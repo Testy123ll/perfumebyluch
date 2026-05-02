@@ -1,6 +1,6 @@
 // Update this number to your real WhatsApp business number (international format, no +)
 // Note: wa.me/message/XXXX short-links do NOT support a prefilled text. Use a phone number.
-export const WHATSAPP_NUMBER = "2348000000000";
+export const WHATSAPP_NUMBER = "2347052537265";
 
 export const waLink = (message: string) =>
   `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
