@@ -26,7 +26,7 @@ const Hero = () => (
             </a>
           </Button>
           <Button asChild size="lg" variant="outline" className="text-base">
-            <a href="#products">Browse Collection</a>
+            <a href="/collections">Browse Collection</a>
           </Button>
         </div>
         <div className="mt-10 flex items-center gap-8 text-sm text-muted-foreground">

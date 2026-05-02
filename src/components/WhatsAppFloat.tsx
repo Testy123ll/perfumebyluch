@@ -8,7 +8,7 @@ const WhatsAppIcon = ({ className }: { className?: string }) => (
 
 const WhatsAppFloat = () => (
   <a
-    href={waLink("Hi Perfumes By Luch! I'd like to place an order.")}
+    href={waLink("Hi Perfumes By Luch! 🌸 I'd like to order a perfume.")}
     target="_blank"
     rel="noopener noreferrer"
     aria-label="Chat on WhatsApp"
