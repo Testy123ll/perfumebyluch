@@ -3,15 +3,72 @@ import { Button } from "@/components/ui/button";
 import { formatPrice, waLink } from "@/lib/whatsapp";
 import { WhatsAppIcon } from "@/components/WhatsAppFloat";
 import { useCart } from "@/contexts/CartContext";
-import { Plus, Check, Loader2 } from "lucide-react";
+import { Plus, Check, Loader2, Search } from "lucide-react";
 import { supabase, Product } from "@/lib/supabase";
+import p1 from "@/assets/perfume-1.jpg";
+import p2 from "@/assets/perfume-2.jpg";
+import p4 from "@/assets/perfume-4.jpg";
+import p7 from "@/assets/perfume-7.jpg";
 
 type Category = "All" | "Boxed" | "Unboxed" | "Thrifted" | "Testers";
 
 const categories: Category[] = ["All", "Boxed", "Unboxed", "Thrifted", "Testers"];
 
+// Shown as demo products when Supabase is not yet configured
+const SAMPLE_PRODUCTS: Product[] = [
+  {
+    id: "sample-boxed",
+    name: "Baccarat Rouge 540",
+    description: "Jasmine · amberwood · ambergris · fir resin",
+    price: 120000,
+    category: "Boxed",
+    image_url: p2,
+    in_stock: true,
+    visible: true,
+    is_new: true,
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: "sample-unboxed",
+    name: "Oud Wood",
+    description: "Rare oud wood · sandalwood · vetiver · amber",
+    price: 75000,
+    category: "Unboxed",
+    image_url: p4,
+    in_stock: true,
+    visible: true,
+    is_new: false,
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: "sample-thrifted",
+    name: "Chance Eau Tendre",
+    description: "Grapefruit · quince · jasmine · white musk",
+    price: 35000,
+    category: "Thrifted",
+    image_url: p1,
+    in_stock: true,
+    visible: true,
+    is_new: false,
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: "sample-tester",
+    name: "Sauvage",
+    description: "Bergamot · pepper · ambroxan · labdanum",
+    price: 28000,
+    category: "Testers",
+    image_url: p7,
+    in_stock: false,
+    visible: true,
+    is_new: false,
+    created_at: new Date().toISOString(),
+  },
+];
+
 const Products = () => {
   const [active, setActive] = useState<Category>("All");
+  const [search, setSearch] = useState("");
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const { addItem, items } = useCart();
@@ -23,14 +80,21 @@ const Products = () => {
         .select("*")
         .eq("visible", true)
         .order("created_at", { ascending: false });
-      
-      if (data) setProducts(data);
+
+      // Fall back to sample products when Supabase returns nothing
+      if (data && data.length > 0) {
+        setProducts(data);
+      } else {
+        setProducts(SAMPLE_PRODUCTS);
+      }
       setLoading(false);
     };
     fetchProducts();
   }, []);
 
-  const filtered = active === "All" ? products : products.filter((p) => p.category === active);
+  const filtered = products
+    .filter((p) => active === "All" || p.category === active)
+    .filter((p) => p.name.toLowerCase().includes(search.toLowerCase()));
 
   return (
     <section id="products" className="py-20 md:py-28">
@@ -43,7 +107,22 @@ const Products = () => {
           </p>
         </div>
 
-        <div className="mt-10 flex flex-wrap justify-center gap-2">
+        {/* Search bar */}
+        <div className="mx-auto mt-10 max-w-md">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="Search fragrances..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full rounded-full border border-border bg-card py-2.5 pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground transition-colors focus:border-primary/60 focus:outline-none"
+            />
+          </div>
+        </div>
+
+        {/* Category pills */}
+        <div className="mt-4 flex flex-wrap justify-center gap-2">
           {categories.map((cat) => (
             <button
               key={cat}
@@ -63,10 +142,17 @@ const Products = () => {
           <div className="mt-20 flex justify-center pb-12">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
+        ) : filtered.length === 0 ? (
+          <div className="mt-20 pb-12 text-center">
+            <p className="text-muted-foreground text-sm">
+              No products in this category yet. Check back soon.
+            </p>
+          </div>
         ) : (
           <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {filtered.map((p) => {
               const inCart = items.some((i) => i.id === p.id);
+              const soldOut = !p.in_stock;
               return (
                 <article
                   key={p.id}
@@ -80,17 +166,34 @@ const Products = () => {
                         width={768}
                         height={768}
                         loading="lazy"
-                        className="h-full w-full object-cover transition-smooth group-hover:scale-105"
+                        className={`h-full w-full object-cover transition-smooth group-hover:scale-105 ${soldOut ? "opacity-60" : ""}`}
                       />
                     ) : (
                       <div className="flex h-full w-full items-center justify-center bg-muted text-muted-foreground">
                         No Image
                       </div>
                     )}
-                    <span className="absolute left-3 top-3 rounded-full bg-background/80 px-3 py-1 text-xs text-foreground backdrop-blur">
+
+                    {/* "New" badge — top-left */}
+                    {p.is_new && (
+                      <span className="absolute left-3 top-3 rounded-full bg-amber-400/90 px-3 py-1 text-xs font-semibold text-amber-950 backdrop-blur">
+                        New
+                      </span>
+                    )}
+
+                    {/* Category label — bottom-left */}
+                    <span className="absolute bottom-3 left-3 rounded-full bg-background/80 px-3 py-1 text-xs text-foreground backdrop-blur">
                       {p.category}
                     </span>
+
+                    {/* Sold Out badge — top-right */}
+                    {soldOut && (
+                      <span className="absolute right-3 top-3 rounded-full bg-red-500/80 px-3 py-1 text-xs font-semibold text-white backdrop-blur">
+                        Sold Out
+                      </span>
+                    )}
                   </div>
+
                   <div className="flex flex-1 flex-col p-5">
                     <h3 className="font-serif text-2xl">{p.name}</h3>
                     <p className="mt-1 text-sm text-muted-foreground">{p.description}</p>
@@ -99,13 +202,16 @@ const Products = () => {
                     </div>
                     <Button
                       onClick={() =>
-                        addItem({ id: p.id, name: p.name, price: p.price, category: p.category })
+                        addItem({ id: p.id, name: p.name, price: p.price, category: p.category, image_url: p.image_url || undefined })
                       }
                       variant={inCart ? "outline" : "default"}
                       size="sm"
+                      disabled={soldOut}
                       className="mt-4 w-full"
                     >
-                      {inCart ? (
+                      {soldOut ? (
+                        "Sold Out"
+                      ) : inCart ? (
                         <>
                           <Check className="h-4 w-4" />
                           Added — Add Another
@@ -117,16 +223,18 @@ const Products = () => {
                         </>
                       )}
                     </Button>
-                    <Button asChild variant="ghost" size="sm" className="mt-2 w-full text-xs text-muted-foreground hover:text-primary">
-                      <a
-                        href={waLink(`Hi, I'd like to order ${p.name} at ${formatPrice(p.price)}`)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <WhatsAppIcon className="h-3.5 w-3.5" />
-                        Order via WhatsApp
-                      </a>
-                    </Button>
+                    {!soldOut && (
+                      <Button asChild variant="ghost" size="sm" className="mt-2 w-full text-xs text-muted-foreground hover:text-primary">
+                        <a
+                          href={waLink(`Hi, I'd like to order ${p.name} at ${formatPrice(p.price)}`)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <WhatsAppIcon className="h-3.5 w-3.5" />
+                          Order via WhatsApp
+                        </a>
+                      </Button>
+                    )}
                   </div>
                 </article>
               );

@@ -8,10 +8,14 @@ import { WhatsAppIcon } from "@/components/WhatsAppFloat";
 import { buildOrderMessage, formatPrice, waLink, WHATSAPP_NUMBER } from "@/lib/whatsapp";
 import { toast } from "@/hooks/use-toast";
 
+const MAX_QTY = 10;
+
 const CartDrawer = () => {
   const { items, isOpen, closeCart, removeItem, updateQuantity, clearCart, subtotal, totalQuantity } = useCart();
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  // Inline clear confirmation state: null | "pending"
+  const [clearState, setClearState] = useState<"idle" | "pending">("idle");
 
   const orderMessage = buildOrderMessage(items);
   const orderLink = waLink(orderMessage);
@@ -32,7 +36,9 @@ const CartDrawer = () => {
     }
   };
 
+  // After tapping "Open WhatsApp to Send", clear cart and close everything
   const finishAndClose = () => {
+    clearCart();
     setConfirmOpen(false);
     closeCart();
   };
@@ -42,6 +48,17 @@ const CartDrawer = () => {
     setConfirmOpen(false);
     closeCart();
   };
+
+  const handleClearClick = () => {
+    if (clearState === "idle") {
+      setClearState("pending");
+    } else {
+      clearCart();
+      setClearState("idle");
+    }
+  };
+
+  const handleClearCancel = () => setClearState("idle");
 
   return (
     <>
@@ -71,11 +88,26 @@ const CartDrawer = () => {
               <div className="flex-1 overflow-y-auto p-6">
                 <ul className="space-y-4">
                   {items.map((item) => (
-                    <li key={item.id} className="flex gap-4 rounded-xl border border-border bg-card p-3">
-                      <div className="flex-1">
+                    <li key={item.id} className="flex gap-3 rounded-xl border border-border bg-card p-3">
+                      {/* Product thumbnail */}
+                      <div className="h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-secondary">
+                        {item.image_url ? (
+                          <img
+                            src={item.image_url}
+                            alt={item.name}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center">
+                            <ShoppingBag className="h-5 w-5 text-muted-foreground" />
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2">
-                          <div>
-                            <h3 className="font-serif text-lg leading-tight">{item.name}</h3>
+                          <div className="min-w-0">
+                            <h3 className="font-serif text-lg leading-tight truncate">{item.name}</h3>
                             <p className="mt-0.5 text-xs uppercase tracking-wider text-muted-foreground">
                               {item.category}
                             </p>
@@ -83,7 +115,7 @@ const CartDrawer = () => {
                           <button
                             onClick={() => removeItem(item.id)}
                             aria-label={`Remove ${item.name}`}
-                            className="text-muted-foreground transition-smooth hover:text-destructive"
+                            className="shrink-0 text-muted-foreground transition-smooth hover:text-destructive"
                           >
                             <Trash2 className="h-4 w-4" />
                           </button>
@@ -101,7 +133,8 @@ const CartDrawer = () => {
                             <button
                               onClick={() => updateQuantity(item.id, item.quantity + 1)}
                               aria-label="Increase quantity"
-                              className="flex h-8 w-8 items-center justify-center rounded-full transition-smooth hover:bg-secondary"
+                              disabled={item.quantity >= MAX_QTY}
+                              className="flex h-8 w-8 items-center justify-center rounded-full transition-smooth hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-40"
                             >
                               <Plus className="h-3 w-3" />
                             </button>
@@ -115,12 +148,32 @@ const CartDrawer = () => {
                   ))}
                 </ul>
 
-                <button
-                  onClick={clearCart}
-                  className="mt-6 text-xs uppercase tracking-wider text-muted-foreground transition-smooth hover:text-foreground"
-                >
-                  Clear cart
-                </button>
+                {/* Inline clear cart confirmation */}
+                <div className="mt-6 flex items-center gap-3">
+                  {clearState === "idle" ? (
+                    <button
+                      onClick={handleClearClick}
+                      className="text-xs uppercase tracking-wider text-muted-foreground transition-smooth hover:text-foreground"
+                    >
+                      Clear cart
+                    </button>
+                  ) : (
+                    <>
+                      <button
+                        onClick={handleClearClick}
+                        className="text-xs uppercase tracking-wider text-destructive transition-smooth hover:text-destructive/80"
+                      >
+                        Are you sure? Tap to confirm
+                      </button>
+                      <button
+                        onClick={handleClearCancel}
+                        className="text-xs text-muted-foreground underline transition-smooth hover:text-foreground"
+                      >
+                        Cancel
+                      </button>
+                    </>
+                  )}
+                </div>
               </div>
 
               <div className="border-t border-border bg-card/50 p-6">

@@ -56,10 +56,11 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const updateQuantity = useCallback((id: string, quantity: number) => {
+    const capped = Math.min(quantity, 10);
     setItems((prev) =>
-      quantity <= 0
+      capped <= 0
         ? prev.filter((p) => p.id !== id)
-        : prev.map((p) => (p.id === id ? { ...p, quantity } : p)),
+        : prev.map((p) => (p.id === id ? { ...p, quantity: capped } : p)),
     );
   }, []);
 

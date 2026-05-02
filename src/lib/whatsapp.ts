@@ -11,6 +11,7 @@ export type CartItem = {
   price: number;
   category: string;
   quantity: number;
+  image_url?: string;
 };
 
 export const formatPrice = (n: number) => `₦${n.toLocaleString("en-NG")}`;
