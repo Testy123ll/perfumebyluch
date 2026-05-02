@@ -1,48 +1,85 @@
 import { waLink } from "@/lib/whatsapp";
 import { WhatsAppIcon } from "@/components/WhatsAppFloat";
-import { Instagram, MapPin } from "lucide-react";
+import { Instagram, MapPin, Clock } from "lucide-react";
+import logo from "@/assets/logo.webp";
+
+const TikTokIcon = ({ className }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden="true">
+    <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5.8 20.1a6.34 6.34 0 0 0 10.86-4.43V8.55a8.16 8.16 0 0 0 4.77 1.52V6.69h-1.84z" />
+  </svg>
+);
 
 const Footer = () => (
-  <footer className="border-t border-border py-12">
+  <footer id="contact" className="border-t border-border py-14">
     <div className="container">
-      <div className="grid gap-8 md:grid-cols-3 md:items-center">
-        <div>
-          <p className="font-serif text-2xl">Perfumes <span className="text-gradient-pink italic">By Luch</span></p>
-          <p className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
-            <MapPin className="h-4 w-4 text-primary" />
-            Lekki, Lagos
+      <div className="grid gap-10 md:grid-cols-4">
+        <div className="md:col-span-1">
+          <img src={logo} alt="Perfumes By Luch" className="h-14 w-auto" width={140} height={56} />
+          <p className="mt-4 text-sm italic text-muted-foreground">
+            Smell so good without breaking the bank.
           </p>
         </div>
 
-        <nav className="flex flex-wrap justify-center gap-6 text-sm text-muted-foreground">
-          <a href="#products" className="transition-smooth hover:text-primary">Shop</a>
-          <a href="#about" className="transition-smooth hover:text-primary">About</a>
-          <a href="#faq" className="transition-smooth hover:text-primary">FAQ</a>
-        </nav>
+        <div>
+          <h3 className="text-xs uppercase tracking-[0.2em] text-primary">Visit Us</h3>
+          <p className="mt-4 flex items-start gap-2 text-sm text-foreground">
+            <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+            <span>
+              13B Charles Ifeanyi Street,<br />
+              Off Fola Osibo Street,<br />
+              Lekki Phase 1, Lagos
+            </span>
+          </p>
+        </div>
 
-        <div className="flex justify-start gap-3 md:justify-end">
-          <a
-            href={waLink("Hi Perfumes By Luch!")}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="WhatsApp"
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-border text-muted-foreground transition-smooth hover:border-primary hover:text-primary"
-          >
-            <WhatsAppIcon className="h-5 w-5" />
-          </a>
-          <a
-            href="https://instagram.com/perfumesbyluch"
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="Instagram"
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-border text-muted-foreground transition-smooth hover:border-primary hover:text-primary"
-          >
-            <Instagram className="h-5 w-5" />
-          </a>
+        <div>
+          <h3 className="text-xs uppercase tracking-[0.2em] text-primary">Opening Hours</h3>
+          <p className="mt-4 flex items-start gap-2 text-sm text-foreground">
+            <Clock className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+            <span>
+              Mon – Sat<br />
+              10:00 AM – 4:30 PM<br />
+              <span className="text-muted-foreground">Closed Sundays</span>
+            </span>
+          </p>
+        </div>
+
+        <div>
+          <h3 className="text-xs uppercase tracking-[0.2em] text-primary">Connect</h3>
+          <div className="mt-4 flex gap-3">
+            <a
+              href={waLink("Hi Perfumes By Luch!")}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="WhatsApp"
+              className="flex h-10 w-10 items-center justify-center rounded-full border border-border text-muted-foreground transition-smooth hover:border-primary hover:text-primary"
+            >
+              <WhatsAppIcon className="h-5 w-5" />
+            </a>
+            <a
+              href="https://instagram.com/perfumesbyluch"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Instagram @perfumesbyluch"
+              className="flex h-10 w-10 items-center justify-center rounded-full border border-border text-muted-foreground transition-smooth hover:border-primary hover:text-primary"
+            >
+              <Instagram className="h-5 w-5" />
+            </a>
+            <a
+              href="https://tiktok.com/@perfumesbyluch"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="TikTok @perfumesbyluch"
+              className="flex h-10 w-10 items-center justify-center rounded-full border border-border text-muted-foreground transition-smooth hover:border-primary hover:text-primary"
+            >
+              <TikTokIcon className="h-5 w-5" />
+            </a>
+          </div>
+          <p className="mt-4 text-xs text-muted-foreground">@perfumesbyluch</p>
         </div>
       </div>
 
-      <p className="mt-10 text-center text-xs text-muted-foreground">
+      <p className="mt-12 border-t border-border pt-6 text-center text-xs text-muted-foreground">
         © {new Date().getFullYear()} Perfumes By Luch. All rights reserved.
       </p>
     </div>
