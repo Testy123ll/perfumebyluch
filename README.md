@@ -1,3 +1,3 @@
-# Welcome to your Lovable project
+# Lekki Scent Story
 
 TODO: Document your project here

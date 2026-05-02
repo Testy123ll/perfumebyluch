@@ -20,7 +20,7 @@ export const buildOrderMessage = (items: CartItem[]): string => {
 
   const lines: string[] = [];
   lines.push("Hi Perfumes By Luch! 🌸");
-  lines.push("I'd like to place the following order:");
+  lines.push("I'd like to buy the following items:");
   lines.push("");
 
   items.forEach((item, i) => {
@@ -36,7 +36,7 @@ export const buildOrderMessage = (items: CartItem[]): string => {
   lines.push(`Items: ${totalQty}`);
   lines.push(`Total: ${formatPrice(subtotal)}`);
   lines.push("");
-  lines.push("Please confirm availability and delivery details. Thank you!");
+  lines.push("Also please confirm availability.");
 
   return lines.join("\n");
 };

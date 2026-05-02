@@ -1,3 +1,4 @@
+import React from "react";
 import {
   Accordion,
   AccordionContent,
@@ -5,26 +6,92 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 
-const faqs = [
+const faqCategories = [
   {
-    q: "Are your perfumes original?",
-    a: "Yes. All products are verified and sourced from trusted suppliers.",
+    category: "General FAQ",
+    items: [
+      {
+        q: "Are your perfumes authentic?",
+        a: "Yes. All our fragrances are 100% authentic and sourced from verified suppliers, retailers, and collectors. We do not sell counterfeit products.",
+      },
+      {
+        q: "What types of perfumes do you sell?",
+        a: "We sell a curated selection of Designer and Niche Unboxed, Boxed, Thrifted Open Box and Tester perfumes.",
+      },
+      {
+        q: "What is the difference between Unboxed, Thrifted Open Box, Boxed and Tester Perfumes?",
+        a: (
+          <div className="space-y-2">
+            <p>
+              So there are 2<br />
+              Old and new,
+            </p>
+            <p>
+              Boxed and tester perfumes are brand new.<br />
+              Unboxed and Thrifted Open Box are thrifted.
+            </p>
+          </div>
+        ),
+      },
+      {
+        q: "Do Unboxed and Thrifted Open Box perfumes last as long as Boxed and Tester Perfumes?",
+        a: "Most times, they do, but not in all cases. The fragrance quality and longevity may be reduced due to exposure to sunlight and shelf life, which could also affect performance.",
+      },
+      {
+        q: "Do you take wholesale orders?",
+        a: "Yes we do, although minimum for wholesale is 10pcs.",
+      },
+    ],
   },
   {
-    q: "Do you deliver outside Lagos?",
-    a: "Yes. Nationwide delivery is available.",
+    category: "Orders & Delivery",
+    items: [
+      {
+        q: "Do you offer nationwide delivery?",
+        a: "Yes, we deliver across Nigeria. Delivery times and fees depend on your location.",
+      },
+      {
+        q: "How long does delivery take?",
+        a: (
+          <div className="space-y-2">
+            <p>Typically:</p>
+            <ul className="list-disc pl-5 space-y-1">
+              <li>Lagos: 1–2 days depending on your location</li>
+              <li>Outside Lagos: 2–7 days depending on your location.</li>
+            </ul>
+          </div>
+        ),
+      },
+      {
+        q: "Do you offer Payment on Delivery?",
+        a: "No we don’t, but you can come to the store to shop, test the fragrances and make payment.",
+      },
+    ],
   },
   {
-    q: "How do I order?",
-    a: "Click any WhatsApp button on this page and send your order. We'll handle the rest.",
-  },
-  {
-    q: "Do you sell testers?",
-    a: "Yes. Testers and thrifted options are available at lower prices.",
-  },
-  {
-    q: "How long does delivery take?",
-    a: "Lagos: 1–2 days. Outside Lagos: 2–4 days.",
+    category: "Returns & Refunds",
+    items: [
+      {
+        q: "Can I return a perfume?",
+        a: (
+          <div className="space-y-3">
+            <p>
+              Due to the nature of fragrances, we only accept returns/exchange on Brand New Boxed Perfumes only if:
+            </p>
+            <ul className="list-disc pl-5 space-y-1">
+              <li>The item is still in its original packaging, sealed and untouched, just the way it was sold to you.</li>
+              <li>You received the wrong product.</li>
+            </ul>
+            <p>
+              However, we do not accept returns or exchange on Unboxed and Thrifted Open Box perfumes for hygiene and safety reasons.
+            </p>
+            <p>
+              You can visit our Walk-In Store to sample our fragrances, kindly check the website to see the store address and opening times.
+            </p>
+          </div>
+        ),
+      },
+    ],
   },
 ];
 
@@ -33,23 +100,32 @@ const FAQ = () => (
     <div className="container max-w-3xl">
       <div className="text-center">
         <p className="text-xs uppercase tracking-[0.3em] text-primary">Questions</p>
-        <h2 className="mt-3 font-serif text-4xl md:text-5xl">Good to know</h2>
+        <h2 className="mt-3 font-serif text-4xl md:text-5xl">Frequently Asked Questions</h2>
       </div>
 
-      <Accordion type="single" collapsible className="mt-10 space-y-3">
-        {faqs.map((f, i) => (
-          <AccordionItem
-            key={i}
-            value={`item-${i}`}
-            className="rounded-xl border border-border bg-card px-5 data-[state=open]:border-primary/40"
-          >
-            <AccordionTrigger className="font-serif text-lg hover:no-underline">
-              {f.q}
-            </AccordionTrigger>
-            <AccordionContent className="text-muted-foreground">{f.a}</AccordionContent>
-          </AccordionItem>
+      <div className="mt-12 space-y-10">
+        {faqCategories.map((category, idx) => (
+          <div key={idx}>
+            <h3 className="mb-4 font-serif text-2xl text-primary">{category.category}</h3>
+            <Accordion type="single" collapsible className="space-y-3">
+              {category.items.map((f, i) => (
+                <AccordionItem
+                  key={i}
+                  value={`item-${idx}-${i}`}
+                  className="rounded-xl border border-border bg-card px-5 data-[state=open]:border-primary/40"
+                >
+                  <AccordionTrigger className="font-serif text-lg text-left hover:no-underline">
+                    {f.q}
+                  </AccordionTrigger>
+                  <AccordionContent className="text-muted-foreground text-base leading-relaxed">
+                    {f.a}
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+          </div>
         ))}
-      </Accordion>
+      </div>
     </div>
   </section>
 );
