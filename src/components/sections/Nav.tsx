@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { waLink } from "@/lib/whatsapp";
+import CartButton from "@/components/CartButton";
 
 const Nav = () => (
   <header className="fixed inset-x-0 top-0 z-40 border-b border-border/50 bg-background/70 backdrop-blur-xl">
@@ -12,11 +13,14 @@ const Nav = () => (
         <a href="#about" className="transition-smooth hover:text-primary">About</a>
         <a href="#faq" className="transition-smooth hover:text-primary">FAQ</a>
       </nav>
-      <Button asChild variant="whatsapp" size="sm">
-        <a href={waLink("Hi Perfumes By Luch!")} target="_blank" rel="noopener noreferrer">
-          Order Now
-        </a>
-      </Button>
+      <div className="flex items-center gap-2">
+        <CartButton />
+        <Button asChild variant="whatsapp" size="sm" className="hidden sm:inline-flex">
+          <a href={waLink("Hi Perfumes By Luch!")} target="_blank" rel="noopener noreferrer">
+            Order Now
+          </a>
+        </Button>
+      </div>
     </div>
   </header>
 );
