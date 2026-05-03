@@ -379,6 +379,10 @@ const Admin = () => {
       toast({ title: "Unauthorized", description: "Only the owner can delete admins.", variant: "destructive" });
       return;
     }
+    if (id === session?.user?.id) {
+      toast({ title: "Action Blocked", description: "You cannot remove your own account.", variant: "destructive" });
+      return;
+    }
     if (email === "luchpfume@gmail.com") {
       toast({ title: "Action Blocked", description: "The primary owner cannot be deleted.", variant: "destructive" });
       return;
