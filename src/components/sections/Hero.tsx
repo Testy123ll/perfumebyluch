@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 import { waLink } from "@/lib/whatsapp";
 import { WhatsAppIcon } from "@/components/WhatsAppFloat";
 import heroImage from "@/assets/hero-perfume.jpg";
@@ -26,7 +27,7 @@ const Hero = () => (
             </a>
           </Button>
           <Button asChild size="lg" variant="outline" className="text-base">
-            <a href="/collections">Browse Collection</a>
+            <Link to="/collections">Browse Collection</Link>
           </Button>
         </div>
         <div className="mt-10 flex items-center gap-8 text-sm text-muted-foreground">

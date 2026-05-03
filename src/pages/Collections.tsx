@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { formatPrice, waLink } from "@/lib/whatsapp";
 import { WhatsAppIcon } from "@/components/WhatsAppFloat";
 import { useCart } from "@/contexts/CartContext";
-import { Plus, Check, Loader2, Search, ShoppingBag } from "lucide-react";
+import { Plus, Check, Loader2, Search, ShoppingBag, Instagram, ChevronLeft, ChevronRight } from "lucide-react";
 import { supabase, Product } from "@/lib/supabase";
 import Nav from "@/components/sections/Nav";
 import Footer from "@/components/sections/Footer";
@@ -76,6 +76,8 @@ const CollectionsGrid = () => {
   const [search, setSearch] = useState("");
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
   const { addItem, items } = useCart();
 
   useEffect(() => {
@@ -99,6 +101,13 @@ const CollectionsGrid = () => {
   const filtered = products
     .filter((p) => active === "All" || p.category === active)
     .filter((p) => p.name.toLowerCase().includes(search.toLowerCase()));
+
+  const totalPages = Math.ceil(filtered.length / pageSize);
+  const paginated = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [active, search]);
 
   return (
     <div>
@@ -150,8 +159,9 @@ const CollectionsGrid = () => {
           <p className="text-muted-foreground text-sm">No products in this category yet. Check back soon.</p>
         </div>
       ) : (
-        <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {filtered.map((p) => {
+        <>
+          <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {paginated.map((p) => {
             const inCart = items.some((i) => i.id === p.id);
             const soldOut = !p.in_stock;
             return (
@@ -227,14 +237,52 @@ const CollectionsGrid = () => {
             );
           })}
         </div>
+
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div className="mt-12 flex items-center justify-center gap-4">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(prev => prev - 1)}
+            >
+              <ChevronLeft className="mr-1 h-4 w-4" /> Previous
+            </Button>
+            <div className="flex gap-1">
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                <button
+                  key={page}
+                  onClick={() => setCurrentPage(page)}
+                  className={`flex h-8 w-8 items-center justify-center rounded-md text-sm transition-all ${
+                    currentPage === page
+                      ? "bg-primary text-primary-foreground font-medium"
+                      : "hover:bg-muted"
+                  }`}
+                >
+                  {page}
+                </button>
+              ))}
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage(prev => prev + 1)}
+            >
+              Next <ChevronRight className="ml-1 h-4 w-4" />
+            </Button>
+          </div>
+        )}
+      </>
       )}
 
       {/* CTA */}
       <div className="mt-14 text-center">
-        <Button asChild variant="outline" size="lg">
-          <a href={waLink("Hi! Can I see more perfumes available?")} target="_blank" rel="noopener noreferrer">
-            <WhatsAppIcon className="h-4 w-4" />
-            View More on WhatsApp
+        <Button asChild variant="outline" size="lg" className="hover:border-primary hover:text-primary">
+          <a href="https://instagram.com/perfumesbyluch" target="_blank" rel="noopener noreferrer">
+            <Instagram className="h-4 w-4" />
+            View More on Instagram
           </a>
         </Button>
       </div>
