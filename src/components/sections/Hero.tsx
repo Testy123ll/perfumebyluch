@@ -17,7 +17,7 @@ const Hero = () => (
           <span className="text-gradient-pink italic">You Can Trust</span>
         </h1>
         <p className="mt-6 max-w-md text-lg text-muted-foreground">
-          Boxed, unboxed, thrifted, and tester perfumes available. Authentic fragrances, delivered nationwide.
+          Boxed, unboxed, thrifted, and tester perfumes available. Authentic fragrances, delivered across Nigeria, Ghana and Cameroon.
         </p>
         <div className="mt-8 flex flex-wrap gap-4">
           <Button asChild size="lg" variant="whatsapp" className="text-base">

@@ -15,7 +15,7 @@ const Admin = () => {
   const [session, setSession] = useState<any>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [authChecking, setAuthChecking] = useState(true);
-  const [activeTab, setActiveTab] = useState<"products" | "team" | "activity">("products");
+  const [activeTab, setActiveTab] = useState<"products" | "team" | "activity" | "reviews">("products");
 
   // Team state
   const [team, setTeam] = useState<{ 
@@ -41,8 +41,19 @@ const Admin = () => {
     in_stock: true,
     visible: true,
     is_new: false,
+    video_url: "",
+    sizes: [] as { size: string; price: number }[],
   });
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [reviewFormData, setReviewFormData] = useState({
+    reviewer_name: "",
+    product_id: "",
+    rating: 5,
+    comment: "",
+    verified: false,
+  });
 
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -87,6 +98,14 @@ const Admin = () => {
     const { data, error } = await query;
     if (!error) setLogs(data || []);
   }, [logFilterAdmin, logFilterAction]);
+
+  const fetchReviews = useCallback(async () => {
+    const { data, error } = await supabase
+      .from("reviews")
+      .select("*, products(name)")
+      .order("created_at", { ascending: false });
+    if (!error) setReviews(data || []);
+  }, []);
 
   const fetchTeam = useCallback(async () => {
     const { data: profiles, error: pError } = await supabase.from("profiles").select("*");
@@ -149,6 +168,7 @@ const Admin = () => {
       } else {
         setUserRole(profile.role);
         fetchProducts();
+        fetchReviews();
         if (profile.role === "owner") {
           fetchTeam();
         }
@@ -172,7 +192,7 @@ const Admin = () => {
     );
 
     return () => authListener.subscription.unsubscribe();
-  }, [navigate, fetchProducts, fetchTeam, fetchLogs, toast]);
+  }, [navigate, fetchProducts, fetchTeam, fetchLogs, fetchReviews, toast]);
 
   const handleLogout = async () => {
     localStorage.removeItem(TEST_SESSION_KEY);
@@ -228,8 +248,11 @@ const Admin = () => {
       in_stock: product.in_stock,
       visible: product.visible,
       is_new: product.is_new ?? false,
+      video_url: product.video_url || "",
+      sizes: product.sizes || [],
     });
     setImageFile(null);
+    setVideoFile(null);
     setShowForm(true);
   };
 
@@ -243,8 +266,11 @@ const Admin = () => {
       in_stock: true,
       visible: true,
       is_new: false,
+      video_url: "",
+      sizes: [],
     });
     setImageFile(null);
+    setVideoFile(null);
     setShowForm(false);
   };
 
@@ -273,6 +299,22 @@ const Admin = () => {
       image_url = publicUrlData.publicUrl;
     }
 
+    let video_url = editingId ? products.find((p) => p.id === editingId)?.video_url : "";
+
+    if (videoFile) {
+      const fileExt = videoFile.name.split(".").pop();
+      const fileName = `${Math.random()}.${fileExt}`;
+      const filePath = `product-videos/${fileName}`;
+      const { error: uploadError } = await supabase.storage.from("products").upload(filePath, videoFile);
+      if (uploadError) {
+        toast({ title: "Video Upload Error", description: uploadError.message, variant: "destructive" });
+        setLoading(false);
+        return;
+      }
+      const { data: publicUrlData } = supabase.storage.from("products").getPublicUrl(filePath);
+      video_url = publicUrlData.publicUrl;
+    }
+
     const payload = {
       name: formData.name,
       price: parseFloat(formData.price),
@@ -281,6 +323,8 @@ const Admin = () => {
       in_stock: formData.in_stock,
       visible: formData.visible,
       is_new: formData.is_new,
+      video_url,
+      sizes: formData.sizes,
       ...(image_url ? { image_url } : {}),
     };
 
@@ -407,6 +451,50 @@ const Admin = () => {
     }
   };
 
+  const handleToggleReviewVisibility = async (id: string, current: boolean, reviewer: string) => {
+    const { error } = await supabase.from("reviews").update({ visible: !current }).eq("id", id);
+    if (!error) {
+      logAction(current ? "Hid review" : "Showed review", "review", reviewer);
+      fetchReviews();
+    }
+  };
+
+  const handleToggleReviewVerified = async (id: string, current: boolean, reviewer: string) => {
+    const { error } = await supabase.from("reviews").update({ verified: !current }).eq("id", id);
+    if (!error) {
+      logAction(current ? "Unverified review" : "Verified review", "review", reviewer);
+      fetchReviews();
+    }
+  };
+
+  const handleDeleteReview = async (id: string, reviewer: string) => {
+    if (!confirm(`Delete review from ${reviewer}?`)) return;
+    const { error } = await supabase.from("reviews").delete().eq("id", id);
+    if (!error) {
+      logAction("Deleted review", "review", reviewer);
+      fetchReviews();
+    }
+  };
+
+  const handleAddReview = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const { error } = await supabase.from("reviews").insert([reviewFormData]);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Success", description: "Review added manually" });
+      logAction("Manually added review", "review", reviewFormData.reviewer_name);
+      setReviewFormData({
+        reviewer_name: "",
+        product_id: "",
+        rating: 5,
+        comment: "",
+        verified: false,
+      });
+      fetchReviews();
+    }
+  };
+
   if (authChecking) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
@@ -460,6 +548,14 @@ const Admin = () => {
                     }`}
                   >
                     Activity
+                  </button>
+                  <button
+                    onClick={() => setActiveTab("reviews")}
+                    className={`rounded-md px-3 py-1 text-sm transition-all ${
+                      activeTab === "reviews" ? "bg-background shadow-sm" : "hover:text-foreground/80"
+                    }`}
+                  >
+                    Reviews
                   </button>
                 </>
               )}
@@ -519,10 +615,73 @@ const Admin = () => {
                     accept="image/*"
                     onChange={(e) => setImageFile(e.target.files?.[0] || null)}
                     required={!editingId}
-                    className="w-full"
+                    className="w-full text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm">
+                    Video {editingId && !videoFile ? "(Leave blank to keep current)" : ""}
+                  </label>
+                  <input
+                    type="file"
+                    accept="video/mp4,video/quicktime,video/webm"
+                    onChange={(e) => setVideoFile(e.target.files?.[0] || null)}
+                    className="w-full text-sm"
                   />
                 </div>
               </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium">Pricing Sizes (Optional)</label>
+                <div className="space-y-2">
+                  {formData.sizes.map((s, idx) => (
+                    <div key={idx} className="flex gap-2 items-center">
+                      <input
+                        type="text"
+                        placeholder="Size (e.g. 100ml)"
+                        value={s.size}
+                        onChange={(e) => {
+                          const newSizes = [...formData.sizes];
+                          newSizes[idx].size = e.target.value;
+                          setFormData({ ...formData, sizes: newSizes });
+                        }}
+                        className="flex-1 rounded-md border border-input bg-transparent px-3 py-1.5 text-sm"
+                      />
+                      <input
+                        type="number"
+                        placeholder="Price"
+                        value={s.price}
+                        onChange={(e) => {
+                          const newSizes = [...formData.sizes];
+                          newSizes[idx].price = parseFloat(e.target.value);
+                          setFormData({ ...formData, sizes: newSizes });
+                        }}
+                        className="flex-1 rounded-md border border-input bg-transparent px-3 py-1.5 text-sm"
+                      />
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          const newSizes = formData.sizes.filter((_, i) => i !== idx);
+                          setFormData({ ...formData, sizes: newSizes });
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4 text-red-500" />
+                      </Button>
+                    </div>
+                  ))}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="mt-1"
+                    onClick={() => setFormData({ ...formData, sizes: [...formData.sizes, { size: "", price: 0 }] })}
+                  >
+                    <Plus className="h-4 w-4 mr-1" /> Add Size
+                  </Button>
+                </div>
+              </div>
+
               <div>
                 <label className="mb-1 block text-sm">Description (Notes)</label>
                 <input
@@ -822,6 +981,108 @@ const Admin = () => {
                       </tr>
                     ))
                   )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+        {activeTab === "reviews" && (
+          <div className="space-y-8 animate-fade-in pb-20">
+            <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+              <h2 className="mb-4 text-xl font-medium">Add Manual Review</h2>
+              <form onSubmit={handleAddReview} className="grid grid-cols-2 gap-4">
+                <input
+                  placeholder="Reviewer Name"
+                  value={reviewFormData.reviewer_name}
+                  onChange={(e) => setReviewFormData({ ...reviewFormData, reviewer_name: e.target.value })}
+                  className="rounded-md border border-input bg-transparent px-3 py-2 text-sm"
+                  required
+                />
+                <select
+                  value={reviewFormData.product_id}
+                  onChange={(e) => setReviewFormData({ ...reviewFormData, product_id: e.target.value })}
+                  className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  required
+                >
+                  <option value="">Select Product</option>
+                  {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                </select>
+                <div className="flex items-center gap-4">
+                  <label className="text-sm">Rating (1-5)</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="5"
+                    value={reviewFormData.rating}
+                    onChange={(e) => setReviewFormData({ ...reviewFormData, rating: parseInt(e.target.value) })}
+                    className="w-20 rounded-md border border-input bg-transparent px-3 py-1 text-sm"
+                  />
+                </div>
+                <div className="flex items-center gap-4">
+                  <label className="flex items-center gap-2 text-sm cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={reviewFormData.verified}
+                      onChange={(e) => setReviewFormData({ ...reviewFormData, verified: e.target.checked })}
+                    />
+                    Verified Purchase
+                  </label>
+                </div>
+                <textarea
+                  placeholder="Comment"
+                  value={reviewFormData.comment}
+                  onChange={(e) => setReviewFormData({ ...reviewFormData, comment: e.target.value })}
+                  className="col-span-2 rounded-md border border-input bg-transparent px-3 py-2 text-sm h-20"
+                />
+                <Button type="submit" className="w-fit">Save Review</Button>
+              </form>
+            </div>
+
+            <div className="rounded-xl border border-border bg-card overflow-hidden shadow-sm">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-muted/50">
+                  <tr>
+                    <th className="p-4 font-medium">Reviewer</th>
+                    <th className="p-4 font-medium">Product</th>
+                    <th className="p-4 font-medium">Rating</th>
+                    <th className="p-4 font-medium">Comment</th>
+                    <th className="p-4 font-medium">Status</th>
+                    <th className="p-4 font-medium text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {reviews.map((r) => (
+                    <tr key={r.id} className="border-t border-border">
+                      <td className="p-4">
+                        <div className="font-medium">{r.reviewer_name}</div>
+                        <div className="text-[10px] text-muted-foreground uppercase">{new Date(r.created_at).toLocaleDateString()}</div>
+                      </td>
+                      <td className="p-4">{r.products?.name}</td>
+                      <td className="p-4 text-yellow-500 font-bold">{"★".repeat(r.rating)}</td>
+                      <td className="p-4 max-w-xs truncate">{r.comment}</td>
+                      <td className="p-4">
+                        <div className="flex gap-2">
+                          <span 
+                            onClick={() => handleToggleReviewVerified(r.id, r.verified, r.reviewer_name)}
+                            className={`px-2 py-0.5 rounded-full text-[10px] uppercase cursor-pointer ${r.verified ? 'bg-green-500/20 text-green-500' : 'bg-muted text-muted-foreground'}`}
+                          >
+                            {r.verified ? 'Verified' : 'Unverified'}
+                          </span>
+                          <span 
+                            onClick={() => handleToggleReviewVisibility(r.id, r.visible, r.reviewer_name)}
+                            className={`px-2 py-0.5 rounded-full text-[10px] uppercase cursor-pointer ${r.visible ? 'bg-primary/20 text-primary' : 'bg-red-500/20 text-red-500'}`}
+                          >
+                            {r.visible ? 'Visible' : 'Hidden'}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="p-4 text-right">
+                        <Button variant="ghost" size="icon" onClick={() => handleDeleteReview(r.id, r.reviewer_name)}>
+                          <Trash2 className="h-4 w-4 text-red-500" />
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>

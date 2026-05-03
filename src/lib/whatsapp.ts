@@ -12,6 +12,7 @@ export type CartItem = {
   category: string;
   quantity: number;
   image_url?: string;
+  size?: string;
 };
 
 export const formatPrice = (n: number) => `₦${n.toLocaleString("en-NG")}`;
@@ -25,8 +26,9 @@ export const buildOrderMessage = (items: CartItem[]): string => {
   lines.push("");
 
   items.forEach((item, i) => {
+    const sizeLabel = item.size ? ` (${item.size})` : "";
     lines.push(
-      `${i + 1}. ${item.name} (${item.category}) — ${item.quantity} × ${formatPrice(item.price)} = ${formatPrice(item.price * item.quantity)}`,
+      `${i + 1}. ${item.name}${sizeLabel} (${item.category}) — ${item.quantity} × ${formatPrice(item.price)} = ${formatPrice(item.price * item.quantity)}`,
     );
   });
 

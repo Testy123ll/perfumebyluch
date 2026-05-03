@@ -42,9 +42,9 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
   const addItem = useCallback((product: CartProduct) => {
     setItems((prev) => {
-      const existing = prev.find((p) => p.id === product.id);
+      const existing = prev.find((p) => p.id === product.id && p.size === product.size);
       if (existing) {
-        return prev.map((p) => (p.id === product.id ? { ...p, quantity: p.quantity + 1 } : p));
+        return prev.map((p) => (p.id === product.id && p.size === product.size) ? { ...p, quantity: p.quantity + 1 } : p);
       }
       return [...prev, { ...product, quantity: 1 }];
     });

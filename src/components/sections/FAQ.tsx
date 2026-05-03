@@ -47,8 +47,12 @@ const faqCategories = [
     category: "Orders & Delivery",
     items: [
       {
-        q: "Do you offer nationwide delivery?",
-        a: "Yes, we deliver across Nigeria. Delivery times and fees depend on your location.",
+        q: "Do you offer delivery across Nigeria, Ghana and Cameroon?",
+        a: "Yes, we deliver across Nigeria, Ghana and Cameroon. Delivery times and fees depend on your location.",
+      },
+      {
+        q: "Do you deliver outside Nigeria?",
+        a: "Yes! We deliver to Ghana and Cameroon. For orders outside Nigeria, delivery typically takes 5–14 days depending on your location. Contact us on WhatsApp for exact delivery costs and timelines to your area.",
       },
       {
         q: "How long does delivery take?",

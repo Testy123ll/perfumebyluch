@@ -26,5 +26,7 @@ export type Product = {
   in_stock: boolean;
   visible: boolean;
   is_new: boolean;
+  video_url?: string;
+  sizes?: { size: string; price: number }[];
   created_at: string;
 };
