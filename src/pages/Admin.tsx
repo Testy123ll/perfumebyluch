@@ -414,7 +414,7 @@ const Admin = () => {
           </Button>
         </div>
 
-        {activeTab === "products" ? (
+        {activeTab === "products" && (
           <>
             {showForm ? (
           <div className="mb-8 rounded-xl border border-border bg-card p-6 shadow-sm">
@@ -470,52 +470,34 @@ const Admin = () => {
               <div>
                 <label className="mb-1 block text-sm">Description (Notes)</label>
                 <input
+                  required
                   type="text"
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm"
                 />
               </div>
-              <div className="flex items-center gap-4">
-                <label className="flex items-center gap-2 text-sm">
-                  <input
-                    type="checkbox"
-                    checked={formData.in_stock}
-                    onChange={(e) => setFormData({ ...formData, in_stock: e.target.checked })}
-                  />
-                  In Stock
-                </label>
-                <label className="flex items-center gap-2 text-sm">
-                  <input
-                    type="checkbox"
-                    checked={formData.visible}
-                    onChange={(e) => setFormData({ ...formData, visible: e.target.checked })}
-                  />
-                  Visible
-                </label>
-                <label className="flex items-center gap-2 text-sm">
-                  <input
-                    type="checkbox"
-                    checked={formData.is_new}
-                    onChange={(e) => setFormData({ ...formData, is_new: e.target.checked })}
-                  />
-                  New Arrival
-                </label>
-              </div>
-              <div className="flex gap-2 pt-4">
+              <div className="flex gap-2">
                 <Button type="submit" disabled={loading}>
-                  {loading ? "Saving..." : "Save Product"}
+                  {loading ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : editingId ? (
+                    "Update"
+                  ) : (
+                    "Add"
+                  )}
                 </Button>
-                <Button type="button" variant="outline" onClick={resetForm}>
+                <Button variant="ghost" onClick={resetForm}>
                   Cancel
                 </Button>
               </div>
             </form>
           </div>
         ) : (
-          <div className="mb-6 flex justify-end">
-            <Button onClick={() => setShowForm(true)}>
-              <Plus className="mr-2 h-4 w-4" /> Add Product
+          <div className="mb-8 flex items-center justify-between">
+            <h2 className="font-serif text-2xl">Product Catalog</h2>
+            <Button onClick={() => setShowForm(true)} className="gap-2">
+              <Plus className="h-4 w-4" /> Add Product
             </Button>
           </div>
         )}
@@ -532,22 +514,24 @@ const Admin = () => {
               </tr>
             </thead>
             <tbody>
-              {loading && products.length === 0 ? (
+              {products.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="p-4 text-center">Loading...</td>
-                </tr>
-              ) : products.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="p-4 text-center">No products found.</td>
+                  <td colSpan={5} className="p-8 text-center text-muted-foreground">
+                    No products found. Add your first perfume!
+                  </td>
                 </tr>
               ) : (
                 products.map((p) => (
                   <tr key={p.id} className="border-t border-border">
-                    <td className="p-4 flex items-center gap-3">
-                      {p.image_url && (
-                        <img src={p.image_url} alt={p.name} className="h-10 w-10 rounded object-cover" />
-                      )}
-                      <div>
+                    <td className="p-4">
+                      <div className="flex items-center gap-3">
+                        {p.image_url && (
+                          <img
+                            src={p.image_url}
+                            alt={p.name}
+                            className="h-10 w-10 rounded-md object-cover"
+                          />
+                        )}
                         <div className="font-medium">{p.name}</div>
                         <div className="text-xs text-muted-foreground">{p.description}</div>
                       </div>
@@ -594,7 +578,9 @@ const Admin = () => {
           </table>
         </div>
           </>
-        ) : activeTab === "team" ? (
+        )}
+
+        {activeTab === "team" && (
           <div className="space-y-6 animate-fade-in">
             <div className="rounded-xl border border-border bg-card p-6 flex items-center gap-4">
               <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
@@ -704,6 +690,8 @@ const Admin = () => {
               </table>
             </div>
           </div>
+        )}
+
         {activeTab === "activity" && (
           <div className="space-y-6 animate-fade-in">
             <div className="flex items-center justify-between">
