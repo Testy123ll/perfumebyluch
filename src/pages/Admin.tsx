@@ -240,6 +240,13 @@ const Admin = () => {
     setLoading(false);
   };
 
+  console.log("Admin Dashboard State:", { 
+    hasSession: !!session, 
+    userRole, 
+    authChecking,
+    supabaseConfigured: IS_SUPABASE_CONFIGURED 
+  });
+
   const fetchInvites = async () => {
     const { data, error } = await supabase.from("admin_invites").select("*");
     if (!error) setInvites(data || []);

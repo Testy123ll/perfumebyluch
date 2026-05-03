@@ -24,11 +24,14 @@ const AdminLogin = () => {
     e.preventDefault();
     setLoading(true);
 
+    console.log("Login Attempt:", { email, isConfigured: IS_SUPABASE_CONFIGURED });
+
     // Use local test auth when Supabase is not configured yet
     if (!IS_SUPABASE_CONFIGURED) {
       if (email === TEST_EMAIL && password === TEST_PASSWORD) {
+        console.log("Test Login Success, navigating...");
         localStorage.setItem(TEST_SESSION_KEY, "true");
-        navigate("/admin");
+        navigate("/admin", { replace: true });
       } else {
         toast({
           title: "Invalid credentials",
@@ -40,14 +43,18 @@ const AdminLogin = () => {
       return;
     }
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    console.log("Supabase Login Result:", { success: !!data?.session, error: error?.message });
+
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
-    } else {
-      navigate("/admin");
+    } else if (data?.session) {
+      navigate("/admin", { replace: true });
     }
     setLoading(false);
   };
+
+
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
