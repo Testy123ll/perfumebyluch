@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase, Product, IS_SUPABASE_CONFIGURED } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast, toast } from "@/components/ui/use-toast";
 import { Trash2, Edit2, Eye, EyeOff, Plus, LogOut, Loader2, Shield, ShieldOff, Mail, History, User } from "lucide-react";
 
 const OWNER_ID = "7a7f1bb0-6aa6-42e6-80e3-7e4f7a48491e";
@@ -56,7 +56,7 @@ const Admin = () => {
   });
 
   const navigate = useNavigate();
-  const { toast } = useToast();
+  // Using static toast to avoid re-render loops
 
   const fetchProducts = useCallback(async () => {
     setLoading(true);
@@ -71,7 +71,7 @@ const Admin = () => {
       setProducts(data || []);
     }
     setLoading(false);
-  }, [toast]);
+  }, []);
 
   const logAction = async (action: string, target_type: string, target_name: string) => {
     if (!session?.user?.id) return;
@@ -152,13 +152,24 @@ const Admin = () => {
         .single();
       
       if (profileError || !profile) {
-        // Profiles table missing or query failed — default to admin with warning
-        setUserRole("admin");
-        toast({ 
-          title: "Profiles table not found — running in open admin mode",
-          description: "Database setup may be incomplete.",
-          variant: "destructive" 
-        });
+        // Automatically insert a row into profiles for them
+        const { error: insertError } = await supabase
+          .from("profiles")
+          .insert([{ id: session.user.id, email: session.user.email, role: 'admin' }]);
+        
+        if (insertError) {
+          setUserRole("admin");
+          toast({ 
+            title: "Profiles initialization issue",
+            description: "Database row could not be created, but access granted as admin.",
+            variant: "destructive" 
+          });
+        } else {
+          setUserRole("admin");
+        }
+        fetchProducts();
+        fetchReviews();
+        fetchLogs();
       } else if (profile.role !== "admin" && profile.role !== "owner") {
         toast({ title: "Access Denied", description: "You do not have admin privileges.", variant: "destructive" });
         supabase.auth.signOut();
@@ -192,7 +203,7 @@ const Admin = () => {
     );
 
     return () => authListener.subscription.unsubscribe();
-  }, [navigate, fetchProducts, fetchTeam, fetchLogs, fetchReviews, toast]);
+  }, [navigate, fetchProducts, fetchTeam, fetchLogs, fetchReviews]);
 
   const handleLogout = async () => {
     localStorage.removeItem(TEST_SESSION_KEY);
@@ -350,12 +361,14 @@ const Admin = () => {
     setLoading(false);
   };
 
-  console.log("Admin Dashboard State:", { 
-    hasSession: !!session, 
-    userRole, 
-    authChecking,
-    supabaseConfigured: IS_SUPABASE_CONFIGURED 
-  });
+  useEffect(() => {
+    console.log("Admin Dashboard State:", { 
+      hasSession: !!session, 
+      userRole, 
+      authChecking,
+      supabaseConfigured: IS_SUPABASE_CONFIGURED 
+    });
+  }, [session, userRole, authChecking]);
 
   const handleDeleteLog = async (id: string) => {
     if (session?.user?.id !== OWNER_ID) return;

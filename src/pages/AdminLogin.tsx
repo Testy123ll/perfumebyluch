@@ -63,11 +63,25 @@ const AdminLogin = () => {
       }
 
       const { data, error } = await supabase.auth.signUp({ email, password });
+      
       if (error) {
         toast({ title: "Error", description: error.message, variant: "destructive" });
       } else if (data?.user) {
-        toast({ title: "Success", description: "Account created! You can now sign in." });
-        setIsSignUp(false);
+        // 1. Insert into profiles
+        await supabase.from("profiles").insert([{ id: data.user.id, email: email, role: 'admin' }]);
+        
+        // 2. Delete from invites
+        await supabase.from("admin_invites").delete().eq("email", email);
+
+        // 3. Auto Sign In
+        const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+        
+        if (signInError) {
+          toast({ title: "Error signing in", description: signInError.message, variant: "destructive" });
+        } else {
+          toast({ title: "Success", description: "Account created successfully. Welcome to the admin panel!" });
+          navigate("/admin", { replace: true });
+        }
       }
     } else {
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
