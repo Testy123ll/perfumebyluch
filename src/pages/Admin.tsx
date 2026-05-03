@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase, Product, IS_SUPABASE_CONFIGURED } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
-import { Trash2, Edit2, Eye, EyeOff, Plus, LogOut, Loader2 } from "lucide-react";
+import { Trash2, Edit2, Eye, EyeOff, Plus, LogOut, Loader2, Shield, ShieldOff, Mail } from "lucide-react";
 
 const TEST_SESSION_KEY = "pbl_admin_test_session";
 
@@ -17,8 +17,13 @@ const Admin = () => {
   const [activeTab, setActiveTab] = useState<"products" | "team">("products");
 
   // Team state
-  const [admins, setAdmins] = useState<{ id: string; email: string; role: string; created_at: string }[]>([]);
-  const [invites, setInvites] = useState<{ email: string; created_at: string }[]>([]);
+  const [team, setTeam] = useState<{ 
+    id?: string; 
+    email: string; 
+    role: string; 
+    status: "active" | "pending" | "restricted";
+    created_at: string;
+  }[]>([]);
   const [newInviteEmail, setNewInviteEmail] = useState("");
 
   const [showForm, setShowForm] = useState(false);
@@ -81,11 +86,10 @@ const Admin = () => {
         return;
       } else {
         setUserRole(profile.role);
+        fetchProducts();
+        fetchTeam();
       }
       
-      fetchProducts();
-      fetchInvites();
-      fetchAdmins();
       setAuthChecking(false);
     };
 
@@ -241,20 +245,31 @@ const Admin = () => {
     supabaseConfigured: IS_SUPABASE_CONFIGURED 
   });
 
-  const fetchInvites = async () => {
-    const { data, error } = await supabase.from("admin_invites").select("*");
-    if (!error) setInvites(data || []);
-  };
-
-  const fetchAdmins = async () => {
-    const { data, error } = await supabase.from("profiles").select("*").in("role", ["admin", "owner"]);
-    if (!error) setAdmins(data || []);
-  };
-
-  const handleAddInvite = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newInviteEmail) return;
+  const fetchTeam = async () => {
+    const { data: profiles, error: pError } = await supabase.from("profiles").select("*");
+    const { data: invites, error: iError } = await supabase.from("admin_invites").select("*");
     
+    if (pError || iError) return;
+
+    const combinedTeam: any[] = [
+      ...(profiles || []).map(p => ({
+        id: p.id,
+        email: p.email,
+        role: p.role,
+        status: p.role === "restricted" ? "restricted" : "active",
+        created_at: p.created_at
+      })),
+      ...(invites || []).map(i => ({
+        email: i.email,
+        role: "admin",
+        status: "pending",
+        created_at: i.created_at
+      }))
+    ];
+
+    setTeam(combinedTeam.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()));
+  };
+
     const { error } = await supabase.from("admin_invites").insert([{ 
       email: newInviteEmail,
       invited_by: session?.user?.id 
@@ -265,13 +280,26 @@ const Admin = () => {
     } else {
       toast({ title: "Success", description: `Invited ${newInviteEmail} as admin` });
       setNewInviteEmail("");
-      fetchInvites();
+      fetchTeam();
     }
   };
 
   const handleDeleteInvite = async (email: string) => {
     const { error } = await supabase.from("admin_invites").delete().eq("email", email);
-    if (!error) fetchInvites();
+    if (!error) fetchTeam();
+  };
+
+  const handleToggleRestrict = async (id: string, currentRole: string) => {
+    if (userRole !== "owner") return;
+    const newRole = currentRole === "restricted" ? "admin" : "restricted";
+    
+    const { error } = await supabase.from("profiles").update({ role: newRole }).eq("id", id);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Success", description: `Admin ${newRole === "restricted" ? "restricted" : "restored"}` });
+      fetchTeam();
+    }
   };
 
   const handleDeleteAdmin = async (id: string, email: string) => {
@@ -283,14 +311,14 @@ const Admin = () => {
       toast({ title: "Action Blocked", description: "The primary owner cannot be deleted.", variant: "destructive" });
       return;
     }
-    if (!confirm(`Are you sure you want to remove ${email} from the admin team?`)) return;
+    if (!confirm(`Are you sure you want to PERMANENTLY remove ${email}?`)) return;
 
     const { error } = await supabase.from("profiles").delete().eq("id", id);
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
-      toast({ title: "Success", description: "Admin removed" });
-      fetchAdmins();
+      toast({ title: "Success", description: "Admin account deleted" });
+      fetchTeam();
     }
   };
 
@@ -538,68 +566,70 @@ const Admin = () => {
               <table className="w-full text-left text-sm">
                 <thead className="bg-muted/50">
                   <tr>
-                    <th className="p-4 font-medium">Active Admins</th>
+                    <th className="p-4 font-medium">Team Member</th>
                     <th className="p-4 font-medium">Role</th>
+                    <th className="p-4 font-medium">Status</th>
                     <th className="p-4 font-medium text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {admins.map((admin) => (
-                    <tr key={admin.id} className="border-t border-border">
-                      <td className="p-4 font-medium">{admin.email}</td>
-                      <td className="p-4 capitalize text-muted-foreground">{admin.role}</td>
+                  {team.map((member) => (
+                    <tr key={member.id || member.email} className="border-t border-border">
+                      <td className="p-4">
+                        <div className="font-medium">{member.email}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {new Date(member.created_at).toLocaleDateString()}
+                        </div>
+                      </td>
+                      <td className="p-4">
+                        <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${
+                          member.role === "owner" ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
+                        }`}>
+                          {member.role === "owner" && <Shield className="h-3 w-3" />}
+                          {member.role === "admin" && <ShieldOff className="h-3 w-3" />}
+                          <span className="capitalize">{member.role}</span>
+                        </span>
+                      </td>
+                      <td className="p-4">
+                        <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
+                          member.status === "active" ? "bg-green-500/10 text-green-500" :
+                          member.status === "pending" ? "bg-yellow-500/10 text-yellow-500" :
+                          "bg-red-500/10 text-red-500"
+                        }`}>
+                          <span className="capitalize">{member.status}</span>
+                        </span>
+                      </td>
                       <td className="p-4 text-right">
-                        {userRole === "owner" && admin.role !== "owner" && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleDeleteAdmin(admin.id, admin.email || "")}
-                            className="text-red-500 hover:text-red-600"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        )}
+                        <div className="flex justify-end gap-2">
+                          {userRole === "owner" && member.role !== "owner" && (
+                            <>
+                              {member.status !== "pending" && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  title={member.status === "restricted" ? "Unrestrict Admin" : "Restrict Admin"}
+                                  onClick={() => handleToggleRestrict(member.id!, member.role)}
+                                  className={member.status === "restricted" ? "text-green-500" : "text-orange-500"}
+                                >
+                                  {member.status === "restricted" ? <Shield className="h-4 w-4" /> : <ShieldOff className="h-4 w-4" />}
+                                </Button>
+                              )}
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                title="Delete Account/Invite"
+                                onClick={() => member.status === "pending" ? handleDeleteInvite(member.email) : handleDeleteAdmin(member.id!, member.email)}
+                                className="text-red-500 hover:text-red-600"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </>
+                          )}
+                          {member.status === "pending" && <Mail className="h-4 w-4 text-muted-foreground opacity-50" />}
+                        </div>
                       </td>
                     </tr>
                   ))}
-                </tbody>
-              </table>
-            </div>
-
-            <div className="rounded-xl border border-border bg-card overflow-hidden">
-              <table className="w-full text-left text-sm">
-                <thead className="bg-muted/50">
-                  <tr>
-                    <th className="p-4 font-medium">Pending Invites</th>
-                    <th className="p-4 font-medium">Date</th>
-                    <th className="p-4 font-medium text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {invites.length === 0 ? (
-                    <tr>
-                      <td colSpan={3} className="p-4 text-center text-muted-foreground">No pending invites.</td>
-                    </tr>
-                  ) : (
-                    invites.map((invite) => (
-                      <tr key={invite.email} className="border-t border-border">
-                        <td className="p-4 font-medium">{invite.email}</td>
-                        <td className="p-4 text-muted-foreground">
-                          {new Date(invite.created_at).toLocaleDateString()}
-                        </td>
-                        <td className="p-4 text-right">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleDeleteInvite(invite.email)}
-                            className="text-red-500 hover:text-red-600"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </td>
-                      </tr>
-                    ))
-                  )}
                 </tbody>
               </table>
             </div>
