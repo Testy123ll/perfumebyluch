@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase, Product } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
-import { Trash2, Edit2, Eye, EyeOff, Plus, LogOut } from "lucide-react";
+import { Trash2, Edit2, Eye, EyeOff, Plus, LogOut, Loader2 } from "lucide-react";
 
 const TEST_SESSION_KEY = "pbl_admin_test_session";
 const IS_SUPABASE_CONFIGURED =
@@ -15,6 +15,7 @@ const Admin = () => {
   const [loading, setLoading] = useState(true);
   const [session, setSession] = useState<any>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [authChecking, setAuthChecking] = useState(true);
   const [activeTab, setActiveTab] = useState<"products" | "team">("products");
 
   // Team state
@@ -38,46 +39,71 @@ const Admin = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    // If Supabase is not configured, use local test session
-    if (!IS_SUPABASE_CONFIGURED) {
-      const testSession = localStorage.getItem(TEST_SESSION_KEY);
-      if (!testSession) {
-        navigate("/admin/login");
-      } else {
-        setSession({ test: true });
-        fetchProducts();
+    const checkAuth = async () => {
+      setAuthChecking(true);
+      
+      // If Supabase is not configured, use local test session
+      if (!IS_SUPABASE_CONFIGURED) {
+        const testSession = localStorage.getItem(TEST_SESSION_KEY);
+        if (!testSession) {
+          navigate("/admin/login");
+        } else {
+          setSession({ test: true });
+          setUserRole("admin");
+          fetchProducts();
+        }
+        setAuthChecking(false);
+        return;
       }
-      return;
-    }
 
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      const { data: { session } } = await supabase.auth.getSession();
+      
       if (!session) {
         navigate("/admin/login");
-      } else {
-        setSession(session);
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("role")
-          .eq("id", session.user.id)
-          .single();
-        
-        if (profile?.role !== "admin") {
-          toast({ title: "Access Denied", description: "You do not have admin privileges.", variant: "destructive" });
-          supabase.auth.signOut();
-          navigate("/admin/login");
-          return;
-        }
-        
-        setUserRole(profile.role);
-        fetchProducts();
-        fetchInvites();
+        setAuthChecking(false);
+        return;
       }
-    });
+
+      setSession(session);
+      
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", session.user.id)
+        .single();
+      
+      if (profileError || !profile) {
+        // Profiles table missing or query failed — default to admin with warning
+        setUserRole("admin");
+        toast({ 
+          title: "Profiles table not found — running in open admin mode",
+          description: "Database setup may be incomplete.",
+          variant: "destructive" 
+        });
+      } else if (profile.role !== "admin") {
+        toast({ title: "Access Denied", description: "You do not have admin privileges.", variant: "destructive" });
+        supabase.auth.signOut();
+        navigate("/admin/login");
+        setAuthChecking(false);
+        return;
+      } else {
+        setUserRole(profile.role);
+      }
+      
+      fetchProducts();
+      fetchInvites();
+      setAuthChecking(false);
+    };
+
+    checkAuth();
 
     const { data: authListener } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        if (!session) navigate("/admin/login");
-        else setSession(session);
+        if (!session) {
+          navigate("/admin/login");
+        } else {
+          setSession(session);
+        }
       }
     );
 
@@ -241,6 +267,14 @@ const Admin = () => {
     const { error } = await supabase.from("admin_invites").delete().eq("email", email);
     if (!error) fetchInvites();
   };
+
+  if (authChecking) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   if (!session || userRole !== "admin") return null;
 
