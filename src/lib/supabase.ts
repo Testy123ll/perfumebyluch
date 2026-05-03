@@ -5,11 +5,14 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || "";
 
 export const IS_SUPABASE_CONFIGURED =
   !!import.meta.env.VITE_SUPABASE_URL &&
+  import.meta.env.VITE_SUPABASE_URL.startsWith("https://") &&
   !import.meta.env.VITE_SUPABASE_URL.includes("PLACEHOLDER") &&
   !!import.meta.env.VITE_SUPABASE_ANON_KEY &&
   !import.meta.env.VITE_SUPABASE_ANON_KEY.includes("PLACEHOLDER");
 
-const isConfigured = IS_SUPABASE_CONFIGURED && supabaseUrl.startsWith("https://");
+const isConfigured = IS_SUPABASE_CONFIGURED;
+
+console.log("Supabase Client Init:", { isConfigured, url: !!supabaseUrl, key: !!supabaseAnonKey });
 
 // Only create the real client when credentials are valid.
 // When not configured, export a safe no-op mock so the app still renders.
