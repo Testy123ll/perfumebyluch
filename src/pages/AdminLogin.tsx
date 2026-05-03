@@ -5,11 +5,12 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 
 // Temporary test credentials — remove once real Supabase auth is set up
-const TEST_EMAIL = "admin@test.com";
-const TEST_PASSWORD = "admin123";
+const TEST_EMAIL = "luchpfume@gmail.com";
+const TEST_PASSWORD = "luchperfume";
 const TEST_SESSION_KEY = "pbl_admin_test_session";
 const IS_SUPABASE_CONFIGURED =
   import.meta.env.VITE_SUPABASE_URL &&
+  import.meta.env.VITE_SUPABASE_URL.startsWith("https://") &&
   !import.meta.env.VITE_SUPABASE_URL.includes("PLACEHOLDER");
 
 const AdminLogin = () => {
