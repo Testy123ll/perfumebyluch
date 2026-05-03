@@ -46,21 +46,6 @@ const Admin = () => {
   useEffect(() => {
     const checkAuth = async () => {
       setAuthChecking(true);
-      
-      // If Supabase is not configured, use local test session
-      if (!IS_SUPABASE_CONFIGURED) {
-        const testSession = localStorage.getItem(TEST_SESSION_KEY);
-        if (!testSession) {
-          navigate("/admin/login");
-        } else {
-          setSession({ test: true });
-          setUserRole("admin");
-          fetchProducts();
-        }
-        setAuthChecking(false);
-        return;
-      }
-
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
@@ -94,8 +79,10 @@ const Admin = () => {
       } else {
         setUserRole(profile.role);
         fetchProducts();
-        fetchTeam();
-        fetchLogs();
+        if (profile.role === "owner") {
+          fetchTeam();
+          fetchLogs();
+        }
       }
       
       setAuthChecking(false);
@@ -391,22 +378,26 @@ const Admin = () => {
               >
                 Products
               </button>
-              <button
-                onClick={() => setActiveTab("team")}
-                className={`rounded-md px-3 py-1 text-sm transition-all ${
-                  activeTab === "team" ? "bg-background shadow-sm" : "hover:text-foreground/80"
-                }`}
-              >
-                Team
-              </button>
-              <button
-                onClick={() => setActiveTab("activity")}
-                className={`rounded-md px-3 py-1 text-sm transition-all ${
-                  activeTab === "activity" ? "bg-background shadow-sm" : "hover:text-foreground/80"
-                }`}
-              >
-                Activity
-              </button>
+              {userRole === "owner" && (
+                <>
+                  <button
+                    onClick={() => setActiveTab("team")}
+                    className={`rounded-md px-3 py-1 text-sm transition-all ${
+                      activeTab === "team" ? "bg-background shadow-sm" : "hover:text-foreground/80"
+                    }`}
+                  >
+                    Team
+                  </button>
+                  <button
+                    onClick={() => setActiveTab("activity")}
+                    className={`rounded-md px-3 py-1 text-sm transition-all ${
+                      activeTab === "activity" ? "bg-background shadow-sm" : "hover:text-foreground/80"
+                    }`}
+                  >
+                    Activity
+                  </button>
+                </>
+              )}
             </div>
           </div>
           <Button variant="outline" onClick={handleLogout}>

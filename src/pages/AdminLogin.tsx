@@ -1,19 +1,13 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase, IS_SUPABASE_CONFIGURED } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 
-// Temporary test credentials — remove once real Supabase auth is set up
-const TEST_EMAIL = "luchpfume@gmail.com";
-const TEST_PASSWORD = "luchperfume";
-const TEST_SESSION_KEY = "pbl_admin_test_session";
-
-
 const AdminLogin = () => {
   const [isSignUp, setIsSignUp] = useState(false);
-  const [email, setEmail] = useState("luchpfume@gmail.com");
-  const [password, setPassword] = useState("luchperfume");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -21,33 +15,6 @@ const AdminLogin = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-
-    // Use local test auth when Supabase is not configured yet
-    if (!IS_SUPABASE_CONFIGURED) {
-      if (isSignUp) {
-        const users = JSON.parse(localStorage.getItem("pbl_mock_users") || "[]");
-        if (users.find((u: any) => u.email === email)) {
-          toast({ title: "Error", description: "User already exists", variant: "destructive" });
-        } else {
-          users.push({ email, password });
-          localStorage.setItem("pbl_mock_users", JSON.stringify(users));
-          toast({ title: "Success", description: "Mock account created! You can now sign in." });
-          setIsSignUp(false);
-        }
-      } else {
-        const users = JSON.parse(localStorage.getItem("pbl_mock_users") || "[]");
-        const user = users.find((u: any) => u.email === email && u.password === password);
-        
-        if (user || (email === TEST_EMAIL && password === TEST_PASSWORD)) {
-          localStorage.setItem(TEST_SESSION_KEY, "true");
-          navigate("/admin", { replace: true });
-        } else {
-          toast({ title: "Invalid credentials", description: "Wrong email or password.", variant: "destructive" });
-        }
-      }
-      setLoading(false);
-      return;
-    }
 
     if (isSignUp) {
       const { data, error } = await supabase.auth.signUp({ email, password });
@@ -71,14 +38,9 @@ const AdminLogin = () => {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm rounded-xl border border-border bg-card p-8 shadow-card-luxe">
-        <h1 className="mb-2 text-center font-serif text-3xl">
+        <h1 className="mb-6 text-center font-serif text-3xl">
           {isSignUp ? "Admin Sign Up" : "Admin Login"}
         </h1>
-        {!IS_SUPABASE_CONFIGURED && (
-          <p className="mb-6 text-center text-xs text-muted-foreground">
-            Test mode — using local credentials
-          </p>
-        )}
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
             <label className="mb-1 block text-sm font-medium">Email</label>
