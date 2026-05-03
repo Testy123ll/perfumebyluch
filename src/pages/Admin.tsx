@@ -337,13 +337,21 @@ const Admin = () => {
     e.preventDefault();
     if (!newInviteEmail) return;
     
-    const { error } = await supabase.from("admin_invites").insert([{ 
+    const { error } = await supabase.from("admin_invites").upsert([{ 
       email: newInviteEmail,
       invited_by: session?.user?.id 
     }]);
 
     if (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+      if (error.code === "23505" || error.message?.includes("duplicate")) {
+        toast({ 
+          title: "Duplicate Invite", 
+          description: "This email has already been invited. Check your pending invites list.", 
+          variant: "destructive" 
+        });
+      } else {
+        toast({ title: "Error", description: error.message, variant: "destructive" });
+      }
     } else {
       toast({ title: "Success", description: `Invited ${newInviteEmail} as admin` });
       logAction("Invited admin", "admin", newInviteEmail);
