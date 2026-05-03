@@ -17,6 +17,7 @@ const Admin = () => {
   const [activeTab, setActiveTab] = useState<"products" | "team">("products");
 
   // Team state
+  const [admins, setAdmins] = useState<{ id: string; email: string; role: string; created_at: string }[]>([]);
   const [invites, setInvites] = useState<{ email: string; created_at: string }[]>([]);
   const [newInviteEmail, setNewInviteEmail] = useState("");
 
@@ -64,12 +65,6 @@ const Admin = () => {
 
       setSession(session);
       
-      const { data: profile, error: profileError } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", session.user.id)
-        .single();
-      
       if (profileError || !profile) {
         // Profiles table missing or query failed — default to admin with warning
         setUserRole("admin");
@@ -78,7 +73,7 @@ const Admin = () => {
           description: "Database setup may be incomplete.",
           variant: "destructive" 
         });
-      } else if (profile.role !== "admin") {
+      } else if (profile.role !== "admin" && profile.role !== "owner") {
         toast({ title: "Access Denied", description: "You do not have admin privileges.", variant: "destructive" });
         supabase.auth.signOut();
         navigate("/admin/login");
@@ -90,6 +85,7 @@ const Admin = () => {
       
       fetchProducts();
       fetchInvites();
+      fetchAdmins();
       setAuthChecking(false);
     };
 
@@ -250,6 +246,11 @@ const Admin = () => {
     if (!error) setInvites(data || []);
   };
 
+  const fetchAdmins = async () => {
+    const { data, error } = await supabase.from("profiles").select("*").in("role", ["admin", "owner"]);
+    if (!error) setAdmins(data || []);
+  };
+
   const handleAddInvite = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newInviteEmail) return;
@@ -273,6 +274,26 @@ const Admin = () => {
     if (!error) fetchInvites();
   };
 
+  const handleDeleteAdmin = async (id: string, email: string) => {
+    if (userRole !== "owner") {
+      toast({ title: "Unauthorized", description: "Only the owner can delete admins.", variant: "destructive" });
+      return;
+    }
+    if (email === "luchpfume@gmail.com") {
+      toast({ title: "Action Blocked", description: "The primary owner cannot be deleted.", variant: "destructive" });
+      return;
+    }
+    if (!confirm(`Are you sure you want to remove ${email} from the admin team?`)) return;
+
+    const { error } = await supabase.from("profiles").delete().eq("id", id);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Success", description: "Admin removed" });
+      fetchAdmins();
+    }
+  };
+
   if (authChecking) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
@@ -281,7 +302,7 @@ const Admin = () => {
     );
   }
 
-  if (!session || userRole !== "admin") return null;
+  if (!session || (userRole !== "admin" && userRole !== "owner")) return null;
 
   return (
     <div className="min-h-screen bg-background p-8">
@@ -511,6 +532,38 @@ const Admin = () => {
                 />
                 <Button type="submit">Invite Admin</Button>
               </form>
+            </div>
+
+            <div className="rounded-xl border border-border bg-card overflow-hidden">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-muted/50">
+                  <tr>
+                    <th className="p-4 font-medium">Active Admins</th>
+                    <th className="p-4 font-medium">Role</th>
+                    <th className="p-4 font-medium text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {admins.map((admin) => (
+                    <tr key={admin.id} className="border-t border-border">
+                      <td className="p-4 font-medium">{admin.email}</td>
+                      <td className="p-4 capitalize text-muted-foreground">{admin.role}</td>
+                      <td className="p-4 text-right">
+                        {userRole === "owner" && admin.role !== "owner" && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDeleteAdmin(admin.id, admin.email || "")}
+                            className="text-red-500 hover:text-red-600"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
 
             <div className="rounded-xl border border-border bg-card overflow-hidden">
