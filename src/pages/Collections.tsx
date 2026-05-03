@@ -15,8 +15,8 @@ import p2 from "@/assets/perfume-2.jpg";
 import p4 from "@/assets/perfume-4.jpg";
 import p7 from "@/assets/perfume-7.jpg";
 
-type Category = "All" | "Unboxed Perfumes" | "Thrifted Open Box Perfumes" | "Boxed Perfumes" | "Tester Perfumes";
-const categories: Category[] = ["All", "Unboxed Perfumes", "Thrifted Open Box Perfumes", "Boxed Perfumes", "Tester Perfumes"];
+type Category = "All" | "Unboxed" | "Thrifted Open Box" | "Boxed" | "Tester";
+const categories: Category[] = ["All", "Unboxed", "Thrifted Open Box", "Boxed", "Tester"];
 
 const SAMPLE_PRODUCTS: Product[] = [
   {
@@ -24,7 +24,7 @@ const SAMPLE_PRODUCTS: Product[] = [
     name: "Baccarat Rouge 540",
     description: "Jasmine · amberwood · ambergris · fir resin",
     price: 120000,
-    category: "Boxed Perfumes",
+    category: "Boxed",
     image_url: p2,
     in_stock: true,
     visible: true,
@@ -36,7 +36,7 @@ const SAMPLE_PRODUCTS: Product[] = [
     name: "Oud Wood",
     description: "Rare oud wood · sandalwood · vetiver · amber",
     price: 75000,
-    category: "Unboxed Perfumes",
+    category: "Unboxed",
     image_url: p4,
     in_stock: true,
     visible: true,
@@ -48,7 +48,7 @@ const SAMPLE_PRODUCTS: Product[] = [
     name: "Chance Eau Tendre",
     description: "Grapefruit · quince · jasmine · white musk",
     price: 35000,
-    category: "Thrifted Open Box Perfumes",
+    category: "Thrifted Open Box",
     image_url: p1,
     in_stock: true,
     visible: true,
@@ -60,7 +60,7 @@ const SAMPLE_PRODUCTS: Product[] = [
     name: "Sauvage",
     description: "Bergamot · pepper · ambroxan · labdanum",
     price: 28000,
-    category: "Tester Perfumes",
+    category: "Tester",
     image_url: p7,
     in_stock: false,
     visible: true,
@@ -251,7 +251,7 @@ const Collections = () => (
           <p className="text-xs uppercase tracking-[0.3em] text-primary">All Fragrances</p>
           <h1 className="mt-3 font-serif text-4xl md:text-5xl">The Collection</h1>
           <p className="mt-4 text-muted-foreground">
-            Browse our full range of designer and niche fragrances — unboxed, thrifted open box, boxed, and tester perfumes.
+            Browse our full range of designer and niche fragrances — boxed, unboxed, thrifted, and testers.
           </p>
         </div>
         <div className="mt-12">
