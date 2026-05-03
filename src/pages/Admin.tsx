@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase, Product, IS_SUPABASE_CONFIGURED } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
-import { Trash2, Edit2, Eye, EyeOff, Plus, LogOut, Loader2, Shield, ShieldOff, Mail } from "lucide-react";
+import { Trash2, Edit2, Eye, EyeOff, Plus, LogOut, Loader2, Shield, ShieldOff, Mail, History } from "lucide-react";
 
 const TEST_SESSION_KEY = "pbl_admin_test_session";
 
@@ -14,7 +14,7 @@ const Admin = () => {
   const [session, setSession] = useState<any>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [authChecking, setAuthChecking] = useState(true);
-  const [activeTab, setActiveTab] = useState<"products" | "team">("products");
+  const [activeTab, setActiveTab] = useState<"products" | "team" | "activity">("products");
 
   // Team state
   const [team, setTeam] = useState<{ 
@@ -24,7 +24,8 @@ const Admin = () => {
     status: "active" | "pending" | "restricted";
     created_at: string;
   }[]>([]);
-  const [newInviteEmail, setNewInviteEmail] = useState("");
+  // Activity state
+  const [logs, setLogs] = useState<{ id: string; admin_email: string; action: string; details: string; created_at: string }[]>([]);
 
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -70,6 +71,12 @@ const Admin = () => {
 
       setSession(session);
       
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", session.user.id)
+        .single();
+      
       if (profileError || !profile) {
         // Profiles table missing or query failed — default to admin with warning
         setUserRole("admin");
@@ -88,6 +95,7 @@ const Admin = () => {
         setUserRole(profile.role);
         fetchProducts();
         fetchTeam();
+        fetchLogs();
       }
       
       setAuthChecking(false);
@@ -223,6 +231,7 @@ const Admin = () => {
       if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
       else {
         toast({ title: "Success", description: "Product updated" });
+        logAction("Update Product", `Updated product: ${formData.name}`);
         resetForm();
         fetchProducts();
       }
@@ -231,6 +240,7 @@ const Admin = () => {
       if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
       else {
         toast({ title: "Success", description: "Product created" });
+        logAction("Create Product", `Created product: ${formData.name}`);
         resetForm();
         fetchProducts();
       }
@@ -244,6 +254,20 @@ const Admin = () => {
     authChecking,
     supabaseConfigured: IS_SUPABASE_CONFIGURED 
   });
+  const logAction = async (action: string, details: string) => {
+    if (!IS_SUPABASE_CONFIGURED || !session?.user?.email) return;
+    await supabase.from("audit_logs").insert([{
+      admin_email: session.user.email,
+      action,
+      details
+    }]);
+    fetchLogs();
+  };
+
+  const fetchLogs = async () => {
+    const { data, error } = await supabase.from("audit_logs").select("*").order("created_at", { ascending: false }).limit(50);
+    if (!error) setLogs(data || []);
+  };
 
   const fetchTeam = async () => {
     const { data: profiles, error: pError } = await supabase.from("profiles").select("*");
@@ -279,6 +303,7 @@ const Admin = () => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
       toast({ title: "Success", description: `Invited ${newInviteEmail} as admin` });
+      logAction("Invite Admin", `Invited: ${newInviteEmail}`);
       setNewInviteEmail("");
       fetchTeam();
     }
@@ -286,10 +311,13 @@ const Admin = () => {
 
   const handleDeleteInvite = async (email: string) => {
     const { error } = await supabase.from("admin_invites").delete().eq("email", email);
-    if (!error) fetchTeam();
+    if (!error) {
+      logAction("Delete Invite", `Deleted invite for: ${email}`);
+      fetchTeam();
+    }
   };
 
-  const handleToggleRestrict = async (id: string, currentRole: string) => {
+  const handleToggleRestrict = async (id: string, currentRole: string, email: string) => {
     if (userRole !== "owner") return;
     const newRole = currentRole === "restricted" ? "admin" : "restricted";
     
@@ -298,6 +326,7 @@ const Admin = () => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
       toast({ title: "Success", description: `Admin ${newRole === "restricted" ? "restricted" : "restored"}` });
+      logAction(newRole === "restricted" ? "Restrict Admin" : "Unrestrict Admin", `Target: ${email}`);
       fetchTeam();
     }
   };
@@ -318,6 +347,7 @@ const Admin = () => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
       toast({ title: "Success", description: "Admin account deleted" });
+      logAction("Delete Admin", `Deleted account: ${email}`);
       fetchTeam();
     }
   };
@@ -354,6 +384,14 @@ const Admin = () => {
                 }`}
               >
                 Team
+              </button>
+              <button
+                onClick={() => setActiveTab("activity")}
+                className={`rounded-md px-3 py-1 text-sm transition-all ${
+                  activeTab === "activity" ? "bg-background shadow-sm" : "hover:text-foreground/80"
+                }`}
+              >
+                Activity
               </button>
             </div>
           </div>
@@ -608,7 +646,7 @@ const Admin = () => {
                                   variant="ghost"
                                   size="icon"
                                   title={member.status === "restricted" ? "Unrestrict Admin" : "Restrict Admin"}
-                                  onClick={() => handleToggleRestrict(member.id!, member.role)}
+                                  onClick={() => handleToggleRestrict(member.id!, member.role, member.email || "")}
                                   className={member.status === "restricted" ? "text-green-500" : "text-orange-500"}
                                 >
                                   {member.status === "restricted" ? <Shield className="h-4 w-4" /> : <ShieldOff className="h-4 w-4" />}
@@ -630,6 +668,47 @@ const Admin = () => {
                       </td>
                     </tr>
                   ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        {activeTab === "activity" && (
+          <div className="space-y-6 animate-fade-in">
+            <div className="flex items-center justify-between">
+              <h2 className="font-serif text-2xl">Activity Log</h2>
+            </div>
+
+            <div className="rounded-xl border border-border bg-card overflow-hidden">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-muted/50">
+                  <tr>
+                    <th className="p-4 font-medium">Admin</th>
+                    <th className="p-4 font-medium">Action</th>
+                    <th className="p-4 font-medium">Details</th>
+                    <th className="p-4 font-medium">Time</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {logs.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="p-4 text-center text-muted-foreground">No activities recorded yet.</td>
+                    </tr>
+                  ) : (
+                    logs.map((log) => (
+                      <tr key={log.id} className="border-t border-border">
+                        <td className="p-4 font-medium">{log.admin_email}</td>
+                        <td className="p-4">
+                          <span className="inline-flex rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                            {log.action}
+                          </span>
+                        </td>
+                        <td className="p-4 text-muted-foreground">{log.details}</td>
+                        <td className="p-4 text-xs text-muted-foreground">
+                          {new Date(log.created_at).toLocaleString()}
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
