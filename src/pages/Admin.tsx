@@ -47,6 +47,72 @@ const Admin = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  const fetchProducts = useCallback(async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from("products")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      toast({ title: "Error fetching products", description: error.message, variant: "destructive" });
+    } else {
+      setProducts(data || []);
+    }
+    setLoading(false);
+  }, [toast]);
+
+  const logAction = async (action: string, target_type: string, target_name: string) => {
+    if (!session?.user?.id) return;
+    await supabase.from("activity_log").insert([{
+      admin_id: session.user.id,
+      admin_email: session.user.email,
+      action,
+      target_type,
+      target_name
+    }]);
+    fetchLogs();
+  };
+
+  const fetchLogs = useCallback(async () => {
+    let query = supabase.from("activity_log").select("*").order("created_at", { ascending: false }).limit(100);
+    
+    if (logFilterAdmin !== "all") {
+      query = query.eq("admin_email", logFilterAdmin);
+    }
+    if (logFilterAction !== "all") {
+      query = query.eq("action", logFilterAction);
+    }
+
+    const { data, error } = await query;
+    if (!error) setLogs(data || []);
+  }, [logFilterAdmin, logFilterAction]);
+
+  const fetchTeam = useCallback(async () => {
+    const { data: profiles, error: pError } = await supabase.from("profiles").select("*");
+    const { data: invites, error: iError } = await supabase.from("admin_invites").select("*");
+    
+    if (pError || iError) return;
+
+    const combinedTeam: any[] = [
+      ...(profiles || []).map(p => ({
+        id: p.id,
+        email: p.email,
+        role: p.role,
+        status: p.role === "restricted" ? "restricted" : "active",
+        created_at: p.created_at
+      })),
+      ...(invites || []).map(i => ({
+        email: i.email,
+        role: "admin",
+        status: "pending",
+        created_at: i.created_at
+      }))
+    ];
+
+    setTeam(combinedTeam.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()));
+  }, []);
+
   useEffect(() => {
     const checkAuth = async () => {
       setAuthChecking(true);
@@ -107,21 +173,6 @@ const Admin = () => {
 
     return () => authListener.subscription.unsubscribe();
   }, [navigate, fetchProducts, fetchTeam, fetchLogs, toast]);
-
-  const fetchProducts = useCallback(async () => {
-    setLoading(true);
-    const { data, error } = await supabase
-      .from("products")
-      .select("*")
-      .order("created_at", { ascending: false });
-
-    if (error) {
-      toast({ title: "Error fetching products", description: error.message, variant: "destructive" });
-    } else {
-      setProducts(data || []);
-    }
-    setLoading(false);
-  }, [toast]);
 
   const handleLogout = async () => {
     localStorage.removeItem(TEST_SESSION_KEY);
@@ -261,31 +312,6 @@ const Admin = () => {
     authChecking,
     supabaseConfigured: IS_SUPABASE_CONFIGURED 
   });
-  const logAction = async (action: string, target_type: string, target_name: string) => {
-    if (!session?.user?.id) return;
-    await supabase.from("activity_log").insert([{
-      admin_id: session.user.id,
-      admin_email: session.user.email,
-      action,
-      target_type,
-      target_name
-    }]);
-    fetchLogs();
-  };
-
-  const fetchLogs = useCallback(async () => {
-    let query = supabase.from("activity_log").select("*").order("created_at", { ascending: false }).limit(100);
-    
-    if (logFilterAdmin !== "all") {
-      query = query.eq("admin_email", logFilterAdmin);
-    }
-    if (logFilterAction !== "all") {
-      query = query.eq("action", logFilterAction);
-    }
-
-    const { data, error } = await query;
-    if (!error) setLogs(data || []);
-  }, [logFilterAdmin, logFilterAction]);
 
   const handleDeleteLog = async (id: string) => {
     if (session?.user?.id !== OWNER_ID) return;
@@ -307,30 +333,6 @@ const Admin = () => {
     }
   };
 
-  const fetchTeam = useCallback(async () => {
-    const { data: profiles, error: pError } = await supabase.from("profiles").select("*");
-    const { data: invites, error: iError } = await supabase.from("admin_invites").select("*");
-    
-    if (pError || iError) return;
-
-    const combinedTeam: any[] = [
-      ...(profiles || []).map(p => ({
-        id: p.id,
-        email: p.email,
-        role: p.role,
-        status: p.role === "restricted" ? "restricted" : "active",
-        created_at: p.created_at
-      })),
-      ...(invites || []).map(i => ({
-        email: i.email,
-        role: "admin",
-        status: "pending",
-        created_at: i.created_at
-      }))
-    ];
-
-    setTeam(combinedTeam.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()));
-  }, []);
   const handleAddInvite = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newInviteEmail) return;
