@@ -11,6 +11,7 @@ const TEST_SESSION_KEY = "pbl_admin_test_session";
 
 
 const AdminLogin = () => {
+  const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState("luchpfume@gmail.com");
   const [password, setPassword] = useState("luchperfume");
   const [loading, setLoading] = useState(false);
@@ -21,42 +22,48 @@ const AdminLogin = () => {
     e.preventDefault();
     setLoading(true);
 
-    console.log("Login Attempt:", { email, isConfigured: IS_SUPABASE_CONFIGURED });
-
     // Use local test auth when Supabase is not configured yet
     if (!IS_SUPABASE_CONFIGURED) {
+      if (isSignUp) {
+        toast({ title: "Sign up disabled in test mode", variant: "destructive" });
+        setLoading(false);
+        return;
+      }
       if (email === TEST_EMAIL && password === TEST_PASSWORD) {
-        console.log("Test Login Success, navigating...");
         localStorage.setItem(TEST_SESSION_KEY, "true");
         navigate("/admin", { replace: true });
       } else {
-        toast({
-          title: "Invalid credentials",
-          description: "Wrong email or password.",
-          variant: "destructive",
-        });
+        toast({ title: "Invalid credentials", description: "Wrong email or password.", variant: "destructive" });
       }
       setLoading(false);
       return;
     }
 
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    console.log("Supabase Login Result:", { success: !!data?.session, error: error?.message });
-
-    if (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    } else if (data?.session) {
-      navigate("/admin", { replace: true });
+    if (isSignUp) {
+      const { data, error } = await supabase.auth.signUp({ email, password });
+      if (error) {
+        toast({ title: "Error", description: error.message, variant: "destructive" });
+      } else if (data?.user) {
+        toast({ title: "Success", description: "Account created! You can now sign in." });
+        setIsSignUp(false);
+      }
+    } else {
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        toast({ title: "Error", description: error.message, variant: "destructive" });
+      } else if (data?.session) {
+        navigate("/admin", { replace: true });
+      }
     }
     setLoading(false);
   };
 
-
-
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm rounded-xl border border-border bg-card p-8 shadow-card-luxe">
-        <h1 className="mb-2 text-center font-serif text-3xl">Admin Login</h1>
+        <h1 className="mb-2 text-center font-serif text-3xl">
+          {isSignUp ? "Admin Sign Up" : "Admin Login"}
+        </h1>
         {!IS_SUPABASE_CONFIGURED && (
           <p className="mb-6 text-center text-xs text-muted-foreground">
             Test mode — using local credentials
@@ -84,9 +91,17 @@ const AdminLogin = () => {
             />
           </div>
           <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? "Loading..." : "Sign In"}
+            {loading ? "Loading..." : isSignUp ? "Create Account" : "Sign In"}
           </Button>
         </form>
+        <div className="mt-6 text-center text-sm">
+          <button
+            onClick={() => setIsSignUp(!isSignUp)}
+            className="text-muted-foreground transition-smooth hover:text-primary"
+          >
+            {isSignUp ? "Already have an account? Sign In" : "Invited? Create an account"}
+          </button>
+        </div>
       </div>
     </div>
   );
