@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { Trash2, Edit2, Eye, EyeOff, Plus, LogOut, Loader2, Shield, ShieldOff, Mail, History, User } from "lucide-react";
 
+const OWNER_ID = "7a7f1bb0-6aa6-42e6-80e3-7e4f7a48491e";
 const TEST_SESSION_KEY = "pbl_admin_test_session";
 
 
@@ -25,7 +26,9 @@ const Admin = () => {
     created_at: string;
   }[]>([]);
   // Activity state
-  const [logs, setLogs] = useState<{ id: string; admin_email: string; action: string; details: string; created_at: string }[]>([]);
+  const [logs, setLogs] = useState<{ id: string; admin_email: string; action: string; target_name: string; created_at: string; admin_id: string }[]>([]);
+  const [logFilterAdmin, setLogFilterAdmin] = useState("all");
+  const [logFilterAction, setLogFilterAction] = useState("all");
 
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -124,13 +127,14 @@ const Admin = () => {
     navigate("/admin/login");
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this product?")) return;
+  const handleDelete = async (id: string, name: string) => {
+    if (!confirm(`Are you sure you want to delete ${name}?`)) return;
     const { error } = await supabase.from("products").delete().eq("id", id);
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
       toast({ title: "Success", description: "Product deleted" });
+      logAction("Deleted product", "product", name);
       fetchProducts();
     }
   };
@@ -143,6 +147,20 @@ const Admin = () => {
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
+      logAction("Toggled visibility", "product", product.name);
+      fetchProducts();
+    }
+  };
+
+  const handleToggleStock = async (product: Product) => {
+    const { error } = await supabase
+      .from("products")
+      .update({ in_stock: !product.in_stock })
+      .eq("id", product.id);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      logAction("Toggled stock status", "product", product.name);
       fetchProducts();
     }
   };
@@ -218,7 +236,7 @@ const Admin = () => {
       if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
       else {
         toast({ title: "Success", description: "Product updated" });
-        logAction("Update Product", `Updated product: ${formData.name}`);
+        logAction("Edited product", "product", formData.name);
         resetForm();
         fetchProducts();
       }
@@ -227,7 +245,7 @@ const Admin = () => {
       if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
       else {
         toast({ title: "Success", description: "Product created" });
-        logAction("Create Product", `Created product: ${formData.name}`);
+        logAction("Added product", "product", formData.name);
         resetForm();
         fetchProducts();
       }
@@ -241,19 +259,50 @@ const Admin = () => {
     authChecking,
     supabaseConfigured: IS_SUPABASE_CONFIGURED 
   });
-  const logAction = async (action: string, details: string) => {
-    if (!IS_SUPABASE_CONFIGURED || !session?.user?.email) return;
-    await supabase.from("audit_logs").insert([{
+  const logAction = async (action: string, target_type: string, target_name: string) => {
+    if (!session?.user?.id) return;
+    await supabase.from("activity_log").insert([{
+      admin_id: session.user.id,
       admin_email: session.user.email,
       action,
-      details
+      target_type,
+      target_name
     }]);
     fetchLogs();
   };
 
   const fetchLogs = async () => {
-    const { data, error } = await supabase.from("audit_logs").select("*").order("created_at", { ascending: false }).limit(50);
+    let query = supabase.from("activity_log").select("*").order("created_at", { ascending: false }).limit(100);
+    
+    if (logFilterAdmin !== "all") {
+      query = query.eq("admin_email", logFilterAdmin);
+    }
+    if (logFilterAction !== "all") {
+      query = query.eq("action", logFilterAction);
+    }
+
+    const { data, error } = await query;
     if (!error) setLogs(data || []);
+  };
+
+  const handleDeleteLog = async (id: string) => {
+    if (session?.user?.id !== OWNER_ID) return;
+    if (!confirm("Are you sure you want to delete this log entry?")) return;
+    
+    const { error } = await supabase.from("activity_log").delete().eq("id", id);
+    if (!error) fetchLogs();
+  };
+
+  const handleClearLogs = async () => {
+    if (session?.user?.id !== OWNER_ID) return;
+    const confirmText = prompt("Type 'CLEAR' to delete all activity logs:");
+    if (confirmText !== "CLEAR") return;
+
+    const { error } = await supabase.from("activity_log").delete().neq("id", "00000000-0000-0000-0000-000000000000"); // Delete all
+    if (!error) {
+      toast({ title: "Success", description: "All logs cleared" });
+      fetchLogs();
+    }
   };
 
   const fetchTeam = async () => {
@@ -293,7 +342,7 @@ const Admin = () => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
       toast({ title: "Success", description: `Invited ${newInviteEmail} as admin` });
-      logAction("Invite Admin", `Invited: ${newInviteEmail}`);
+      logAction("Invited admin", "admin", newInviteEmail);
       setNewInviteEmail("");
       fetchTeam();
     }
@@ -302,7 +351,7 @@ const Admin = () => {
   const handleDeleteInvite = async (email: string) => {
     const { error } = await supabase.from("admin_invites").delete().eq("email", email);
     if (!error) {
-      logAction("Delete Invite", `Deleted invite for: ${email}`);
+      logAction("Cancelled invite", "admin", email);
       fetchTeam();
     }
   };
@@ -337,7 +386,7 @@ const Admin = () => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
       toast({ title: "Success", description: "Admin account deleted" });
-      logAction("Delete Admin", `Deleted account: ${email}`);
+      logAction("Removed admin", "admin", email);
       fetchTeam();
     }
   };
@@ -531,7 +580,8 @@ const Admin = () => {
                     <td className="p-4">₦{p.price.toLocaleString()}</td>
                     <td className="p-4">
                       <span
-                        className={`inline-flex rounded-full px-2 py-1 text-xs ${
+                        onClick={() => handleToggleStock(p)}
+                        className={`inline-flex rounded-full px-2 py-1 text-xs cursor-pointer ${
                           p.in_stock
                             ? "bg-green-500/10 text-green-500"
                             : "bg-red-500/10 text-red-500"
@@ -555,7 +605,7 @@ const Admin = () => {
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => handleDelete(p.id)}
+                          onClick={() => handleDelete(p.id, p.name)}
                           className="text-red-500 hover:text-red-600"
                         >
                           <Trash2 className="h-4 w-4" />
@@ -687,36 +737,72 @@ const Admin = () => {
           <div className="space-y-6 animate-fade-in">
             <div className="flex items-center justify-between">
               <h2 className="font-serif text-2xl">Activity Log</h2>
+              {session?.user?.id === OWNER_ID && (
+                <Button variant="destructive" size="sm" onClick={handleClearLogs}>
+                  Clear All
+                </Button>
+              )}
+            </div>
+
+            <div className="flex gap-4">
+              <select 
+                value={logFilterAdmin} 
+                onChange={(e) => { setLogFilterAdmin(e.target.value); fetchLogs(); }}
+                className="rounded-md border border-input bg-background px-3 py-1 text-sm"
+              >
+                <option value="all">All Admins</option>
+                {Array.from(new Set(logs.map(l => l.admin_email))).map(email => (
+                  <option key={email} value={email}>{email}</option>
+                ))}
+              </select>
+              <select 
+                value={logFilterAction} 
+                onChange={(e) => { setLogFilterAction(e.target.value); fetchLogs(); }}
+                className="rounded-md border border-input bg-background px-3 py-1 text-sm"
+              >
+                <option value="all">All Actions</option>
+                {Array.from(new Set(logs.map(l => l.action))).map(action => (
+                  <option key={action} value={action}>{action}</option>
+                ))}
+              </select>
             </div>
 
             <div className="rounded-xl border border-border bg-card overflow-hidden">
               <table className="w-full text-left text-sm">
                 <thead className="bg-muted/50">
                   <tr>
-                    <th className="p-4 font-medium">Admin</th>
+                    <th className="p-4 font-medium">Date & Time</th>
+                    <th className="p-4 font-medium">Admin Email</th>
                     <th className="p-4 font-medium">Action</th>
-                    <th className="p-4 font-medium">Details</th>
-                    <th className="p-4 font-medium">Time</th>
+                    <th className="p-4 font-medium">Product/Target Name</th>
+                    {session?.user?.id === OWNER_ID && <th className="p-4 font-medium text-right">Actions</th>}
                   </tr>
                 </thead>
                 <tbody>
                   {logs.length === 0 ? (
                     <tr>
-                      <td colSpan={4} className="p-4 text-center text-muted-foreground">No activities recorded yet.</td>
+                      <td colSpan={5} className="p-4 text-center text-muted-foreground">No activities recorded yet.</td>
                     </tr>
                   ) : (
                     logs.map((log) => (
                       <tr key={log.id} className="border-t border-border">
+                        <td className="p-4 text-xs text-muted-foreground">
+                          {new Date(log.created_at).toLocaleString()}
+                        </td>
                         <td className="p-4 font-medium">{log.admin_email}</td>
                         <td className="p-4">
                           <span className="inline-flex rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
                             {log.action}
                           </span>
                         </td>
-                        <td className="p-4 text-muted-foreground">{log.details}</td>
-                        <td className="p-4 text-xs text-muted-foreground">
-                          {new Date(log.created_at).toLocaleString()}
-                        </td>
+                        <td className="p-4 text-muted-foreground">{log.target_name}</td>
+                        {session?.user?.id === OWNER_ID && (
+                          <td className="p-4 text-right">
+                            <Button variant="ghost" size="icon" onClick={() => handleDeleteLog(log.id)} className="text-red-500">
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </td>
+                        )}
                       </tr>
                     ))
                   )}
