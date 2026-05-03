@@ -128,7 +128,7 @@ const Admin = () => {
       name: "",
       price: "",
       description: "",
-      category: "Boxed",
+      category: "Unboxed Perfumes",
       in_stock: true,
       visible: true,
       is_new: false,
@@ -237,10 +237,10 @@ const Admin = () => {
                     onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                     className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                   >
-                    <option value="Boxed">Boxed</option>
-                    <option value="Unboxed">Unboxed</option>
-                    <option value="Thrifted">Thrifted</option>
-                    <option value="Testers">Testers</option>
+                    <option value="Unboxed Perfumes">Unboxed Perfumes</option>
+                    <option value="Thrifted Open Box Perfumes">Thrifted Open Box Perfumes</option>
+                    <option value="Boxed Perfumes">Boxed Perfumes</option>
+                    <option value="Tester Perfumes">Tester Perfumes</option>
                   </select>
                 </div>
                 <div>

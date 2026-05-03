@@ -10,9 +10,9 @@ import p2 from "@/assets/perfume-2.jpg";
 import p4 from "@/assets/perfume-4.jpg";
 import p7 from "@/assets/perfume-7.jpg";
 
-type Category = "All" | "Boxed" | "Unboxed" | "Thrifted" | "Testers";
+type Category = "All" | "Unboxed Perfumes" | "Thrifted Open Box Perfumes" | "Boxed Perfumes" | "Tester Perfumes";
 
-const categories: Category[] = ["All", "Boxed", "Unboxed", "Thrifted", "Testers"];
+const categories: Category[] = ["All", "Unboxed Perfumes", "Thrifted Open Box Perfumes", "Boxed Perfumes", "Tester Perfumes"];
 
 // Shown as demo products when Supabase is not yet configured
 const SAMPLE_PRODUCTS: Product[] = [
@@ -21,7 +21,7 @@ const SAMPLE_PRODUCTS: Product[] = [
     name: "Baccarat Rouge 540",
     description: "Jasmine · amberwood · ambergris · fir resin",
     price: 120000,
-    category: "Boxed",
+    category: "Boxed Perfumes",
     image_url: p2,
     in_stock: true,
     visible: true,
@@ -33,7 +33,7 @@ const SAMPLE_PRODUCTS: Product[] = [
     name: "Oud Wood",
     description: "Rare oud wood · sandalwood · vetiver · amber",
     price: 75000,
-    category: "Unboxed",
+    category: "Unboxed Perfumes",
     image_url: p4,
     in_stock: true,
     visible: true,
@@ -45,7 +45,7 @@ const SAMPLE_PRODUCTS: Product[] = [
     name: "Chance Eau Tendre",
     description: "Grapefruit · quince · jasmine · white musk",
     price: 35000,
-    category: "Thrifted",
+    category: "Thrifted Open Box Perfumes",
     image_url: p1,
     in_stock: true,
     visible: true,
@@ -57,7 +57,7 @@ const SAMPLE_PRODUCTS: Product[] = [
     name: "Sauvage",
     description: "Bergamot · pepper · ambroxan · labdanum",
     price: 28000,
-    category: "Testers",
+    category: "Tester Perfumes",
     image_url: p7,
     in_stock: false,
     visible: true,

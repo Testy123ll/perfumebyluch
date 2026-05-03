@@ -37,7 +37,7 @@ export const buildOrderMessage = (items: CartItem[]): string => {
   lines.push(`Items: ${totalQty}`);
   lines.push(`Total: ${formatPrice(subtotal)}`);
   lines.push("");
-  lines.push("Also please confirm availability.");
+  lines.push("Please confirm availability.");
 
   return lines.join("\n");
 };
