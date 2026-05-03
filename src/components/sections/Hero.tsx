@@ -20,7 +20,7 @@ const Hero = () => (
         </p>
         <div className="mt-8 flex flex-wrap gap-4">
           <Button asChild size="lg" variant="whatsapp" className="text-base">
-            <a href={waLink("Hi Perfumes By Luch! I'd like to shop.")} target="_blank" rel="noopener noreferrer">
+            <a href={waLink("Hi Perfumes By Luch! I'd like to by perfume.")} target="_blank" rel="noopener noreferrer">
               <WhatsAppIcon className="h-5 w-5" />
               Shop on WhatsApp
             </a>

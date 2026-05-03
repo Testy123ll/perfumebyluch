@@ -14,6 +14,12 @@ const Admin = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [session, setSession] = useState<any>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"products" | "team">("products");
+
+  // Team state
+  const [invites, setInvites] = useState<{ email: string; created_at: string }[]>([]);
+  const [newInviteEmail, setNewInviteEmail] = useState("");
 
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -44,12 +50,27 @@ const Admin = () => {
       return;
     }
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!session) {
         navigate("/admin/login");
       } else {
         setSession(session);
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("role")
+          .eq("id", session.user.id)
+          .single();
+        
+        if (profile?.role !== "admin") {
+          toast({ title: "Access Denied", description: "You do not have admin privileges.", variant: "destructive" });
+          supabase.auth.signOut();
+          navigate("/admin/login");
+          return;
+        }
+        
+        setUserRole(profile.role);
         fetchProducts();
+        fetchInvites();
       }
     });
 
@@ -193,19 +214,69 @@ const Admin = () => {
     setLoading(false);
   };
 
-  if (!session) return null;
+  const fetchInvites = async () => {
+    const { data, error } = await supabase.from("admin_invites").select("*");
+    if (!error) setInvites(data || []);
+  };
+
+  const handleAddInvite = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newInviteEmail) return;
+    
+    const { error } = await supabase.from("admin_invites").insert([{ 
+      email: newInviteEmail,
+      invited_by: session?.user?.id 
+    }]);
+
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Success", description: `Invited ${newInviteEmail} as admin` });
+      setNewInviteEmail("");
+      fetchInvites();
+    }
+  };
+
+  const handleDeleteInvite = async (email: string) => {
+    const { error } = await supabase.from("admin_invites").delete().eq("email", email);
+    if (!error) fetchInvites();
+  };
+
+  if (!session || userRole !== "admin") return null;
 
   return (
     <div className="min-h-screen bg-background p-8">
       <div className="mx-auto max-w-5xl">
         <div className="mb-8 flex items-center justify-between">
-          <h1 className="font-serif text-3xl">Admin Dashboard</h1>
+          <div className="flex items-center gap-4">
+            <h1 className="font-serif text-3xl">Admin Dashboard</h1>
+            <div className="ml-4 flex gap-2 rounded-lg bg-muted p-1">
+              <button
+                onClick={() => setActiveTab("products")}
+                className={`rounded-md px-3 py-1 text-sm transition-all ${
+                  activeTab === "products" ? "bg-background shadow-sm" : "hover:text-foreground/80"
+                }`}
+              >
+                Products
+              </button>
+              <button
+                onClick={() => setActiveTab("team")}
+                className={`rounded-md px-3 py-1 text-sm transition-all ${
+                  activeTab === "team" ? "bg-background shadow-sm" : "hover:text-foreground/80"
+                }`}
+              >
+                Team
+              </button>
+            </div>
+          </div>
           <Button variant="outline" onClick={handleLogout}>
             <LogOut className="mr-2 h-4 w-4" /> Logout
           </Button>
         </div>
 
-        {showForm ? (
+        {activeTab === "products" ? (
+          <>
+            {showForm ? (
           <div className="mb-8 rounded-xl border border-border bg-card p-6 shadow-sm">
             <h2 className="mb-4 text-xl font-medium">{editingId ? "Edit Product" : "Add Product"}</h2>
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -382,6 +453,66 @@ const Admin = () => {
             </tbody>
           </table>
         </div>
+          </>
+        ) : (
+          <div className="space-y-6">
+            <div className="rounded-xl border border-border bg-card p-6">
+              <h2 className="mb-4 text-xl font-medium">Add Admin</h2>
+              <p className="mb-4 text-sm text-muted-foreground">
+                Enter an email address to invite someone as an admin. They will automatically get admin rights when they sign up with this email.
+              </p>
+              <form onSubmit={handleAddInvite} className="flex gap-2">
+                <input
+                  type="email"
+                  placeholder="admin-email@example.com"
+                  value={newInviteEmail}
+                  onChange={(e) => setNewInviteEmail(e.target.value)}
+                  className="max-w-xs flex-1 rounded-md border border-input bg-transparent px-3 py-2 text-sm"
+                  required
+                />
+                <Button type="submit">Invite Admin</Button>
+              </form>
+            </div>
+
+            <div className="rounded-xl border border-border bg-card overflow-hidden">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-muted/50">
+                  <tr>
+                    <th className="p-4 font-medium">Pending Invites</th>
+                    <th className="p-4 font-medium">Date</th>
+                    <th className="p-4 font-medium text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {invites.length === 0 ? (
+                    <tr>
+                      <td colSpan={3} className="p-4 text-center text-muted-foreground">No pending invites.</td>
+                    </tr>
+                  ) : (
+                    invites.map((invite) => (
+                      <tr key={invite.email} className="border-t border-border">
+                        <td className="p-4 font-medium">{invite.email}</td>
+                        <td className="p-4 text-muted-foreground">
+                          {new Date(invite.created_at).toLocaleDateString()}
+                        </td>
+                        <td className="p-4 text-right">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDeleteInvite(invite.email)}
+                            className="text-red-500 hover:text-red-600"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

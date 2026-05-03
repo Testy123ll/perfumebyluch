@@ -13,8 +13,8 @@ const IS_SUPABASE_CONFIGURED =
   !import.meta.env.VITE_SUPABASE_URL.includes("PLACEHOLDER");
 
 const AdminLogin = () => {
-  const [email, setEmail] = useState("admin@test.com");
-  const [password, setPassword] = useState("admin123");
+  const [email, setEmail] = useState("luchpfume@gmail.com");
+  const [password, setPassword] = useState("luchperfume");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
