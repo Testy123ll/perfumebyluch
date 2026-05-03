@@ -36,11 +36,14 @@ const CartDrawer = () => {
     }
   };
 
-  // After tapping "Open WhatsApp to Send", clear cart and close everything
+  // Snapshot the link BEFORE clearing the cart, then open WhatsApp programmatically.
+  // If we clear first, React re-renders and orderLink becomes the empty fallback.
   const finishAndClose = () => {
+    const link = orderLink; // capture current value
     clearCart();
     setConfirmOpen(false);
     closeCart();
+    window.open(link, "_blank", "noopener,noreferrer");
   };
 
   const finishAndClear = () => {
@@ -246,12 +249,10 @@ const CartDrawer = () => {
           </p>
 
           <div className="flex flex-col gap-2">
-            <Button asChild variant="whatsapp" size="lg" onClick={finishAndClose}>
-              <a href={orderLink} target="_blank" rel="noopener noreferrer">
-                <WhatsAppIcon className="h-5 w-5" />
-                Open WhatsApp to Send
-                <ExternalLink className="h-4 w-4" />
-              </a>
+            <Button variant="whatsapp" size="lg" onClick={finishAndClose}>
+              <WhatsAppIcon className="h-5 w-5" />
+              Open WhatsApp to Send
+              <ExternalLink className="h-4 w-4" />
             </Button>
             <div className="grid grid-cols-2 gap-2">
               <Button variant="outline" onClick={copyMessage}>
