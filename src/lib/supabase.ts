@@ -12,35 +12,9 @@ export const IS_SUPABASE_CONFIGURED =
 
 const isConfigured = IS_SUPABASE_CONFIGURED;
 
-console.log("Supabase Client Init:", { isConfigured, url: !!supabaseUrl, key: !!supabaseAnonKey });
+console.log("Supabase Client Init:", { supabaseUrl, supabaseAnonKey });
 
-// Only create the real client when credentials are valid.
-// When not configured, export a safe no-op mock so the app still renders.
-export const supabase: SupabaseClient = isConfigured
-  ? createClient(supabaseUrl, supabaseAnonKey)
-  : (new Proxy({}, {
-      get: (_t, prop) => {
-        if (prop === "from") return () => ({
-          select: () => ({ eq: () => ({ order: () => Promise.resolve({ data: [], error: null }) }), order: () => Promise.resolve({ data: [], error: null }) }),
-          insert: () => Promise.resolve({ data: null, error: null }),
-          update: () => ({ eq: () => Promise.resolve({ data: null, error: null }) }),
-          delete: () => ({ eq: () => Promise.resolve({ data: null, error: null }) }),
-        });
-        if (prop === "auth") return {
-          getSession: () => Promise.resolve({ data: { session: null }, error: null }),
-          onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
-          signInWithPassword: () => Promise.resolve({ data: null, error: { message: "Supabase not configured" } }),
-          signOut: () => Promise.resolve({}),
-        };
-        if (prop === "storage") return {
-          from: () => ({
-            upload: () => Promise.resolve({ data: null, error: { message: "Supabase not configured" } }),
-            getPublicUrl: () => ({ data: { publicUrl: "" } }),
-          }),
-        };
-        return () => Promise.resolve({ data: null, error: null });
-      },
-    }) as unknown as SupabaseClient);
+export const supabase: SupabaseClient = createClient(supabaseUrl, supabaseAnonKey);
 
 export type Product = {
   id: string;
