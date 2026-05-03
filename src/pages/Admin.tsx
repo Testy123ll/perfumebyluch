@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase, Product, IS_SUPABASE_CONFIGURED } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
-import { Trash2, Edit2, Eye, EyeOff, Plus, LogOut, Loader2, Shield, ShieldOff, Mail, History } from "lucide-react";
+import { Trash2, Edit2, Eye, EyeOff, Plus, LogOut, Loader2, Shield, ShieldOff, Mail, History, User } from "lucide-react";
 
 const TEST_SESSION_KEY = "pbl_admin_test_session";
 
@@ -366,9 +366,20 @@ const Admin = () => {
     <div className="min-h-screen bg-background p-8">
       <div className="mx-auto max-w-5xl">
         <div className="mb-8 flex items-center justify-between">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-6">
             <h1 className="font-serif text-3xl">Admin Dashboard</h1>
-            <div className="ml-4 flex gap-2 rounded-lg bg-muted p-1">
+            
+            <div className="flex items-center gap-3 rounded-full border border-border bg-card px-4 py-1.5 shadow-sm">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary">
+                <User className="h-4 w-4" />
+              </div>
+              <div className="flex flex-col leading-tight">
+                <span className="text-sm font-medium">{session?.user?.email}</span>
+                <span className="text-[10px] uppercase tracking-wider text-muted-foreground">{userRole}</span>
+              </div>
+            </div>
+
+            <div className="flex gap-2 rounded-lg bg-muted p-1">
               <button
                 onClick={() => setActiveTab("products")}
                 className={`rounded-md px-3 py-1 text-sm transition-all ${
@@ -580,25 +591,43 @@ const Admin = () => {
           </table>
         </div>
           </>
-        ) : (
-          <div className="space-y-6">
-            <div className="rounded-xl border border-border bg-card p-6">
-              <h2 className="mb-4 text-xl font-medium">Add Admin</h2>
-              <p className="mb-4 text-sm text-muted-foreground">
-                Enter an email address to invite someone as an admin. They will automatically get admin rights when they sign up with this email.
-              </p>
-              <form onSubmit={handleAddInvite} className="flex gap-2">
-                <input
-                  type="email"
-                  placeholder="admin-email@example.com"
-                  value={newInviteEmail}
-                  onChange={(e) => setNewInviteEmail(e.target.value)}
-                  className="max-w-xs flex-1 rounded-md border border-input bg-transparent px-3 py-2 text-sm"
-                  required
-                />
-                <Button type="submit">Invite Admin</Button>
-              </form>
+        ) : activeTab === "team" ? (
+          <div className="space-y-6 animate-fade-in">
+            <div className="rounded-xl border border-border bg-card p-6 flex items-center gap-4">
+              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                <User className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <h3 className="font-medium">{session?.user?.email}</h3>
+                <p className="text-sm text-muted-foreground capitalize">{userRole}</p>
+              </div>
             </div>
+
+            {userRole === "owner" ? (
+              <div className="rounded-xl border border-border bg-card p-6">
+                <h2 className="mb-4 text-xl font-medium">Add Admin</h2>
+                <p className="mb-4 text-sm text-muted-foreground">
+                  Enter an email address to invite someone as an admin. They will automatically get admin rights when they sign up with this email.
+                </p>
+                <form onSubmit={handleAddInvite} className="flex gap-4">
+                  <input
+                    type="email"
+                    placeholder="admin@example.com"
+                    value={newInviteEmail}
+                    onChange={(e) => setNewInviteEmail(e.target.value)}
+                    className="flex-1 rounded-md border border-input bg-transparent px-3 py-2 text-sm"
+                    required
+                  />
+                  <Button type="submit">Invite Admin</Button>
+                </form>
+              </div>
+            ) : (
+              <div className="rounded-xl border border-border bg-muted/30 p-6 text-center">
+                <Shield className="mx-auto mb-2 h-8 w-8 text-muted-foreground/50" />
+                <h2 className="text-lg font-medium">Team Management</h2>
+                <p className="text-sm text-muted-foreground">Only the owner can invite or manage other administrators.</p>
+              </div>
+            )}
 
             <div className="rounded-xl border border-border bg-card overflow-hidden">
               <table className="w-full text-left text-sm">
