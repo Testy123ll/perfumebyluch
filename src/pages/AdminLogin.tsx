@@ -25,15 +25,25 @@ const AdminLogin = () => {
     // Use local test auth when Supabase is not configured yet
     if (!IS_SUPABASE_CONFIGURED) {
       if (isSignUp) {
-        toast({ title: "Sign up disabled in test mode", variant: "destructive" });
-        setLoading(false);
-        return;
-      }
-      if (email === TEST_EMAIL && password === TEST_PASSWORD) {
-        localStorage.setItem(TEST_SESSION_KEY, "true");
-        navigate("/admin", { replace: true });
+        const users = JSON.parse(localStorage.getItem("pbl_mock_users") || "[]");
+        if (users.find((u: any) => u.email === email)) {
+          toast({ title: "Error", description: "User already exists", variant: "destructive" });
+        } else {
+          users.push({ email, password });
+          localStorage.setItem("pbl_mock_users", JSON.stringify(users));
+          toast({ title: "Success", description: "Mock account created! You can now sign in." });
+          setIsSignUp(false);
+        }
       } else {
-        toast({ title: "Invalid credentials", description: "Wrong email or password.", variant: "destructive" });
+        const users = JSON.parse(localStorage.getItem("pbl_mock_users") || "[]");
+        const user = users.find((u: any) => u.email === email && u.password === password);
+        
+        if (user || (email === TEST_EMAIL && password === TEST_PASSWORD)) {
+          localStorage.setItem(TEST_SESSION_KEY, "true");
+          navigate("/admin", { replace: true });
+        } else {
+          toast({ title: "Invalid credentials", description: "Wrong email or password.", variant: "destructive" });
+        }
       }
       setLoading(false);
       return;
