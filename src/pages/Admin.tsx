@@ -293,7 +293,10 @@ const Admin = () => {
 
     setTeam(combinedTeam.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()));
   };
-
+  const handleAddInvite = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newInviteEmail) return;
+    
     const { error } = await supabase.from("admin_invites").insert([{ 
       email: newInviteEmail,
       invited_by: session?.user?.id 
