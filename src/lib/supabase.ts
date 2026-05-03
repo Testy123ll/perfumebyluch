@@ -3,8 +3,13 @@ import { createClient, SupabaseClient } from "@supabase/supabase-js";
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || "";
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || "";
 
-const isConfigured =
-  supabaseUrl.startsWith("https://") && supabaseAnonKey.length > 20;
+export const IS_SUPABASE_CONFIGURED =
+  !!import.meta.env.VITE_SUPABASE_URL &&
+  !import.meta.env.VITE_SUPABASE_URL.includes("PLACEHOLDER") &&
+  !!import.meta.env.VITE_SUPABASE_ANON_KEY &&
+  !import.meta.env.VITE_SUPABASE_ANON_KEY.includes("PLACEHOLDER");
+
+const isConfigured = IS_SUPABASE_CONFIGURED && supabaseUrl.startsWith("https://");
 
 // Only create the real client when credentials are valid.
 // When not configured, export a safe no-op mock so the app still renders.

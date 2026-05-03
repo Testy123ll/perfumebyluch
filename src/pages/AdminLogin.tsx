@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/lib/supabase";
+import { supabase, IS_SUPABASE_CONFIGURED } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 
@@ -8,10 +8,7 @@ import { useToast } from "@/components/ui/use-toast";
 const TEST_EMAIL = "luchpfume@gmail.com";
 const TEST_PASSWORD = "luchperfume";
 const TEST_SESSION_KEY = "pbl_admin_test_session";
-const IS_SUPABASE_CONFIGURED =
-  import.meta.env.VITE_SUPABASE_URL &&
-  import.meta.env.VITE_SUPABASE_URL.startsWith("https://") &&
-  !import.meta.env.VITE_SUPABASE_URL.includes("PLACEHOLDER");
+
 
 const AdminLogin = () => {
   const [email, setEmail] = useState("luchpfume@gmail.com");

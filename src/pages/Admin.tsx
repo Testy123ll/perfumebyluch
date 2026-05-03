@@ -1,14 +1,12 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase, Product } from "@/lib/supabase";
+import { supabase, Product, IS_SUPABASE_CONFIGURED } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { Trash2, Edit2, Eye, EyeOff, Plus, LogOut, Loader2 } from "lucide-react";
 
 const TEST_SESSION_KEY = "pbl_admin_test_session";
-const IS_SUPABASE_CONFIGURED =
-  import.meta.env.VITE_SUPABASE_URL &&
-  !import.meta.env.VITE_SUPABASE_URL.includes("PLACEHOLDER");
+
 
 const Admin = () => {
   const [products, setProducts] = useState<Product[]>([]);
