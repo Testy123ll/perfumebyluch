@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase, Product, IS_SUPABASE_CONFIGURED } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
@@ -29,6 +29,7 @@ const Admin = () => {
   const [logs, setLogs] = useState<{ id: string; admin_email: string; action: string; target_name: string; created_at: string; admin_id: string }[]>([]);
   const [logFilterAdmin, setLogFilterAdmin] = useState("all");
   const [logFilterAction, setLogFilterAction] = useState("all");
+  const [newInviteEmail, setNewInviteEmail] = useState("");
 
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -84,8 +85,9 @@ const Admin = () => {
         fetchProducts();
         if (profile.role === "owner") {
           fetchTeam();
-          fetchLogs();
         }
+        // Always fetch logs for both admin and owner (restricted by RLS anyway)
+        fetchLogs();
       }
       
       setAuthChecking(false);
@@ -104,9 +106,9 @@ const Admin = () => {
     );
 
     return () => authListener.subscription.unsubscribe();
-  }, [navigate]);
+  }, [navigate, fetchProducts, fetchTeam, fetchLogs, toast]);
 
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     setLoading(true);
     const { data, error } = await supabase
       .from("products")
@@ -119,7 +121,7 @@ const Admin = () => {
       setProducts(data || []);
     }
     setLoading(false);
-  };
+  }, [toast]);
 
   const handleLogout = async () => {
     localStorage.removeItem(TEST_SESSION_KEY);
@@ -271,7 +273,7 @@ const Admin = () => {
     fetchLogs();
   };
 
-  const fetchLogs = async () => {
+  const fetchLogs = useCallback(async () => {
     let query = supabase.from("activity_log").select("*").order("created_at", { ascending: false }).limit(100);
     
     if (logFilterAdmin !== "all") {
@@ -283,7 +285,7 @@ const Admin = () => {
 
     const { data, error } = await query;
     if (!error) setLogs(data || []);
-  };
+  }, [logFilterAdmin, logFilterAction]);
 
   const handleDeleteLog = async (id: string) => {
     if (session?.user?.id !== OWNER_ID) return;
@@ -305,7 +307,7 @@ const Admin = () => {
     }
   };
 
-  const fetchTeam = async () => {
+  const fetchTeam = useCallback(async () => {
     const { data: profiles, error: pError } = await supabase.from("profiles").select("*");
     const { data: invites, error: iError } = await supabase.from("admin_invites").select("*");
     
@@ -328,7 +330,7 @@ const Admin = () => {
     ];
 
     setTeam(combinedTeam.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()));
-  };
+  }, []);
   const handleAddInvite = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newInviteEmail) return;
