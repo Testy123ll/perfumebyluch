@@ -369,7 +369,7 @@ const Admin = () => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
       toast({ title: "Success", description: `Admin ${newRole === "restricted" ? "restricted" : "restored"}` });
-      logAction(newRole === "restricted" ? "Restrict Admin" : "Unrestrict Admin", `Target: ${email}`);
+      logAction(newRole === "restricted" ? "Restricted admin" : "Restored admin", "admin", email);
       fetchTeam();
     }
   };
