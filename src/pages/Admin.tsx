@@ -1,5 +1,4 @@
 import { useEffect, useState, useCallback } from "react";
-import * as tus from 'tus-js-client';
 import { useNavigate } from "react-router-dom";
 import { supabase, Product, IS_SUPABASE_CONFIGURED } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
@@ -423,69 +422,85 @@ const Admin = () => {
     let video_url = editingId ? products.find((p) => p.id === editingId)?.video_url : "";
 
     if (videoFile) {
-      setUploadProgress("Preparing video upload...");
-      
+      setUploadProgress("Uploading video: 0%");
+
       const videoExt = videoFile.name.split(".").pop();
       const videoPath = `product-videos/${Date.now()}.${videoExt}`;
-      
+
       const { data: { session: currentSession } } = await supabase.auth.getSession();
-      
-      video_url = await new Promise((resolve, reject) => {
-        const upload = new tus.Upload(videoFile, {
-          endpoint: `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/upload/resumable`,
-          retryDelays: [0, 3000, 5000, 10000, 20000],
-          headers: {
-            authorization: `Bearer ${currentSession?.access_token}`,
-            'x-upsert': 'true',
-          },
-          uploadDataDuringCreation: true,
-          removeFingerprintOnSuccess: true,
-          metadata: {
-            bucketName: 'products',
-            objectName: videoPath,
-            contentType: videoFile.type || 'video/mp4',
-            cacheControl: '3600',
-          },
-          chunkSize: 6 * 1024 * 1024, // 6MB chunks
-          onError: (error) => {
-            toast({
-              title: "Video Upload Failed",
-              description: `${error.message} — Please try again.`,
-              variant: "destructive",
-            });
-            setUploadProgress("");
-            setLoading(false);
-            reject(error);
-          },
-          onProgress: (bytesUploaded, bytesTotal) => {
-            const percentage = Math.round((bytesUploaded / bytesTotal) * 100);
-            setUploadProgress(`Uploading video: ${percentage}% — Please stay on this page`);
-          },
-          onSuccess: () => {
-            const { data: vidUrlData } = supabase.storage
-              .from("products")
-              .getPublicUrl(videoPath);
-            resolve(vidUrlData.publicUrl);
-          },
-        });
 
-        // Check for previous incomplete uploads and resume
-        upload.findPreviousUploads().then((previousUploads) => {
-          if (previousUploads.length > 0) {
-            upload.resumeFromPreviousUpload(previousUploads[0]);
-            setUploadProgress("Resuming previous upload...");
-          }
-          upload.start();
+      if (!currentSession?.access_token) {
+        toast({
+          title: "Session Expired",
+          description: "Please log out and log back in, then try again.",
+          variant: "destructive",
         });
-      }).catch(() => {
-        return null;
-      });
-
-      if (!video_url) {
         setLoading(false);
         setUploadProgress("");
         return;
       }
+
+      const uploadUrl = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/products/${videoPath}`;
+
+      const videoUploadResult = await new Promise<string | null>((resolve) => {
+        const xhr = new XMLHttpRequest();
+
+        xhr.upload.addEventListener("progress", (e) => {
+          if (e.lengthComputable) {
+            const pct = Math.round((e.loaded / e.total) * 100);
+            setUploadProgress(`Uploading video: ${pct}% — Please stay on this page`);
+          }
+        });
+
+        xhr.addEventListener("load", () => {
+          if (xhr.status === 200 || xhr.status === 201) {
+            const { data: vidUrlData } = supabase.storage
+              .from("products")
+              .getPublicUrl(videoPath);
+            resolve(vidUrlData.publicUrl);
+          } else {
+            toast({
+              title: "Video Upload Failed",
+              description: `Server responded with status ${xhr.status}. Please try again.`,
+              variant: "destructive",
+            });
+            resolve(null);
+          }
+        });
+
+        xhr.addEventListener("error", () => {
+          toast({
+            title: "Video Upload Failed",
+            description: "Connection error. Please check your internet and try again.",
+            variant: "destructive",
+          });
+          resolve(null);
+        });
+
+        xhr.addEventListener("timeout", () => {
+          toast({
+            title: "Video Upload Timed Out",
+            description: "The upload took too long. Try compressing the video first using Clideo.com.",
+            variant: "destructive",
+          });
+          resolve(null);
+        });
+
+        xhr.open("POST", uploadUrl);
+        xhr.setRequestHeader("Authorization", `Bearer ${currentSession.access_token}`);
+        xhr.setRequestHeader("Content-Type", videoFile.type || "video/mp4");
+        xhr.setRequestHeader("x-upsert", "true");
+        xhr.timeout = 120000; // 2 minute timeout
+        xhr.send(videoFile);
+      });
+
+      if (!videoUploadResult) {
+        setLoading(false);
+        setUploadProgress("");
+        return;
+      }
+
+      video_url = videoUploadResult;
     }
 
     setUploadProgress("");
