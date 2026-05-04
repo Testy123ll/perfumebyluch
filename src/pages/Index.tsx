@@ -29,11 +29,11 @@ const Index = () => {
           </RevealWrapper>
           <SectionDivider />
           <RevealWrapper>
-            <Products />
+            <HowToOrder />
           </RevealWrapper>
           <SectionDivider />
           <RevealWrapper>
-            <HowToOrder />
+            <Products />
           </RevealWrapper>
           <SectionDivider />
           <RevealWrapper>
