@@ -418,39 +418,96 @@ const Admin = () => {
 
 
 
-  const uploadVideoXHR = (
-    signedUrl: string,
+  const uploadVideoChunked = async (
     file: File,
-    contentType: string,
+    filePath: string,
     onProgress: (msg: string) => void
-  ): Promise<{ ok: boolean; error: string | null }> => {
-    return new Promise((resolve) => {
+  ): Promise<{ publicUrl: string | null; error: string | null }> => {
+    const CHUNK_SIZE = 1 * 1024 * 1024; // 1MB per chunk
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    const { data: { session } } = await supabase.auth.getSession();
+    const authToken = session?.access_token || supabaseKey;
+
+    // Step 1: Create resumable upload
+    onProgress("Preparing video upload...");
+    
+    const createRes = await new Promise<{ ok: boolean; url: string | null; error: string | null }>((resolve) => {
       const xhr = new XMLHttpRequest();
-      
-      xhr.upload.onprogress = (e) => {
-        if (e.lengthComputable) {
-          const percent = Math.round((e.loaded / e.total) * 100);
-          onProgress(`Uploading video... ${percent}%`);
-        }
-      };
+      xhr.open("POST", `${supabaseUrl}/storage/v1/upload/resumable`, true);
+      xhr.setRequestHeader("Authorization", `Bearer ${authToken}`);
+      xhr.setRequestHeader("x-upsert", "false");
+      xhr.setRequestHeader("Content-Type", "application/json");
+      xhr.setRequestHeader("Upload-Length", file.size.toString());
+      xhr.setRequestHeader("Upload-Metadata", `bucketName ${btoa("products")},objectName ${btoa(filePath)},contentType ${btoa(file.type || "video/mp4")}`);
+      xhr.setRequestHeader("Tus-Resumable", "1.0.0");
 
       xhr.onload = () => {
-        if (xhr.status >= 200 && xhr.status < 300) {
-          resolve({ ok: true, error: null });
+        if (xhr.status === 201) {
+          const location = xhr.getResponseHeader("Location");
+          resolve({ ok: true, url: location, error: null });
         } else {
-          resolve({ ok: false, error: `Upload failed: ${xhr.status} ${xhr.responseText}` });
+          resolve({ ok: false, url: null, error: `Failed to create upload: ${xhr.status}` });
         }
       };
-
-      xhr.onerror = () => resolve({ ok: false, error: "Network error during upload" });
-      xhr.ontimeout = () => resolve({ ok: false, error: "Upload timed out" });
-
-      xhr.open("PUT", signedUrl, true);
-      xhr.setRequestHeader("Content-Type", contentType);
-      xhr.setRequestHeader("x-upsert", "false");
-      xhr.timeout = 120000; // 2 minute timeout
-      xhr.send(file);
+      xhr.onerror = () => resolve({ ok: false, url: null, error: "Network error creating upload" });
+      xhr.send();
     });
+
+    if (!createRes.ok || !createRes.url) {
+      return { publicUrl: null, error: createRes.error };
+    }
+
+    const uploadUrl = createRes.url.startsWith("http")
+      ? createRes.url
+      : `${supabaseUrl}${createRes.url}`;
+
+    // Step 2: Upload chunks one by one via XHR PATCH
+    let offset = 0;
+    let chunkIndex = 0;
+    const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+
+    while (offset < file.size) {
+      const chunk = file.slice(offset, offset + CHUNK_SIZE);
+      const chunkBuffer = await chunk.arrayBuffer();
+      const percent = Math.round(((chunkIndex + 1) / totalChunks) * 100);
+      onProgress(`Uploading video... ${percent}%`);
+
+      const chunkResult = await new Promise<{ ok: boolean; error: string | null }>((resolve) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open("PATCH", uploadUrl, true);
+        xhr.setRequestHeader("Authorization", `Bearer ${authToken}`);
+        xhr.setRequestHeader("Content-Type", "application/offset+octet-stream");
+        xhr.setRequestHeader("Upload-Offset", offset.toString());
+        xhr.setRequestHeader("Tus-Resumable", "1.0.0");
+        xhr.timeout = 30000;
+
+        xhr.onload = () => {
+          if (xhr.status === 204) {
+            resolve({ ok: true, error: null });
+          } else {
+            resolve({ ok: false, error: `Chunk ${chunkIndex + 1} failed: ${xhr.status} ${xhr.responseText}` });
+          }
+        };
+        xhr.onerror = () => resolve({ ok: false, error: `Network error on chunk ${chunkIndex + 1}` });
+        xhr.ontimeout = () => resolve({ ok: false, error: `Chunk ${chunkIndex + 1} timed out` });
+        xhr.send(chunkBuffer);
+      });
+
+      if (!chunkResult.ok) {
+        return { publicUrl: null, error: chunkResult.error };
+      }
+
+      offset += CHUNK_SIZE;
+      chunkIndex++;
+    }
+
+    // Step 3: Get public URL
+    const { data: publicUrlData } = supabase.storage
+      .from("products")
+      .getPublicUrl(filePath);
+
+    return { publicUrl: publicUrlData.publicUrl, error: null };
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -492,37 +549,18 @@ const Admin = () => {
     let video_url = editingId ? products.find((p) => p.id === editingId)?.video_url : "";
 
     if (videoFile) {
-      setUploadProgress("Preparing video...");
       const videoPath = `product-videos/${Date.now()}.${videoFile.name.split(".").pop()}`;
-
-      // Step 1: Get signed URL
-      const { data: signedData, error: signedError } = await supabase.storage
-        .from("products")
-        .createSignedUploadUrl(videoPath);
-
-      if (signedError || !signedData?.signedUrl) {
-        toast({
-          title: "Video Upload Failed",
-          description: signedError?.message || "Could not get upload URL",
-          variant: "destructive",
-        });
-        setLoading(false);
-        setUploadProgress("");
-        return;
-      }
-
-      // Step 2: Upload via XHR — bypasses Chrome Android fetch bug
-      const { ok, error: xhrError } = await uploadVideoXHR(
-        signedData.signedUrl,
+      
+      const { publicUrl, error: vidError } = await uploadVideoChunked(
         videoFile,
-        videoFile.type || "video/mp4",
+        videoPath,
         setUploadProgress
       );
 
-      if (!ok) {
+      if (vidError) {
         toast({
           title: "Video Upload Failed",
-          description: xhrError || "Unknown error",
+          description: vidError,
           variant: "destructive",
         });
         setLoading(false);
@@ -530,12 +568,7 @@ const Admin = () => {
         return;
       }
 
-      // Step 3: Get public URL
-      const { data: publicUrlData } = supabase.storage
-        .from("products")
-        .getPublicUrl(videoPath);
-
-      video_url = publicUrlData.publicUrl;
+      video_url = publicUrl || "";
     }
 
     setUploadProgress("");
