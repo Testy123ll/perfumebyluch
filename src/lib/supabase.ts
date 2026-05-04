@@ -14,7 +14,32 @@ const isConfigured = IS_SUPABASE_CONFIGURED;
 
 console.log("Supabase Client Init:", { supabaseUrl, supabaseAnonKey });
 
-export const supabase: SupabaseClient = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase: SupabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
+  global: {
+    fetch: fetch.bind(globalThis),
+  },
+  db: {
+    schema: "public",
+  },
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+  },
+});
+
+// Override storage upload to always use standard upload by ensuring TUS isn't triggered
+const originalFrom = supabase.storage.from.bind(supabase.storage);
+supabase.storage.from = (bucketId: string) => {
+  const bucket = originalFrom(bucketId);
+  const originalUpload = bucket.upload.bind(bucket);
+  bucket.upload = (path: string, file: any, options?: any) => {
+    return originalUpload(path, file, {
+      ...options,
+      uploadSignedUrl: undefined,
+    });
+  };
+  return bucket;
+};
 
 export type Product = {
   id: string;

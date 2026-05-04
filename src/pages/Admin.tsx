@@ -7,7 +7,7 @@ import { Trash2, Edit2, Eye, EyeOff, Plus, LogOut, Loader2, Shield, ShieldOff, M
 
 const OWNER_ID = "7a7f1bb0-6aa6-42e6-80e3-7e4f7a48491e";
 const TEST_SESSION_KEY = "pbl_admin_test_session";
-const MAX_VIDEO_SIZE_MB = 5;
+const MAX_VIDEO_SIZE_MB = 15;
 const MAX_VIDEO_SIZE_BYTES = MAX_VIDEO_SIZE_MB * 1024 * 1024;
 
 
@@ -416,51 +416,7 @@ const Admin = () => {
     return { publicUrl: null, error: new Error("Upload failed after retries") };
   };
 
-  const uploadVideoDirectly = async (
-    file: File,
-    filePath: string,
-    onProgress: (msg: string) => void
-  ): Promise<{ publicUrl: string | null; error: any }> => {
-    try {
-      onProgress("Preparing video upload...");
 
-      // Step 1: Get a signed upload URL from Supabase
-      const { data: signedData, error: signedError } = await supabase.storage
-        .from("products")
-        .createSignedUploadUrl(filePath);
-
-      if (signedError || !signedData?.signedUrl) {
-        return { publicUrl: null, error: signedError || new Error("Could not get upload URL") };
-      }
-
-      onProgress("Uploading video... please wait");
-
-      // Step 2: Upload directly via raw fetch PUT — completely bypasses TUS
-      const uploadResponse = await fetch(signedData.signedUrl, {
-        method: "PUT",
-        headers: {
-          "Content-Type": file.type,
-          "x-upsert": "false",
-        },
-        body: file,
-      });
-
-      if (!uploadResponse.ok) {
-        const errorText = await uploadResponse.text();
-        return { publicUrl: null, error: new Error(`Upload failed: ${uploadResponse.status} ${errorText}`) };
-      }
-
-      // Step 3: Get the public URL
-      const { data: publicUrlData } = supabase.storage
-        .from("products")
-        .getPublicUrl(filePath);
-
-      return { publicUrl: publicUrlData.publicUrl, error: null };
-
-    } catch (err: any) {
-      return { publicUrl: null, error: err };
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -501,17 +457,21 @@ const Admin = () => {
     let video_url = editingId ? products.find((p) => p.id === editingId)?.video_url : "";
 
     if (videoFile) {
+      setUploadProgress("Uploading video... please wait");
       const videoPath = `product-videos/${Date.now()}.${videoFile.name.split(".").pop()}`;
-      const { publicUrl, error: vidError } = await uploadVideoDirectly(
-        videoFile,
-        videoPath,
-        setUploadProgress
-      );
+      
+      const { error: vidError } = await supabase.storage
+        .from("products")
+        .upload(videoPath, videoFile, {
+          contentType: videoFile.type,
+          cacheControl: "3600",
+          upsert: false,
+        });
 
       if (vidError) {
         toast({
           title: "Video Upload Failed",
-          description: vidError?.message || JSON.stringify(vidError) || "Unknown error",
+          description: vidError.message,
           variant: "destructive",
         });
         setLoading(false);
@@ -519,7 +479,11 @@ const Admin = () => {
         return;
       }
 
-      video_url = publicUrl || "";
+      const { data: publicUrlData } = supabase.storage
+        .from("products")
+        .getPublicUrl(videoPath);
+      
+      video_url = publicUrlData.publicUrl;
     }
 
     setUploadProgress("");
