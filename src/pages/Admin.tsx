@@ -45,6 +45,7 @@ const Admin = () => {
     is_new: false,
     video_url: "",
     size: "",
+    scent_mood: "",
   });
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [videoFile, setVideoFile] = useState<File | null>(null);
@@ -115,6 +116,8 @@ const Admin = () => {
     
     if (pError || iError) return;
 
+    const profileEmails = new Set((profiles || []).map(p => p.email));
+    
     const combinedTeam: any[] = [
       ...(profiles || []).map(p => ({
         id: p.id,
@@ -123,7 +126,7 @@ const Admin = () => {
         status: p.role === "restricted" ? "restricted" : "active",
         created_at: p.created_at
       })),
-      ...(invites || []).map(i => ({
+      ...(invites || []).filter(i => !profileEmails.has(i.email)).map(i => ({
         email: i.email,
         role: "admin",
         status: "pending",
@@ -131,62 +134,85 @@ const Admin = () => {
       }))
     ];
 
-    setTeam(combinedTeam.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()));
+    // Sort: Owners first, then by date
+    setTeam(combinedTeam.sort((a, b) => {
+      if (a.role === "owner" && b.role !== "owner") return -1;
+      if (a.role !== "owner" && b.role === "owner") return 1;
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    }));
   }, []);
 
   useEffect(() => {
     const checkAuth = async () => {
       setAuthChecking(true);
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
       
-      if (!session) {
+      if (!currentSession) {
         navigate("/admin/login");
         setAuthChecking(false);
         return;
       }
 
-      setSession(session);
+      setSession(currentSession);
       
+      // 1. Check if profile exists
       const { data: profile, error: profileError } = await supabase
         .from("profiles")
         .select("role")
-        .eq("id", session.user.id)
+        .eq("id", currentSession.user.id)
         .single();
       
       if (profileError || !profile) {
-        // Automatically insert a row into profiles for them
-        const { error: insertError } = await supabase
-          .from("profiles")
-          .insert([{ id: session.user.id, email: session.user.email, role: 'admin' }]);
-        
-        if (insertError) {
-          setUserRole("admin");
-          toast({ 
-            title: "Profiles initialization issue",
-            description: "Database row could not be created, but access granted as admin.",
-            variant: "destructive" 
-          });
+        // 2. Check if invited
+        const { data: invite } = await supabase
+          .from("admin_invites")
+          .select("*")
+          .eq("email", currentSession.user.email)
+          .single();
+
+        if (invite) {
+          // 3. Create profile if invited
+          const { error: insertError } = await supabase
+            .from("profiles")
+            .insert([{ id: currentSession.user.id, email: currentSession.user.email, role: 'admin' }]);
+          
+          if (!insertError) {
+            setUserRole("admin");
+            // Optionally delete the invite now
+            await supabase.from("admin_invites").delete().eq("email", currentSession.user.email);
+          } else {
+            toast({ title: "Profile Error", description: "Could not initialize admin profile.", variant: "destructive" });
+            supabase.auth.signOut();
+            navigate("/admin/login");
+            setAuthChecking(false);
+            return;
+          }
         } else {
-          setUserRole("admin");
+          // 4. No profile and no invite = Deny
+          toast({ title: "Access Denied", description: "You have not been invited as an admin.", variant: "destructive" });
+          supabase.auth.signOut();
+          navigate("/admin/login");
+          setAuthChecking(false);
+          return;
         }
-        fetchProducts();
-        fetchReviews();
-        fetchLogs();
-      } else if (profile.role !== "admin" && profile.role !== "owner") {
-        toast({ title: "Access Denied", description: "You do not have admin privileges.", variant: "destructive" });
-        supabase.auth.signOut();
-        navigate("/admin/login");
-        setAuthChecking(false);
-        return;
       } else {
-        setUserRole(profile.role);
-        fetchProducts();
-        fetchReviews();
-        if (profile.role === "owner") {
-          fetchTeam();
+        // Profile exists
+        if (profile.role !== "admin" && profile.role !== "owner") {
+          toast({ title: "Access Denied", description: "Unauthorized role.", variant: "destructive" });
+          supabase.auth.signOut();
+          navigate("/admin/login");
+          setAuthChecking(false);
+          return;
         }
-        // Always fetch logs for both admin and owner (restricted by RLS anyway)
-        fetchLogs();
+        setUserRole(profile.role);
+      }
+
+      // Successful auth - load data
+      fetchProducts();
+      fetchReviews();
+      fetchLogs();
+      if (profile?.role === "owner" || (userRole === "owner")) {
+        fetchTeam();
       }
       
       setAuthChecking(false);
@@ -195,17 +221,21 @@ const Admin = () => {
     checkAuth();
 
     const { data: authListener } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        if (!session) {
+      (event, newSession) => {
+        if (!newSession) {
           navigate("/admin/login");
         } else {
-          setSession(session);
+          setSession(newSession);
         }
       }
     );
 
     return () => authListener.subscription.unsubscribe();
-  }, [navigate, fetchProducts, fetchTeam, fetchLogs, fetchReviews]);
+  }, [navigate, fetchProducts, fetchReviews, fetchLogs, fetchTeam, userRole]);
+
+  useEffect(() => {
+    if (session) fetchLogs();
+  }, [logFilterAdmin, logFilterAction]);
 
   const handleLogout = async () => {
     localStorage.removeItem(TEST_SESSION_KEY);
@@ -233,8 +263,33 @@ const Admin = () => {
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
-      logAction("Toggled visibility", "product", product.name);
+      logAction(product.visible ? "Hidden product" : "Showed product", "product", product.name);
       fetchProducts();
+    }
+  };
+
+  const handleToggleTestimonial = async (id: string, current: boolean, name: string) => {
+    if (!current) {
+      const testimonialsCount = reviews.filter(r => r.is_testimonial).length;
+      if (testimonialsCount >= 3) {
+        toast({ 
+          title: "Limit Reached", 
+          description: "You can only feature 3 Testimonials at a time. Remove one first.", 
+          variant: "destructive" 
+        });
+        return;
+      }
+    }
+
+    const { error } = await supabase
+      .from("reviews")
+      .update({ is_testimonial: !current })
+      .eq("id", id);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      logAction(!current ? "Featured as Testimonial" : "Removed from Testimonials", "review", name);
+      fetchReviews();
     }
   };
 
@@ -251,6 +306,44 @@ const Admin = () => {
     }
   };
 
+  const handleToggleNewArrival = async (product: Product) => {
+    const { error } = await supabase
+      .from("products")
+      .update({ is_new: !product.is_new })
+      .eq("id", product.id);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      logAction(product.is_new ? "Removed from New Arrivals" : "Marked as New Arrival", "product", product.name);
+      fetchProducts();
+    }
+  };
+
+  const handleToggleBestSeller = async (product: Product) => {
+    if (!product.is_bestseller) {
+      const bestSellersCount = products.filter(p => p.is_bestseller).length;
+      if (bestSellersCount >= 6) {
+        toast({ 
+          title: "Limit Reached", 
+          description: "You can only have 6 Top Sellers at a time. Remove one first.", 
+          variant: "destructive" 
+        });
+        return;
+      }
+    }
+
+    const { error } = await supabase
+      .from("products")
+      .update({ is_bestseller: !product.is_bestseller })
+      .eq("id", product.id);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      logAction(!product.is_bestseller ? "Marked as Top Seller" : "Removed from Top Sellers", "product", product.name);
+      fetchProducts();
+    }
+  };
+
   const handleEdit = (product: Product) => {
     setEditingId(product.id);
     setFormData({
@@ -263,6 +356,7 @@ const Admin = () => {
       is_new: product.is_new ?? false,
       video_url: product.video_url || "",
       size: product.size || "",
+      scent_mood: product.scent_mood || "",
     });
     setImageFile(null);
     setVideoFile(null);
@@ -281,6 +375,7 @@ const Admin = () => {
       is_new: false,
       video_url: "",
       size: "",
+      scent_mood: "",
     });
     setImageFile(null);
     setVideoFile(null);
@@ -338,6 +433,7 @@ const Admin = () => {
       is_new: formData.is_new,
       video_url,
       size: formData.size,
+      scent_mood: formData.scent_mood,
       ...(image_url ? { image_url } : {}),
     };
 
@@ -363,14 +459,7 @@ const Admin = () => {
     setLoading(false);
   };
 
-  useEffect(() => {
-    console.log("Admin Dashboard State:", { 
-      hasSession: !!session, 
-      userRole, 
-      authChecking,
-      supabaseConfigured: IS_SUPABASE_CONFIGURED 
-    });
-  }, [session, userRole, authChecking]);
+  // Removed debug useEffect for performance
 
   const handleDeleteLog = async (id: string) => {
     if (session?.user?.id !== OWNER_ID) return;
@@ -421,7 +510,10 @@ const Admin = () => {
 
   const handleDeleteInvite = async (email: string) => {
     const { error } = await supabase.from("admin_invites").delete().eq("email", email);
-    if (!error) {
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Success", description: "Invite cancelled" });
       logAction("Cancelled invite", "admin", email);
       fetchTeam();
     }
@@ -546,6 +638,14 @@ const Admin = () => {
               >
                 Products
               </button>
+              <button
+                onClick={() => setActiveTab("reviews")}
+                className={`rounded-md px-3 py-1 text-sm transition-all ${
+                  activeTab === "reviews" ? "bg-background shadow-sm" : "hover:text-foreground/80"
+                }`}
+              >
+                Reviews
+              </button>
               {userRole === "owner" && (
                 <>
                   <button
@@ -563,14 +663,6 @@ const Admin = () => {
                     }`}
                   >
                     Activity
-                  </button>
-                  <button
-                    onClick={() => setActiveTab("reviews")}
-                    className={`rounded-md px-3 py-1 text-sm transition-all ${
-                      activeTab === "reviews" ? "bg-background shadow-sm" : "hover:text-foreground/80"
-                    }`}
-                  >
-                    Reviews
                   </button>
                 </>
               )}
@@ -676,6 +768,25 @@ const Admin = () => {
                   />
                 </div>
 
+                <div>
+                  <label className="mb-1 block text-sm">Scent Mood (Optional)</label>
+                  <select
+                    value={formData.scent_mood}
+                    onChange={(e) => setFormData({ ...formData, scent_mood: e.target.value })}
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  >
+                    <option value="">— Select Mood —</option>
+                    <option value="💫 Mysterious">💫 Mysterious</option>
+                    <option value="🌹 Romantic">🌹 Romantic</option>
+                    <option value="🌿 Fresh & Clean">🌿 Fresh & Clean</option>
+                    <option value="👑 Bold & Powerful">👑 Bold & Powerful</option>
+                    <option value="🌸 Soft & Feminine">🌸 Soft & Feminine</option>
+                    <option value="🔥 Sensual">🔥 Sensual</option>
+                    <option value="☀️ Bright & Joyful">☀️ Bright & Joyful</option>
+                    <option value="🕌 Oud & Oriental">🕌 Oud & Oriental</option>
+                  </select>
+                </div>
+
               <div>
                 <label className="mb-1 block text-sm">Description (Notes)</label>
                 <input
@@ -704,7 +815,15 @@ const Admin = () => {
           </div>
         ) : (
           <div className="mb-8 flex items-center justify-between">
-            <h2 className="font-serif text-2xl">Product Catalog</h2>
+            <div>
+              <h2 className="font-serif text-2xl">Product Catalog</h2>
+              <div className="mt-1 flex gap-3 text-[10px] uppercase tracking-wider text-muted-foreground">
+                <span className="flex items-center gap-1"><Eye className="h-3 w-3" /> Visible</span>
+                <span className="flex items-center gap-1 font-bold text-green-600">✓ In Stock</span>
+                <span className="flex items-center gap-1 text-primary">✨ New Arrival</span>
+                <span className="flex items-center gap-1 text-amber-500">🔥 Top Seller</span>
+              </div>
+            </div>
             <Button onClick={() => setShowForm(true)} className="gap-2">
               <Plus className="h-4 w-4" /> Add Product
             </Button>
@@ -741,23 +860,49 @@ const Admin = () => {
                             className="h-10 w-10 rounded-md object-cover"
                           />
                         )}
-                        <div className="font-medium">{p.name}</div>
-                        <div className="text-xs text-muted-foreground">{p.description}</div>
+                        <div className="flex flex-col">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium">{p.name}</span>
+                            {p.is_bestseller && <span title="Featured Top Seller" className="text-amber-500">🔥</span>}
+                          </div>
+                          <div className="text-xs text-muted-foreground line-clamp-1">{p.description}</div>
+                        </div>
                       </div>
                     </td>
                     <td className="p-4">{p.category}</td>
                     <td className="p-4">₦{p.price.toLocaleString()}</td>
                     <td className="p-4">
-                      <span
-                        onClick={() => handleToggleStock(p)}
-                        className={`inline-flex rounded-full px-2 py-1 text-xs cursor-pointer ${
-                          p.in_stock
-                            ? "bg-green-500/10 text-green-500"
-                            : "bg-red-500/10 text-red-500"
-                        }`}
-                      >
-                        {p.in_stock ? "In Stock" : "Out of Stock"}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleToggleStock(p)}
+                          title={p.in_stock ? "Mark as Out of Stock" : "Mark as In Stock"}
+                          className={`flex h-8 w-16 items-center justify-center rounded-md border text-[10px] font-bold uppercase transition-all ${
+                            p.in_stock
+                              ? "border-green-500/50 bg-green-500/10 text-green-600"
+                              : "border-red-500/50 bg-red-500/10 text-red-500"
+                          }`}
+                        >
+                          {p.in_stock ? "✓ Stock" : "× Out"}
+                        </button>
+                        <button
+                          onClick={() => handleToggleNewArrival(p)}
+                          title={p.is_new ? "Remove from New Arrivals" : "Mark as New Arrival"}
+                          className={`flex h-8 w-8 items-center justify-center rounded-md border transition-all ${
+                            p.is_new ? "border-primary/50 bg-primary/10 text-primary shadow-sm" : "border-border opacity-40 hover:opacity-100"
+                          }`}
+                        >
+                          ✨
+                        </button>
+                        <button
+                          onClick={() => handleToggleBestSeller(p)}
+                          title={p.is_bestseller ? "Remove from Top Sellers" : "Mark as Top Seller (max 6)"}
+                          className={`flex h-8 w-8 items-center justify-center rounded-md border transition-all ${
+                            p.is_bestseller ? "border-amber-500/50 bg-amber-500/10 shadow-sm" : "border-border opacity-40 hover:opacity-100"
+                          }`}
+                        >
+                          🔥
+                        </button>
+                      </div>
                     </td>
                     <td className="p-4 text-right">
                       <div className="flex justify-end gap-2">
@@ -1033,6 +1178,14 @@ const Admin = () => {
             </div>
 
             <div className="rounded-xl border border-border bg-card overflow-hidden shadow-sm">
+              <div className="border-b border-border bg-muted/30 p-4 flex items-center justify-between">
+                <h2 className="text-lg font-medium">Customer Reviews</h2>
+                <div className="flex gap-4 text-[10px] uppercase tracking-wider text-muted-foreground">
+                  <span className="flex items-center gap-1"><Eye className="h-3 w-3" /> Visible</span>
+                  <span className="flex items-center gap-1 font-bold text-green-600">✓ Verified</span>
+                  <span className="flex items-center gap-1 text-amber-500">⭐ Featured Testimonial</span>
+                </div>
+              </div>
               <table className="w-full text-left text-sm">
                 <thead className="bg-muted/50">
                   <tr>
@@ -1048,7 +1201,10 @@ const Admin = () => {
                   {reviews.map((r) => (
                     <tr key={r.id} className="border-t border-border">
                       <td className="p-4">
-                        <div className="font-medium">{r.reviewer_name}</div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">{r.reviewer_name}</span>
+                          {r.is_testimonial && <span title="Featured as Testimonial" className="text-amber-500">⭐</span>}
+                        </div>
                         <div className="text-[10px] text-muted-foreground uppercase">{new Date(r.created_at).toLocaleDateString()}</div>
                       </td>
                       <td className="p-4">{r.products?.name}</td>
@@ -1056,18 +1212,27 @@ const Admin = () => {
                       <td className="p-4 max-w-xs truncate">{r.comment}</td>
                       <td className="p-4">
                         <div className="flex gap-2">
-                          <span 
-                            onClick={() => handleToggleReviewVerified(r.id, r.verified, r.reviewer_name)}
-                            className={`px-2 py-0.5 rounded-full text-[10px] uppercase cursor-pointer ${r.verified ? 'bg-green-500/20 text-green-500' : 'bg-muted text-muted-foreground'}`}
-                          >
-                            {r.verified ? 'Verified' : 'Unverified'}
-                          </span>
-                          <span 
+                          <button 
                             onClick={() => handleToggleReviewVisibility(r.id, r.visible, r.reviewer_name)}
-                            className={`px-2 py-0.5 rounded-full text-[10px] uppercase cursor-pointer ${r.visible ? 'bg-primary/20 text-primary' : 'bg-red-500/20 text-red-500'}`}
+                            title="Toggle Visibility"
+                            className={`flex h-8 w-8 items-center justify-center rounded-md border transition-all ${r.visible ? 'border-primary/50 bg-primary/10 text-primary' : 'border-red-500/50 bg-red-500/10 text-red-500'}`}
                           >
-                            {r.visible ? 'Visible' : 'Hidden'}
-                          </span>
+                            <Eye className="h-4 w-4" />
+                          </button>
+                          <button 
+                            onClick={() => handleToggleReviewVerified(r.id, r.verified, r.reviewer_name)}
+                            title="Toggle Verified Badge"
+                            className={`flex h-8 w-8 items-center justify-center rounded-md border font-bold transition-all ${r.verified ? 'border-green-500/50 bg-green-500/10 text-green-600' : 'border-border opacity-40'}`}
+                          >
+                            ✓
+                          </button>
+                          <button 
+                            onClick={() => handleToggleTestimonial(r.id, r.is_testimonial, r.reviewer_name)}
+                            title="Feature as Testimonial (max 3)"
+                            className={`flex h-8 w-8 items-center justify-center rounded-md border transition-all ${r.is_testimonial ? 'border-amber-500/50 bg-amber-500/10 text-amber-500 shadow-sm' : 'border-border opacity-40'}`}
+                          >
+                            ⭐
+                          </button>
                         </div>
                       </td>
                       <td className="p-4 text-right">

@@ -1,29 +1,63 @@
 import Nav from "@/components/sections/Nav";
 import Hero from "@/components/sections/Hero";
-import HowToOrder from "@/components/sections/HowToOrder";
+import BestSellers from "@/components/sections/BestSellers";
 import Products from "@/components/sections/Products";
-import About from "@/components/sections/About";
+import HowToOrder from "@/components/sections/HowToOrder";
+import Guarantee from "@/components/sections/Guarantee";
 import Reviews from "@/components/sections/Reviews";
+import Testimonials from "@/components/sections/Testimonials";
+import About from "@/components/sections/About";
 import FAQ from "@/components/sections/FAQ";
 import CTA from "@/components/sections/CTA";
 import Footer from "@/components/sections/Footer";
 import WhatsAppFloat from "@/components/WhatsAppFloat";
 import { CartProvider } from "@/contexts/CartContext";
 import CartDrawer from "@/components/CartDrawer";
+import SectionDivider from "@/components/ui/SectionDivider";
+import RevealWrapper from "@/components/ui/RevealWrapper";
 
 const Index = () => {
   return (
     <CartProvider>
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background scroll-smooth">
         <Nav />
         <main>
           <Hero />
-          <HowToOrder />
-          <Products />
-          <About />
-          <Reviews />
-          <FAQ />
-          <CTA />
+          <SectionDivider />
+          <RevealWrapper>
+            <BestSellers />
+          </RevealWrapper>
+          <SectionDivider />
+          <RevealWrapper>
+            <Products />
+          </RevealWrapper>
+          <SectionDivider />
+          <RevealWrapper>
+            <HowToOrder />
+          </RevealWrapper>
+          <SectionDivider />
+          <RevealWrapper>
+            <Guarantee />
+          </RevealWrapper>
+          <SectionDivider />
+          <RevealWrapper>
+            <Reviews />
+          </RevealWrapper>
+          <SectionDivider />
+          <RevealWrapper>
+            <Testimonials />
+          </RevealWrapper>
+          <SectionDivider />
+          <RevealWrapper>
+            <About />
+          </RevealWrapper>
+          <SectionDivider />
+          <RevealWrapper>
+            <FAQ />
+          </RevealWrapper>
+          <RevealWrapper>
+            <CTA />
+          </RevealWrapper>
         </main>
         <Footer />
         <WhatsAppFloat />

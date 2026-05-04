@@ -1,5 +1,5 @@
 const About = () => (
-  <section id="about" className="py-20 md:py-28">
+  <section id="about" className="py-14 md:py-20">
     <div className="container">
       <div className="mx-auto max-w-3xl rounded-3xl border border-border bg-card p-10 text-center md:p-16">
         <p className="text-xs uppercase tracking-[0.3em] text-primary">About Us</p>

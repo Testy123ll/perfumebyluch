@@ -91,9 +91,14 @@ const Footer = () => (
         </div>
       </div>
 
-      <p className="mt-12 border-t border-border pt-6 text-center text-xs text-muted-foreground">
-        © {new Date().getFullYear()} Perfumes By Luch. All rights reserved.
-      </p>
+      <div className="mt-12 border-t border-border pt-8 text-center">
+        <p className="mb-4 text-xs italic text-muted-foreground/60">
+          Thank you for trusting us with your scent story. 🌸
+        </p>
+        <p className="text-xs text-muted-foreground">
+          © {new Date().getFullYear()} Perfumes By Luch. All rights reserved.
+        </p>
+      </div>
     </div>
   </footer>
 );

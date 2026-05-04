@@ -26,7 +26,7 @@ const Reviews = () => {
     : "0.0";
 
   return (
-    <section id="reviews" className="py-20 md:py-28 bg-secondary/30">
+    <section id="reviews" className="py-14 md:py-20 bg-secondary/30">
       <div className="container">
         <div className="mx-auto max-w-2xl text-center">
           <p className="text-xs uppercase tracking-[0.3em] text-primary">Loved by clients</p>

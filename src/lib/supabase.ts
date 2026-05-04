@@ -28,6 +28,8 @@ export type Product = {
   is_new: boolean;
   video_url?: string;
   size?: string;
+  is_bestseller?: boolean;
+  scent_mood?: string;
   created_at: string;
 };
 

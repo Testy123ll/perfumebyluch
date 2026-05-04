@@ -3,9 +3,32 @@ import { waLink } from "@/lib/whatsapp";
 import { WhatsAppIcon } from "@/components/WhatsAppFloat";
 
 const CTA = () => (
-  <section className="py-20 md:py-28">
+  <section className="py-14 md:py-20">
     <div className="container">
-      <div className="relative overflow-hidden rounded-3xl border border-primary/30 bg-gradient-to-br from-card to-background p-10 text-center md:p-20">
+      {/* Emotional Statement */}
+      <div className="mb-16 text-center animate-fade-up [animation-delay:200ms]">
+        <p className="font-serif text-2xl md:text-4xl leading-relaxed text-foreground">
+          "Scent is the only sense directly linked to memory and emotion. <br className="hidden md:block" />
+          <span className="text-primary italic mt-2 block">Choose wisely. Choose something that stays."</span>
+        </p>
+        
+        <div className="mt-12 flex flex-wrap justify-center gap-8 md:gap-16">
+          <div className="text-center">
+            <p className="font-serif text-xl text-foreground">500+</p>
+            <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Happy customers</p>
+          </div>
+          <div className="text-center">
+            <p className="font-serif text-xl text-foreground">3 Countries</p>
+            <p className="text-[10px] uppercase tracking-widest text-muted-foreground">NG · GH · CM</p>
+          </div>
+          <div className="text-center">
+            <p className="font-serif text-xl text-foreground">100%</p>
+            <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Authentic Always</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="relative overflow-hidden rounded-3xl border border-primary/30 bg-gradient-to-br from-card to-background p-10 text-center md:p-20 shadow-pink">
         <div className="absolute inset-0 bg-radial-pink" />
         <div className="relative">
           <h2 className="font-serif text-4xl md:text-6xl">

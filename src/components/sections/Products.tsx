@@ -72,11 +72,29 @@ const SAMPLE_PRODUCTS: Product[] = [
 ];
 
 const Products = () => {
-  const [active, setActive] = useState<Category>("All");
-  const [search, setSearch] = useState("");
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [active, setActive] = useState<Category>("All");
+  const [search, setSearch] = useState("");
+  const [loadMsgIdx, setLoadMsgIdx] = useState(0);
   const { addItem, items } = useCart();
+
+  const loadingMessages = [
+    "Curating your collection...",
+    "Finding your perfect scent...",
+    "Preparing something special...",
+    "Almost there...",
+  ];
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (loading) {
+      interval = setInterval(() => {
+        setLoadMsgIdx((prev) => (prev + 1) % loadingMessages.length);
+      }, 800);
+    }
+    return () => clearInterval(interval);
+  }, [loading]);
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -102,11 +120,11 @@ const Products = () => {
     .filter((p) => p.name.toLowerCase().includes(search.toLowerCase()));
 
   return (
-    <section id="products" className="py-20 md:py-28">
+    <section id="products" className="py-14 md:py-20">
       <div className="container">
         <div className="mx-auto max-w-2xl text-center">
           <p className="text-xs uppercase tracking-[0.3em] text-primary">The Collection</p>
-          <h2 className="mt-3 font-serif text-4xl md:text-5xl">Signature Scents</h2>
+          <h2 className="mt-3 font-serif text-4xl md:text-5xl">Shop The Collection</h2>
           <p className="mt-4 text-muted-foreground">
             Hand-picked fragrances across every budget. Add to cart and send your order in one message.
           </p>
@@ -144,8 +162,11 @@ const Products = () => {
         </div>
 
         {loading ? (
-          <div className="mt-20 flex justify-center pb-12">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <div className="flex flex-col items-center justify-center py-24 gap-4">
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
+            <p className="font-serif italic text-muted-foreground animate-fade-in transition-all duration-300">
+              {loadingMessages[loadMsgIdx]}
+            </p>
           </div>
         ) : filtered.length === 0 ? (
           <div className="mt-20 pb-12 text-center">
@@ -156,7 +177,12 @@ const Products = () => {
         ) : (
           <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {filtered.map((p, idx) => (
-              <ProductCard key={p.id} product={p} priority={idx < 4} />
+              <ProductCard 
+                key={p.id} 
+                product={p} 
+                priority={idx < 4} 
+                isTopSelling={p.is_bestseller}
+              />
             ))}
           </div>
         )}
@@ -174,7 +200,7 @@ const Products = () => {
   );
 };
 
-const ProductCard = ({ product, priority }: { product: Product; priority?: boolean }) => {
+const ProductCard = ({ product, priority, isTopSelling }: { product: Product; priority?: boolean; isTopSelling?: boolean }) => {
   const { addItem, items } = useCart();
   const [videoOpen, setVideoOpen] = useState(false);
   const inCart = items.some((i) => i.id === product.id);
@@ -193,7 +219,7 @@ const ProductCard = ({ product, priority }: { product: Product; priority?: boole
 
   return (
     <>
-      <article className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-card-luxe transition-smooth hover:-translate-y-1 hover:border-primary/40 hover:shadow-pink">
+      <article className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card/60 backdrop-blur-sm shadow-card-luxe transition-smooth hover:-translate-y-1 hover:border-primary/40 hover:shadow-pink">
         <div className="relative aspect-square overflow-hidden bg-secondary">
           {product.image_url ? (
             <img
@@ -224,12 +250,23 @@ const ProductCard = ({ product, priority }: { product: Product; priority?: boole
             </button>
           )}
 
-          {/* "New" badge */}
-          {product.is_new && (
+          {/* Emotional Hover Overlay */}
+          <div className="absolute inset-x-0 bottom-0 z-20 bg-gradient-to-t from-black/80 to-transparent p-4 text-center opacity-0 transition-opacity duration-300 group-hover:opacity-100 pointer-events-none">
+            <p className="font-serif text-sm italic text-white/90">
+              {product.scent_mood || "Discover your next signature scent"}
+            </p>
+          </div>
+
+          {/* "New" or "Top Selling" badge */}
+          {product.is_new ? (
             <span className="absolute left-3 top-3 rounded-full bg-amber-400/90 px-3 py-1 text-xs font-semibold text-amber-950 backdrop-blur">
               New
             </span>
-          )}
+          ) : isTopSelling ? (
+            <span className="absolute left-3 top-3 rounded-full bg-amber-500/90 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white backdrop-blur shadow-lg animate-pulse-slow">
+              🔥 Top Selling
+            </span>
+          ) : null}
 
           {/* Category label */}
           <span className="absolute bottom-3 left-3 rounded-full bg-background/80 px-3 py-1 text-xs text-foreground backdrop-blur">
