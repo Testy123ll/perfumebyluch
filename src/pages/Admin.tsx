@@ -418,6 +418,41 @@ const Admin = () => {
 
 
 
+  const uploadVideoXHR = (
+    signedUrl: string,
+    file: File,
+    contentType: string,
+    onProgress: (msg: string) => void
+  ): Promise<{ ok: boolean; error: string | null }> => {
+    return new Promise((resolve) => {
+      const xhr = new XMLHttpRequest();
+      
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable) {
+          const percent = Math.round((e.loaded / e.total) * 100);
+          onProgress(`Uploading video... ${percent}%`);
+        }
+      };
+
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          resolve({ ok: true, error: null });
+        } else {
+          resolve({ ok: false, error: `Upload failed: ${xhr.status} ${xhr.responseText}` });
+        }
+      };
+
+      xhr.onerror = () => resolve({ ok: false, error: "Network error during upload" });
+      xhr.ontimeout = () => resolve({ ok: false, error: "Upload timed out" });
+
+      xhr.open("PUT", signedUrl, true);
+      xhr.setRequestHeader("Content-Type", contentType);
+      xhr.setRequestHeader("x-upsert", "false");
+      xhr.timeout = 120000; // 2 minute timeout
+      xhr.send(file);
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -457,47 +492,18 @@ const Admin = () => {
     let video_url = editingId ? products.find((p) => p.id === editingId)?.video_url : "";
 
     if (videoFile) {
-      setUploadProgress("Uploading video: 0%");
+      setUploadProgress("Preparing video...");
       const videoPath = `product-videos/${Date.now()}.${videoFile.name.split(".").pop()}`;
-      
-      const { data: { session: currentSession } } = await supabase.auth.getSession();
 
-      const uploadResult = await new Promise<{ error: any; publicUrl?: string }>((resolve) => {
-        const xhr = new XMLHttpRequest();
-        const uploadUrl = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/products/${videoPath}`;
+      // Step 1: Get signed URL
+      const { data: signedData, error: signedError } = await supabase.storage
+        .from("products")
+        .createSignedUploadUrl(videoPath);
 
-        xhr.upload.addEventListener("progress", (e) => {
-          if (e.lengthComputable) {
-            const pct = Math.round((e.loaded / e.total) * 100);
-            setUploadProgress(`Uploading video: ${pct}%`);
-          }
-        });
-
-        xhr.addEventListener("load", () => {
-          if (xhr.status === 200 || xhr.status === 201) {
-            const { data: publicUrlData } = supabase.storage
-              .from("products")
-              .getPublicUrl(videoPath);
-            resolve({ error: null, publicUrl: publicUrlData.publicUrl });
-          } else {
-            resolve({ error: { message: `Upload failed with status ${xhr.status}` } });
-          }
-        });
-
-        xhr.addEventListener("error", () => resolve({ error: { message: "Network error during upload" } }));
-        
-        xhr.open("POST", uploadUrl);
-        xhr.setRequestHeader("Authorization", `Bearer ${currentSession?.access_token || ''}`);
-        xhr.setRequestHeader("apikey", import.meta.env.VITE_SUPABASE_ANON_KEY);
-        xhr.setRequestHeader("x-upsert", "false");
-        xhr.setRequestHeader("Content-Type", videoFile.type || 'video/mp4');
-        xhr.send(videoFile);
-      });
-
-      if (uploadResult.error) {
+      if (signedError || !signedData?.signedUrl) {
         toast({
           title: "Video Upload Failed",
-          description: uploadResult.error.message,
+          description: signedError?.message || "Could not get upload URL",
           variant: "destructive",
         });
         setLoading(false);
@@ -505,7 +511,31 @@ const Admin = () => {
         return;
       }
 
-      video_url = uploadResult.publicUrl || "";
+      // Step 2: Upload via XHR — bypasses Chrome Android fetch bug
+      const { ok, error: xhrError } = await uploadVideoXHR(
+        signedData.signedUrl,
+        videoFile,
+        videoFile.type || "video/mp4",
+        setUploadProgress
+      );
+
+      if (!ok) {
+        toast({
+          title: "Video Upload Failed",
+          description: xhrError || "Unknown error",
+          variant: "destructive",
+        });
+        setLoading(false);
+        setUploadProgress("");
+        return;
+      }
+
+      // Step 3: Get public URL
+      const { data: publicUrlData } = supabase.storage
+        .from("products")
+        .getPublicUrl(videoPath);
+
+      video_url = publicUrlData.publicUrl;
     }
 
     setUploadProgress("");
