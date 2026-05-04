@@ -215,7 +215,7 @@ const CollectionsGrid = () => {
                     className="mt-4 w-full"
                   >
                     {soldOut ? "Sold Out" : inCart ? (
-                      <><Check className="h-4 w-4" /> Added — Add Another</>
+                      <><Check className="h-4 w-4" /> Added • Add Another</>
                     ) : (
                       <><Plus className="h-4 w-4" /> Add to Cart</>
                     )}
@@ -299,7 +299,7 @@ const Collections = () => (
           <p className="text-xs uppercase tracking-[0.3em] text-primary">All Fragrances</p>
           <h1 className="mt-3 font-serif text-4xl md:text-5xl">The Collection</h1>
           <p className="mt-4 text-muted-foreground">
-            Browse our full range of designer and niche fragrances — boxed, unboxed, thrifted, and testers.
+            Browse our full range of designer and niche fragrances: boxed, unboxed, thrifted, and testers.
           </p>
         </div>
         <div className="mt-12">

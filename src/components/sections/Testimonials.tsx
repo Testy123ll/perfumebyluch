@@ -91,7 +91,7 @@ const Testimonials = () => {
                       <div className="flex items-center gap-2">
                         <p className="font-serif text-lg text-primary">
                           {testimonials[0].reviewer_name}
-                          <span className="ml-2 text-sm font-sans italic text-muted-foreground">— {testimonials[0].area || "Verified Buyer"}</span>
+                          <span className="ml-2 text-sm font-sans italic text-muted-foreground">, {testimonials[0].area || "Verified Buyer"}</span>
                         </p>
                         {testimonials[0].verified && <BadgeCheck className="h-4 w-4 text-primary" />}
                       </div>
@@ -118,7 +118,7 @@ const Testimonials = () => {
                     <div className="mt-6">
                       <p className="font-serif text-base text-primary">
                         {testimonials[1].reviewer_name}
-                        <span className="ml-2 text-xs font-sans italic text-muted-foreground">— {testimonials[1].area || "Lagos"}</span>
+                        <span className="ml-2 text-xs font-sans italic text-muted-foreground">, {testimonials[1].area || "Lagos"}</span>
                       </p>
                     </div>
                   </div>
@@ -144,7 +144,7 @@ const Testimonials = () => {
                   <div className="mt-8 flex items-center gap-3">
                     <p className="font-serif text-lg text-primary">
                       {testimonials[2].reviewer_name}
-                      <span className="ml-2 text-sm font-sans italic text-muted-foreground">— {testimonials[2].area || "Perfume Enthusiast"}</span>
+                      <span className="ml-2 text-sm font-sans italic text-muted-foreground">, {testimonials[2].area || "Perfume Enthusiast"}</span>
                     </p>
                     {testimonials[2].verified && <BadgeCheck className="h-4 w-4 text-primary" />}
                   </div>

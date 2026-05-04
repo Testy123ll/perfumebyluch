@@ -37,8 +37,8 @@ const Footer = () => (
           <p className="mt-4 flex items-start gap-2 text-sm text-foreground">
             <Clock className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
             <span>
-              Mon – Sat<br />
-              10:00 AM – 4:30 PM<br />
+              Mon to Sat<br />
+              10:00 AM to 4:30 PM<br />
               <span className="text-muted-foreground">Closed Sundays</span>
             </span>
           </p>

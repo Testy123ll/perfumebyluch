@@ -30,4 +30,7 @@ export default defineConfig(({ mode }) => ({
     },
     chunkSizeWarningLimit: 1000,
   },
+  define: {
+    'import.meta.env.VITE_APP_URL': JSON.stringify('https://perfumebyluch.com'),
+  },
 }));

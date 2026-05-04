@@ -4,7 +4,7 @@ const steps = [
   {
     icon: Search,
     title: "Browse",
-    description: "Find the scent that feels like you — or the one you've always wanted to be.",
+    description: "Find the scent that feels like you, or the one you've always wanted to be.",
   },
   {
     icon: ShoppingCart,

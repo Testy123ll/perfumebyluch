@@ -66,7 +66,7 @@ const CTA = () => (
             <div className="h-10 w-px bg-border hidden md:block self-center" />
             <div>
               <p className="font-serif text-3xl text-foreground">3</p>
-              <p>Countries — Nigeria · Ghana · Cameroon</p>
+              <p>Countries • Nigeria · Ghana · Cameroon</p>
             </div>
             <div className="h-10 w-px bg-border hidden md:block self-center" />
             <div>

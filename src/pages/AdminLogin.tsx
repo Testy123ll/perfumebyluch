@@ -4,7 +4,7 @@ import { supabase, IS_SUPABASE_CONFIGURED } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 
-// Temporary test constants — values removed for security
+// Temporary test constants: values removed for security
 const TEST_EMAIL = "";
 const TEST_PASSWORD = "";
 const TEST_SESSION_KEY = "pbl_admin_test_session";

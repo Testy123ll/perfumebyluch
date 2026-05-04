@@ -112,7 +112,7 @@ const CartDrawer = () => {
                           <div className="min-w-0">
                             <h3 className="font-serif text-lg leading-tight truncate">
                               {item.name}
-                              {item.size && <span className="ml-1 text-sm text-muted-foreground">— {item.size}</span>}
+                              {item.size && <span className="ml-1 text-sm text-muted-foreground">, {item.size}</span>}
                             </h3>
                             <p className="mt-0.5 text-xs uppercase tracking-wider text-muted-foreground">
                               {item.category}
@@ -220,7 +220,7 @@ const CartDrawer = () => {
                   <div className="min-w-0">
                     <p className="font-serif text-base">
                       {item.name}
-                      {item.size && <span className="ml-1 text-sm text-muted-foreground">— {item.size}</span>}
+                      {item.size && <span className="ml-1 text-sm text-muted-foreground">, {item.size}</span>}
                     </p>
                     <p className="text-xs uppercase tracking-wider text-muted-foreground">
                       {item.category} · Qty {item.quantity}

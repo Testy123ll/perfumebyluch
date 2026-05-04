@@ -57,6 +57,7 @@ const Admin = () => {
     comment: "",
     verified: false,
   });
+  const [uploadProgress, setUploadProgress] = useState<string>("");
 
   const navigate = useNavigate();
   // Using static toast to avoid re-render loops
@@ -389,17 +390,46 @@ const Admin = () => {
     let image_url = editingId ? products.find((p) => p.id === editingId)?.image_url : "";
 
     if (imageFile) {
+      setUploadProgress("Uploading image...");
+      
+      const isReadable = await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(true);
+        reader.onerror = () => resolve(false);
+        reader.readAsArrayBuffer(imageFile.slice(0, 1024));
+      });
+
+      if (!isReadable) {
+        toast({ 
+          title: "File Error", 
+          description: "Could not read the image file. Please try selecting it again.",
+          variant: "destructive"
+        });
+        setLoading(false);
+        setUploadProgress("");
+        return;
+      }
+
       const fileExt = imageFile.name.split(".").pop();
       const fileName = `${Math.random()}.${fileExt}`;
       const filePath = `product-images/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
         .from("products")
-        .upload(filePath, imageFile);
+        .upload(filePath, imageFile, {
+          contentType: imageFile.type,
+          upsert: false,
+          duplex: 'half',
+        });
 
       if (uploadError) {
-        toast({ title: "Upload Error", description: uploadError.message, variant: "destructive" });
+        toast({ 
+          title: "Upload Error", 
+          description: `${uploadError.message} — Check your internet connection and try again.`,
+          variant: "destructive" 
+        });
         setLoading(false);
+        setUploadProgress("");
         return;
       }
 
@@ -410,18 +440,53 @@ const Admin = () => {
     let video_url = editingId ? products.find((p) => p.id === editingId)?.video_url : "";
 
     if (videoFile) {
+      setUploadProgress("Uploading video... This may take a moment on mobile.");
+
+      const isReadable = await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(true);
+        reader.onerror = () => resolve(false);
+        reader.readAsArrayBuffer(videoFile.slice(0, 1024));
+      });
+
+      if (!isReadable) {
+        toast({ 
+          title: "File Error", 
+          description: "Could not read the video file. Please try selecting it again.",
+          variant: "destructive"
+        });
+        setLoading(false);
+        setUploadProgress("");
+        return;
+      }
+
       const fileExt = videoFile.name.split(".").pop();
       const fileName = `${Math.random()}.${fileExt}`;
       const filePath = `product-videos/${fileName}`;
-      const { error: uploadError } = await supabase.storage.from("products").upload(filePath, videoFile);
+
+      const { error: uploadError } = await supabase.storage
+        .from("products")
+        .upload(filePath, videoFile, {
+          contentType: videoFile.type,
+          upsert: false,
+          duplex: 'half',
+        });
+
       if (uploadError) {
-        toast({ title: "Video Upload Error", description: uploadError.message, variant: "destructive" });
+        toast({ 
+          title: "Upload Error", 
+          description: `${uploadError.message} — Check your internet connection and try again.`,
+          variant: "destructive" 
+        });
         setLoading(false);
+        setUploadProgress("");
         return;
       }
       const { data: publicUrlData } = supabase.storage.from("products").getPublicUrl(filePath);
       video_url = publicUrlData.publicUrl;
     }
+
+    setUploadProgress("");
 
     const payload = {
       name: formData.name,
@@ -751,7 +816,7 @@ const Admin = () => {
                   {videoFile && (
                     <p className={`mt-1 text-xs ${videoFile.size > MAX_VIDEO_SIZE_BYTES ? "text-red-500 font-bold" : "text-green-600"}`}>
                       Selected: {videoFile.name} ({(videoFile.size / (1024 * 1024)).toFixed(1)} MB) 
-                      {videoFile.size > MAX_VIDEO_SIZE_BYTES ? " — Too large" : " — Good to upload"}
+                      {videoFile.size > MAX_VIDEO_SIZE_BYTES ? " • Too large" : " • Good to upload"}
                     </p>
                   )}
                 </div>
@@ -775,7 +840,7 @@ const Admin = () => {
                     onChange={(e) => setFormData({ ...formData, scent_mood: e.target.value })}
                     className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                   >
-                    <option value="">— Select Mood —</option>
+                    <option value="">Select Mood</option>
                     <option value="💫 Mysterious">💫 Mysterious</option>
                     <option value="🌹 Romantic">🌹 Romantic</option>
                     <option value="🌿 Fresh & Clean">🌿 Fresh & Clean</option>
@@ -811,6 +876,9 @@ const Admin = () => {
                   Cancel
                 </Button>
               </div>
+              {uploadProgress && (
+                <p className="mt-2 text-sm text-primary animate-pulse">{uploadProgress}</p>
+              )}
             </form>
           </div>
         ) : (

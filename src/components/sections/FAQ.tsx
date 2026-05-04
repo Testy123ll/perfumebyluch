@@ -54,7 +54,7 @@ const faqCategories = [
       },
       {
         q: "Do you deliver outside Nigeria?",
-        a: "Yes! We deliver Worldwide. For international orders, delivery typically takes 5–14 days depending on your location. Contact us on WhatsApp for exact delivery costs and timelines to your area.",
+        a: "Yes! We deliver Worldwide. For international orders, delivery typically takes 5 to 14 days depending on your location. Contact us on WhatsApp for exact delivery costs and timelines to your area.",
       },
       {
         q: "How long does delivery take?",
@@ -62,8 +62,8 @@ const faqCategories = [
           <div className="space-y-2">
             <p>Typically:</p>
             <ul className="list-disc pl-5 space-y-1">
-              <li>Lagos: 1–2 days depending on your location</li>
-              <li>Outside Lagos: 2–7 days depending on your location.</li>
+              <li>Lagos: 1 to 2 days depending on your location</li>
+              <li>Outside Lagos: 2 to 7 days depending on your location.</li>
             </ul>
           </div>
         ),

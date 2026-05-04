@@ -8,7 +8,7 @@ const About = () => (
         </h2>
         <p className="mt-6 text-lg leading-relaxed text-muted-foreground">
           Perfumes By Luch is a Lekki-based fragrance house dedicated to making luxury accessible. Every bottle is
-          carefully verified and sourced from trusted suppliers — so you get the real scent, every single time.
+          carefully verified and sourced from trusted suppliers, so you get the real scent, every single time.
           Whether you want Brand New Luxurious,Testers or budget-friendly Unboxed/Thrifted open box fragrances, we’ve got you.
         </p>
       </div>

@@ -7,17 +7,17 @@ const Guarantee = () => {
     {
       title: "100% Authentic",
       icon: Shield,
-      description: "Every perfume is sourced directly and verified for authenticity. What you smell is what you get — no imitations, no compromises.",
+      description: "Every perfume is sourced directly and verified for authenticity. What you smell is what you get, no imitations, no compromises.",
     },
     {
       title: "Long Lasting Fragrance",
       icon: Sparkles,
-      description: "Our curated selection focuses on longevity. Expect 8–12 hours of wear from our boxed collection, and 6–8 hours from our testers.",
+      description: "Our curated selection focuses on longevity. Expect 8 to 12 hours of wear from our boxed collection, and 6 to 8 hours from our testers.",
     },
     {
       title: "Satisfaction Guarantee",
       icon: Heart,
-      description: "Not happy with your purchase? Message us on WhatsApp within 24 hours of delivery and we'll make it right — no questions asked.",
+      description: "Not happy with your purchase? Message us on WhatsApp within 24 hours of delivery and we'll make it right, no questions asked.",
     },
   ];
 
@@ -32,7 +32,7 @@ const Guarantee = () => {
             "We know what it feels like to fall in love with a scent and receive something that doesn't match. That's why we built Perfumes By Luch differently."
           </p>
           <p className="mt-6 text-sm text-muted-foreground/80">
-            Every bottle we sell is a promise — of authenticity, of longevity, and of an experience that lingers.
+            Every bottle we sell is a promise: of authenticity, of longevity, and of an experience that lingers.
           </p>
         </div>
 

@@ -42,16 +42,16 @@ const Hero = () => {
             />
           </div>
         ))}
-        
+
         {/* Transparent gradient to let image colors breathe */}
         <div className="absolute inset-0 bg-gradient-to-b from-background/30 via-background/20 to-background/60" />
-        
+
         {/* Deep gradient fade at bottom to blend into page */}
         <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-background via-background/80 to-transparent" />
       </div>
 
       <div className="absolute inset-0 bg-radial-pink pointer-events-none opacity-20" />
-      
+
       <div className="container relative z-10 grid gap-12 lg:grid-cols-2 lg:items-center">
         <div className="animate-fade-up relative">
           <div className="absolute inset-0 -z-10 rounded-2xl bg-background/40 backdrop-blur-sm -mx-4 -my-6 px-4 py-6 md:bg-background/30" />
@@ -69,11 +69,11 @@ const Hero = () => {
             Boxed, unboxed, thrifted, and tester perfumes available. Authentic fragrances, delivered across Nigeria and Worldwide.
           </p>
           <p className="mt-4 font-serif italic text-primary/80 animate-fade-in [animation-delay:400ms] text-sm md:text-base">
-            "The right scent doesn't just smell good — it tells your story before you say a word."
+            "The right scent doesn't just smell good, it tells your story before you say a word."
           </p>
           <div className="mt-8 flex flex-wrap gap-4">
             <Button asChild size="lg" variant="whatsapp" className="text-base">
-              <a href={waLink("Hi Perfumes By Luch! I'd like to by perfume.")} target="_blank" rel="noopener noreferrer">
+              <a href={waLink("Hi Perfumes By Luch! I'd like to buy perfume.")} target="_blank" rel="noopener noreferrer">
                 <WhatsAppIcon className="h-5 w-5" />
                 Shop on WhatsApp
               </a>
@@ -93,11 +93,10 @@ const Hero = () => {
                 key={i}
                 onClick={() => setCurrentImage(i)}
                 aria-label={`Go to slide ${i + 1}`}
-                className={`h-1.5 rounded-full transition-all duration-300 ${
-                  i === currentImage 
-                    ? "w-6 bg-primary" 
-                    : "w-1.5 bg-primary/30 hover:bg-primary/60"
-                }`}
+                className={`h-1.5 rounded-full transition-all duration-300 ${i === currentImage
+                  ? "w-6 bg-primary"
+                  : "w-1.5 bg-primary/30 hover:bg-primary/60"
+                  }`}
               />
             ))}
           </div>
@@ -109,7 +108,7 @@ const Hero = () => {
             </div>
             <div className="h-10 w-px bg-border" />
             <div>
-              <p className="font-serif text-2xl text-foreground">1–2</p>
+              <p className="font-serif text-2xl text-foreground">1 to 2</p>
               <p>Days Lagos</p>
             </div>
             <div className="h-10 w-px bg-border" />
@@ -118,7 +117,7 @@ const Hero = () => {
               <p>Happy clients</p>
             </div>
           </div>
-          
+
           {/* Trust Bar */}
           <div className="mt-12 flex flex-wrap items-center gap-x-4 gap-y-2 text-[10px] uppercase tracking-[0.25em] text-muted-foreground/60 animate-fade-in [animation-delay:600ms]">
             <span>✦ Boxed & Unboxed Originals</span>

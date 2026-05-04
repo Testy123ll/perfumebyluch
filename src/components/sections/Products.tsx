@@ -204,7 +204,7 @@ const Products = () => {
             className="inline-flex items-center gap-3 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-lg transition-smooth hover:scale-105"
           >
             <ShoppingBag className="h-4 w-4" />
-            {totalQuantity} item{totalQuantity > 1 ? "s" : ""} in cart — Send Order via WhatsApp
+            {totalQuantity} item{totalQuantity > 1 ? "s" : ""} in cart • Send Order via WhatsApp
           </button>
         </div>
       )}
@@ -320,7 +320,7 @@ const ProductCard = ({ product, priority, isTopSelling }: { product: Product; pr
             ) : inCart ? (
               <>
                 <Check className="h-4 w-4 mr-2" />
-                Added — Add Another
+                Added • Add Another
               </>
             ) : (
               <>
