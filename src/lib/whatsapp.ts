@@ -22,13 +22,13 @@ export const buildOrderMessage = (items: CartItem[]): string => {
 
   const lines: string[] = [];
   lines.push("Hi Perfumes By Luch! 🌸");
-  lines.push("I'd like to buy the following items:");
+  lines.push("I'd like to buy the following item(s):");
   lines.push("");
 
   items.forEach((item, i) => {
     const sizeLabel = item.size ? ` (${item.size})` : "";
     lines.push(
-      `${i + 1}. ${item.name}${sizeLabel} (${item.category}) — ${item.quantity} × ${formatPrice(item.price)} = ${formatPrice(item.price * item.quantity)}`,
+      `${i + 1}. ${item.name}${sizeLabel} — ${item.quantity} × ${formatPrice(item.price)} = ${formatPrice(item.price * item.quantity)}`,
     );
   });
 

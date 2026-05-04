@@ -110,7 +110,10 @@ const CartDrawer = () => {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
-                            <h3 className="font-serif text-lg leading-tight truncate">{item.name}</h3>
+                            <h3 className="font-serif text-lg leading-tight truncate">
+                              {item.name}
+                              {item.size && <span className="ml-1 text-sm text-muted-foreground">— {item.size}</span>}
+                            </h3>
                             <p className="mt-0.5 text-xs uppercase tracking-wider text-muted-foreground">
                               {item.category}
                             </p>
@@ -215,7 +218,10 @@ const CartDrawer = () => {
               {items.map((item) => (
                 <li key={item.id} className="flex items-start justify-between gap-3 py-3 first:pt-0 last:pb-0">
                   <div className="min-w-0">
-                    <p className="font-serif text-base">{item.name}</p>
+                    <p className="font-serif text-base">
+                      {item.name}
+                      {item.size && <span className="ml-1 text-sm text-muted-foreground">— {item.size}</span>}
+                    </p>
                     <p className="text-xs uppercase tracking-wider text-muted-foreground">
                       {item.category} · Qty {item.quantity}
                     </p>

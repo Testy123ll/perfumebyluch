@@ -27,6 +27,14 @@ export type Product = {
   visible: boolean;
   is_new: boolean;
   video_url?: string;
-  sizes?: { size: string; price: number }[];
+  size?: string;
   created_at: string;
+};
+
+export const getOptimisedImageUrl = (url: string, width = 400, quality = 75) => {
+  if (!url) return '';
+  if (url.includes('supabase')) {
+    return `${url}?width=${width}&quality=${quality}&format=webp`;
+  }
+  return url;
 };

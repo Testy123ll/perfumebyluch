@@ -1,6 +1,6 @@
 import { waLink } from "@/lib/whatsapp";
 import { WhatsAppIcon } from "@/components/WhatsAppFloat";
-import { Instagram, MapPin, Clock, Mail } from "lucide-react";
+import { Instagram, MapPin, Clock, Mail, Phone } from "lucide-react";
 import logo from "@/assets/logo.webp";
 
 const TikTokIcon = ({ className }: { className?: string }) => (
@@ -46,10 +46,16 @@ const Footer = () => (
 
         <div>
           <h3 className="text-xs uppercase tracking-[0.2em] text-primary">Connect</h3>
-          <p className="mt-4 mb-4 flex items-center gap-2 text-sm text-foreground">
+          <p className="mt-4 flex items-center gap-2 text-sm text-foreground">
             <Mail className="h-4 w-4 shrink-0 text-primary" />
             <a href="mailto:luchperfumes@yahoo.com" className="transition-smooth hover:text-primary">
               luchperfumes@yahoo.com
+            </a>
+          </p>
+          <p className="mt-2 mb-4 flex items-center gap-2 text-sm text-foreground">
+            <Phone className="h-4 w-4 shrink-0 text-primary" />
+            <a href="tel:+2347052537265" className="transition-smooth hover:text-primary">
+              +234 705 253 7265
             </a>
           </p>
           <div className="flex gap-3">

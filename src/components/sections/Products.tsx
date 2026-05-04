@@ -3,8 +3,8 @@ import { Button } from "@/components/ui/button";
 import { formatPrice, waLink } from "@/lib/whatsapp";
 import { WhatsAppIcon } from "@/components/WhatsAppFloat";
 import { useCart } from "@/contexts/CartContext";
-import { Plus, Check, Loader2, Search, Play, X } from "lucide-react";
-import { supabase, Product } from "@/lib/supabase";
+import { Plus, Check, Loader2, Search, Play, X, Instagram } from "lucide-react";
+import { supabase, Product, getOptimisedImageUrl } from "@/lib/supabase";
 import {
   Dialog,
   DialogContent,
@@ -155,16 +155,17 @@ const Products = () => {
           </div>
         ) : (
           <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {filtered.map((p) => (
-              <ProductCard key={p.id} product={p} />
+            {filtered.map((p, idx) => (
+              <ProductCard key={p.id} product={p} priority={idx < 4} />
             ))}
           </div>
         )}
 
         <div className="mt-12 text-center">
-          <Button asChild variant="outline" size="lg">
-            <a href={waLink("Hi! Can I see more perfumes available?")} target="_blank" rel="noopener noreferrer">
-              View More on WhatsApp
+          <Button asChild variant="outline" size="lg" className="gap-2">
+            <a href="https://instagram.com/perfumesbyluch" target="_blank" rel="noopener noreferrer">
+              <Instagram className="h-5 w-5 text-primary" />
+              View More on Instagram
             </a>
           </Button>
         </div>
@@ -173,26 +174,20 @@ const Products = () => {
   );
 };
 
-const ProductCard = ({ product }: { product: Product }) => {
+const ProductCard = ({ product, priority }: { product: Product; priority?: boolean }) => {
   const { addItem, items } = useCart();
-  const [selectedSize, setSelectedSize] = useState<{ size: string; price: number } | null>(
-    product.sizes && product.sizes.length > 0 ? null : { size: "", price: product.price }
-  );
   const [videoOpen, setVideoOpen] = useState(false);
-
-  const displayPrice = selectedSize ? selectedSize.price : product.price;
-  const inCart = items.some((i) => i.id === product.id && i.size === (selectedSize?.size || undefined));
+  const inCart = items.some((i) => i.id === product.id);
   const soldOut = !product.in_stock;
 
   const handleAddToCart = () => {
-    if (!selectedSize && product.sizes && product.sizes.length > 0) return;
     addItem({
       id: product.id,
       name: product.name,
-      price: displayPrice,
+      price: product.price,
       category: product.category,
       image_url: product.image_url || undefined,
-      size: selectedSize?.size || undefined,
+      size: product.size || undefined,
     });
   };
 
@@ -202,11 +197,13 @@ const ProductCard = ({ product }: { product: Product }) => {
         <div className="relative aspect-square overflow-hidden bg-secondary">
           {product.image_url ? (
             <img
-              src={product.image_url}
+              src={getOptimisedImageUrl(product.image_url)}
               alt={product.name}
-              width={768}
-              height={768}
-              loading="lazy"
+              width={400}
+              height={400}
+              loading={priority ? "eager" : "lazy"}
+              decoding="async"
+              fetchPriority={priority ? "high" : "auto"}
               className={`h-full w-full object-cover transition-smooth group-hover:scale-105 ${soldOut ? "opacity-60" : ""}`}
             />
           ) : (
@@ -248,43 +245,29 @@ const ProductCard = ({ product }: { product: Product }) => {
         </div>
 
         <div className="flex flex-1 flex-col p-5">
-          <h3 className="font-serif text-2xl">{product.name}</h3>
+          <div className="flex items-start justify-between">
+            <h3 className="font-serif text-2xl">{product.name}</h3>
+            {product.size && (
+              <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary">
+                {product.size}
+              </span>
+            )}
+          </div>
           <p className="mt-1 text-sm text-muted-foreground">{product.description}</p>
 
-          {/* Size Selector */}
-          {product.sizes && product.sizes.length > 0 && (
-            <div className="mt-4 flex flex-wrap gap-2">
-              {product.sizes.map((s, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => setSelectedSize(s)}
-                  className={`rounded-md border px-3 py-1 text-xs transition-colors ${
-                    selectedSize?.size === s.size
-                      ? "border-primary bg-primary/10 text-primary"
-                      : "border-border bg-transparent text-muted-foreground hover:border-primary/50"
-                  }`}
-                >
-                  {s.size}
-                </button>
-              ))}
-            </div>
-          )}
-
           <div className="mt-4 flex items-center justify-between">
-            <span className="font-serif text-xl text-primary">{formatPrice(displayPrice)}</span>
+            <span className="font-serif text-xl text-primary">{formatPrice(product.price)}</span>
           </div>
 
           <Button
             onClick={handleAddToCart}
             variant={inCart ? "outline" : "default"}
             size="sm"
-            disabled={soldOut || (!selectedSize && product.sizes && product.sizes.length > 0)}
+            disabled={soldOut}
             className="mt-4 w-full"
           >
             {soldOut ? (
               "Sold Out"
-            ) : !selectedSize && product.sizes && product.sizes.length > 0 ? (
-              "Please select a size"
             ) : inCart ? (
               <>
                 <Check className="h-4 w-4 mr-2" />
@@ -303,14 +286,13 @@ const ProductCard = ({ product }: { product: Product }) => {
               asChild
               variant="ghost"
               size="sm"
-              disabled={!selectedSize}
-              className={`mt-2 w-full text-xs text-muted-foreground hover:text-primary ${!selectedSize ? 'pointer-events-none opacity-50' : ''}`}
+              className="mt-2 w-full text-xs text-muted-foreground hover:text-primary"
             >
               <a
                 href={waLink(
                   `Hi, I'd like to order ${product.name}${
-                    selectedSize?.size ? ` (${selectedSize.size})` : ""
-                  } at ${formatPrice(displayPrice)}`
+                    product.size ? ` (${product.size})` : ""
+                  } at ${formatPrice(product.price)}`
                 )}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -329,11 +311,14 @@ const ProductCard = ({ product }: { product: Product }) => {
           <div className="relative aspect-video w-full overflow-hidden rounded-lg">
             {product.video_url && (
               <video
-                src={product.video_url}
+                poster={getOptimisedImageUrl(product.image_url, 800, 80)}
+                preload={videoOpen ? "auto" : "metadata"}
+                playsInline
                 autoPlay
                 controls
                 className="h-full w-full"
               >
+                <source src={product.video_url} type="video/mp4" />
                 Your browser does not support the video tag.
               </video>
             )}

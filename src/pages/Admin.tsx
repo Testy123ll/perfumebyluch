@@ -7,6 +7,8 @@ import { Trash2, Edit2, Eye, EyeOff, Plus, LogOut, Loader2, Shield, ShieldOff, M
 
 const OWNER_ID = "7a7f1bb0-6aa6-42e6-80e3-7e4f7a48491e";
 const TEST_SESSION_KEY = "pbl_admin_test_session";
+const MAX_VIDEO_SIZE_MB = 20;
+const MAX_VIDEO_SIZE_BYTES = MAX_VIDEO_SIZE_MB * 1024 * 1024;
 
 
 const Admin = () => {
@@ -42,7 +44,7 @@ const Admin = () => {
     visible: true,
     is_new: false,
     video_url: "",
-    sizes: [] as { size: string; price: number }[],
+    size: "",
   });
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [videoFile, setVideoFile] = useState<File | null>(null);
@@ -260,7 +262,7 @@ const Admin = () => {
       visible: product.visible,
       is_new: product.is_new ?? false,
       video_url: product.video_url || "",
-      sizes: product.sizes || [],
+      size: product.size || "",
     });
     setImageFile(null);
     setVideoFile(null);
@@ -278,7 +280,7 @@ const Admin = () => {
       visible: true,
       is_new: false,
       video_url: "",
-      sizes: [],
+      size: "",
     });
     setImageFile(null);
     setVideoFile(null);
@@ -335,7 +337,7 @@ const Admin = () => {
       visible: formData.visible,
       is_new: formData.is_new,
       video_url,
-      sizes: formData.sizes,
+      size: formData.size,
       ...(image_url ? { image_url } : {}),
     };
 
@@ -638,62 +640,41 @@ const Admin = () => {
                   <input
                     type="file"
                     accept="video/mp4,video/quicktime,video/webm"
-                    onChange={(e) => setVideoFile(e.target.files?.[0] || null)}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0] || null;
+                      if (file && file.size > MAX_VIDEO_SIZE_BYTES) {
+                        toast({
+                          title: "Video too large",
+                          description: `Please upload a video under ${MAX_VIDEO_SIZE_MB}MB. Tip: compress your video using HandBrake or Clideo.com before uploading.`,
+                          variant: "destructive",
+                        });
+                        e.target.value = "";
+                        setVideoFile(null);
+                        return;
+                      }
+                      setVideoFile(file);
+                    }}
                     className="w-full text-sm"
                   />
+                  {videoFile && (
+                    <p className={`mt-1 text-xs ${videoFile.size > MAX_VIDEO_SIZE_BYTES ? "text-red-500 font-bold" : "text-green-600"}`}>
+                      Selected: {videoFile.name} ({(videoFile.size / (1024 * 1024)).toFixed(1)} MB) 
+                      {videoFile.size > MAX_VIDEO_SIZE_BYTES ? " — Too large" : " — Good to upload"}
+                    </p>
+                  )}
                 </div>
               </div>
 
-              <div>
-                <label className="mb-2 block text-sm font-medium">Pricing Sizes (Optional)</label>
-                <div className="space-y-2">
-                  {formData.sizes.map((s, idx) => (
-                    <div key={idx} className="flex gap-2 items-center">
-                      <input
-                        type="text"
-                        placeholder="Size (e.g. 100ml)"
-                        value={s.size}
-                        onChange={(e) => {
-                          const newSizes = [...formData.sizes];
-                          newSizes[idx].size = e.target.value;
-                          setFormData({ ...formData, sizes: newSizes });
-                        }}
-                        className="flex-1 rounded-md border border-input bg-transparent px-3 py-1.5 text-sm"
-                      />
-                      <input
-                        type="number"
-                        placeholder="Price"
-                        value={s.price}
-                        onChange={(e) => {
-                          const newSizes = [...formData.sizes];
-                          newSizes[idx].price = parseFloat(e.target.value);
-                          setFormData({ ...formData, sizes: newSizes });
-                        }}
-                        className="flex-1 rounded-md border border-input bg-transparent px-3 py-1.5 text-sm"
-                      />
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => {
-                          const newSizes = formData.sizes.filter((_, i) => i !== idx);
-                          setFormData({ ...formData, sizes: newSizes });
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4 text-red-500" />
-                      </Button>
-                    </div>
-                  ))}
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="mt-1"
-                    onClick={() => setFormData({ ...formData, sizes: [...formData.sizes, { size: "", price: 0 }] })}
-                  >
-                    <Plus className="h-4 w-4 mr-1" /> Add Size
-                  </Button>
+                <div>
+                  <label className="mb-1 block text-sm">Size (Optional)</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. 50ml, 100ml, 3.4oz"
+                    value={formData.size}
+                    onChange={(e) => setFormData({ ...formData, size: e.target.value })}
+                    className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm"
+                  />
                 </div>
-              </div>
 
               <div>
                 <label className="mb-1 block text-sm">Description (Notes)</label>
@@ -706,7 +687,7 @@ const Admin = () => {
                 />
               </div>
               <div className="flex gap-2">
-                <Button type="submit" disabled={loading}>
+                <Button type="submit" disabled={loading || (!!videoFile && videoFile.size > MAX_VIDEO_SIZE_BYTES)}>
                   {loading ? (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   ) : editingId ? (
