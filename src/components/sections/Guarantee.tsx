@@ -1,4 +1,7 @@
 import { Shield, Sparkles, Heart } from "lucide-react";
+import { waLink } from "@/lib/whatsapp";
+import { WhatsAppIcon } from "@/components/WhatsAppFloat";
+
 const Guarantee = () => {
   const promises = [
     {
@@ -55,6 +58,21 @@ const Guarantee = () => {
           <p className="font-serif text-xl italic text-primary/80">
             "Scent is the strongest sense tied to memory. We make sure yours is worth remembering."
           </p>
+        </div>
+
+        <div className="mt-12 flex flex-col items-center gap-4 text-center">
+          <p className="font-serif italic text-muted-foreground text-sm">
+            Ready to experience the difference?
+          </p>
+          <a
+            href={waLink("Hi Perfumes By Luch! I'd like to place an order.")}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 rounded-full bg-whatsapp px-6 py-3 text-sm font-semibold text-whatsapp-foreground shadow-glow transition-smooth hover:scale-105"
+          >
+            <WhatsAppIcon className="h-4 w-4" />
+            Order with Confidence
+          </a>
         </div>
       </div>
     </section>

@@ -153,6 +153,18 @@ const Testimonials = () => {
             )}
           </div>
         </div>
+
+        <div className="mt-16 flex flex-col items-center gap-3 text-center">
+          <p className="font-serif italic text-muted-foreground text-base md:text-lg max-w-md">
+            "Your next favourite perfume is one message away."
+          </p>
+          <a
+            href="#products"
+            className="mt-2 inline-flex items-center gap-2 rounded-full border border-primary/40 px-6 py-2.5 text-sm text-primary transition-smooth hover:bg-primary/10"
+          >
+            Browse the Collection ↓
+          </a>
+        </div>
       </div>
     </section>
   );

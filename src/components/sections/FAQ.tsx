@@ -5,6 +5,8 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { waLink } from "@/lib/whatsapp";
+import { WhatsAppIcon } from "@/components/WhatsAppFloat";
 
 const faqCategories = [
   {
@@ -129,6 +131,22 @@ const FAQ = () => (
             </Accordion>
           </div>
         ))}
+      </div>
+
+      <div className="mt-12 rounded-2xl border border-primary/20 bg-primary/5 p-8 text-center">
+        <p className="font-serif text-xl">Still have questions?</p>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Our team is always available on WhatsApp to help you find the perfect scent, confirm availability, or answer any questions before you order.
+        </p>
+        <a
+          href={waLink("Hi Perfumes By Luch! I have a question before I order.")}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-6 inline-flex items-center gap-2 rounded-full bg-whatsapp px-6 py-3 text-sm font-semibold text-whatsapp-foreground shadow-glow transition-smooth hover:scale-105"
+        >
+          <WhatsAppIcon className="h-4 w-4" />
+          Chat With Us on WhatsApp
+        </a>
       </div>
     </div>
   </section>

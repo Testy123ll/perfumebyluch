@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { BadgeCheck, Star } from "lucide-react";
 import { Link } from "react-router-dom";
+import { waLink } from "@/lib/whatsapp";
+import { WhatsAppIcon } from "@/components/WhatsAppFloat";
 
 const Reviews = () => {
   const [reviews, setReviews] = useState<any[]>([]);
@@ -94,6 +96,25 @@ const Reviews = () => {
             ))}
           </div>
         )}
+
+        <div className="mt-16 flex flex-col items-center gap-4 text-center">
+          <div className="h-px w-16 bg-primary/30 mb-2" />
+          <p className="font-serif text-2xl md:text-3xl">
+            Ready to write your own story?
+          </p>
+          <p className="text-sm text-muted-foreground max-w-sm">
+            Join hundreds of customers across Nigeria, Ghana and Cameroon who found their signature scent with us.
+          </p>
+          <a
+            href={waLink("Hi Perfumes By Luch! I'd like to find my signature scent.")}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 rounded-full bg-whatsapp px-6 py-3 text-sm font-semibold text-whatsapp-foreground shadow-glow transition-smooth hover:scale-105 mt-2"
+          >
+            <WhatsAppIcon className="h-4 w-4" />
+            Find My Signature Scent
+          </a>
+        </div>
       </div>
     </section>
   );

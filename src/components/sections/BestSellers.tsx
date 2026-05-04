@@ -106,6 +106,15 @@ const BestSellers = () => {
           </div>
         )}
 
+        <div className="mt-12 flex flex-col items-center gap-3">
+          <a
+            href="#products"
+            className="font-serif italic text-primary/80 text-sm hover:text-primary transition-colors"
+          >
+            Explore the full collection ↓
+          </a>
+        </div>
+
         <div className="mt-12 text-center">
           <a
             href="#products"

@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { formatPrice, waLink } from "@/lib/whatsapp";
 import { WhatsAppIcon } from "@/components/WhatsAppFloat";
 import { useCart } from "@/contexts/CartContext";
-import { Plus, Check, Loader2, Search, Play, X, Instagram } from "lucide-react";
+import { Plus, Check, Loader2, Search, Play, X, Instagram, ShoppingBag } from "lucide-react";
 import { supabase, Product, getOptimisedImageUrl } from "@/lib/supabase";
 import {
   Dialog,
@@ -77,7 +77,7 @@ const Products = () => {
   const [active, setActive] = useState<Category>("All");
   const [search, setSearch] = useState("");
   const [loadMsgIdx, setLoadMsgIdx] = useState(0);
-  const { addItem, items } = useCart();
+  const { addItem, items, openCart, totalQuantity } = useCart();
 
   const loadingMessages = [
     "Curating your collection...",
@@ -196,6 +196,18 @@ const Products = () => {
           </Button>
         </div>
       </div>
+
+      {totalQuantity > 0 && (
+        <div className="fixed bottom-24 left-0 right-0 z-40 flex justify-center px-4 animate-fade-up">
+          <button
+            onClick={openCart}
+            className="inline-flex items-center gap-3 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-lg transition-smooth hover:scale-105"
+          >
+            <ShoppingBag className="h-4 w-4" />
+            {totalQuantity} item{totalQuantity > 1 ? "s" : ""} in cart — Send Order via WhatsApp
+          </button>
+        </div>
+      )}
     </section>
   );
 };

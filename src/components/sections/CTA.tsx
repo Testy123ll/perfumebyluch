@@ -31,7 +31,7 @@ const CTA = () => (
       <div className="relative overflow-hidden rounded-3xl border border-primary/30 bg-gradient-to-br from-card to-background p-10 text-center md:p-20 shadow-pink">
         <div className="absolute inset-0 bg-radial-pink" />
         <div className="relative">
-          <h2 className="font-serif text-4xl md:text-6xl">
+          <h2 className="font-serif text-4xl md:text-5xl lg:text-6xl leading-tight">
             Ready to <span className="italic text-gradient-pink">smell amazing</span>?
           </h2>
           <p className="mx-auto mt-4 max-w-md text-muted-foreground">
@@ -47,6 +47,33 @@ const CTA = () => (
               Message on WhatsApp
             </a>
           </Button>
+
+          <div className="mt-4 flex flex-col items-center gap-2">
+            <p className="text-xs text-muted-foreground/60 uppercase tracking-widest">or</p>
+            <a
+              href="#products"
+              className="font-serif italic text-primary/70 text-sm hover:text-primary transition-colors"
+            >
+              Browse the collection first ↓
+            </a>
+          </div>
+
+          <div className="mt-10 flex flex-wrap justify-center gap-8 text-center text-sm text-muted-foreground">
+            <div>
+              <p className="font-serif text-3xl text-foreground">500+</p>
+              <p>Happy customers across West Africa</p>
+            </div>
+            <div className="h-10 w-px bg-border hidden md:block self-center" />
+            <div>
+              <p className="font-serif text-3xl text-foreground">3</p>
+              <p>Countries — Nigeria · Ghana · Cameroon</p>
+            </div>
+            <div className="h-10 w-px bg-border hidden md:block self-center" />
+            <div>
+              <p className="font-serif text-3xl text-foreground">100%</p>
+              <p>Authentic, every single time</p>
+            </div>
+          </div>
         </div>
       </div>
     </div>

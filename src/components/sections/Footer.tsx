@@ -87,15 +87,25 @@ const Footer = () => (
               <TikTokIcon className="h-5 w-5" />
             </a>
           </div>
-          <p className="mt-4 text-xs text-muted-foreground">@perfumesbyluch</p>
         </div>
       </div>
 
       <div className="mt-12 border-t border-border pt-8 text-center">
-        <p className="mb-4 text-xs italic text-muted-foreground/60">
-          Thank you for trusting us with your scent story. 🌸
-        </p>
-        <p className="text-xs text-muted-foreground">
+        <div className="mt-8 flex flex-col items-center gap-3 border-t border-border pt-8">
+          <p className="font-serif italic text-muted-foreground text-sm">
+            "Thank you for trusting us with your scent story. 🌸"
+          </p>
+          <a
+            href={waLink("Hi Perfumes By Luch! I'd like to place an order.")}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 rounded-full bg-whatsapp px-5 py-2.5 text-sm font-semibold text-whatsapp-foreground transition-smooth hover:scale-105"
+          >
+            <WhatsAppIcon className="h-4 w-4" />
+            Order on WhatsApp
+          </a>
+        </div>
+        <p className="text-xs text-muted-foreground mt-8">
           © {new Date().getFullYear()} Perfumes By Luch. All rights reserved.
         </p>
       </div>
