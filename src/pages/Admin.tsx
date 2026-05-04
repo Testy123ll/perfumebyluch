@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import * as tus from 'tus-js-client';
 import { useNavigate } from "react-router-dom";
 import { supabase, Product, IS_SUPABASE_CONFIGURED } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
@@ -422,43 +423,68 @@ const Admin = () => {
     let video_url = editingId ? products.find((p) => p.id === editingId)?.video_url : "";
 
     if (videoFile) {
-      setUploadProgress("Uploading video... Please stay on this page.");
+      setUploadProgress("Preparing video upload...");
+      
       const videoExt = videoFile.name.split(".").pop();
       const videoPath = `product-videos/${Date.now()}.${videoExt}`;
+      
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      
+      video_url = await new Promise((resolve, reject) => {
+        const upload = new tus.Upload(videoFile, {
+          endpoint: `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/upload/resumable`,
+          retryDelays: [0, 3000, 5000, 10000, 20000],
+          headers: {
+            authorization: `Bearer ${currentSession?.access_token}`,
+            'x-upsert': 'true',
+          },
+          uploadDataDuringCreation: true,
+          removeFingerprintOnSuccess: true,
+          metadata: {
+            bucketName: 'products',
+            objectName: videoPath,
+            contentType: videoFile.type || 'video/mp4',
+            cacheControl: '3600',
+          },
+          chunkSize: 6 * 1024 * 1024, // 6MB chunks
+          onError: (error) => {
+            toast({
+              title: "Video Upload Failed",
+              description: `${error.message} — Please try again.`,
+              variant: "destructive",
+            });
+            setUploadProgress("");
+            setLoading(false);
+            reject(error);
+          },
+          onProgress: (bytesUploaded, bytesTotal) => {
+            const percentage = Math.round((bytesUploaded / bytesTotal) * 100);
+            setUploadProgress(`Uploading video: ${percentage}% — Please stay on this page`);
+          },
+          onSuccess: () => {
+            const { data: vidUrlData } = supabase.storage
+              .from("products")
+              .getPublicUrl(videoPath);
+            resolve(vidUrlData.publicUrl);
+          },
+        });
 
-      let uploadSuccess = false;
-      for (let attempt = 1; attempt <= 3; attempt++) {
-        if (attempt > 1) {
-          setUploadProgress(`Retrying video upload (attempt ${attempt} of 3)...`);
-          await new Promise(r => setTimeout(r, 2000));
-        }
+        // Check for previous incomplete uploads and resume
+        upload.findPreviousUploads().then((previousUploads) => {
+          if (previousUploads.length > 0) {
+            upload.resumeFromPreviousUpload(previousUploads[0]);
+            setUploadProgress("Resuming previous upload...");
+          }
+          upload.start();
+        });
+      }).catch(() => {
+        return null;
+      });
 
-        const { error: vidError } = await supabase.storage
-          .from("products")
-          .upload(videoPath, videoFile, {
-            contentType: videoFile.type || "video/mp4",
-            upsert: true,
-          });
-
-        if (!vidError) {
-          const { data: vidUrlData } = supabase.storage
-            .from("products")
-            .getPublicUrl(videoPath);
-          video_url = vidUrlData.publicUrl;
-          uploadSuccess = true;
-          break;
-        }
-
-        if (attempt === 3) {
-          toast({
-            title: "Video Upload Failed",
-            description: `${vidError.message} — Try compressing the video or use a WiFi connection.`,
-            variant: "destructive",
-          });
-          setLoading(false);
-          setUploadProgress("");
-          return;
-        }
+      if (!video_url) {
+        setLoading(false);
+        setUploadProgress("");
+        return;
       }
     }
 
@@ -656,8 +682,8 @@ const Admin = () => {
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
       {uploadProgress && (
-        <div className="fixed top-0 left-0 right-0 z-50 bg-primary px-4 py-3 text-center text-sm font-medium text-primary-foreground animate-pulse">
-          ⏳ {uploadProgress} — Please do not close this page
+        <div className="fixed top-0 left-0 right-0 z-50 bg-primary px-4 py-3 text-center text-sm font-medium text-primary-foreground">
+          ⏳ {uploadProgress}
         </div>
       )}
       <div className="mx-auto max-w-5xl w-full">
