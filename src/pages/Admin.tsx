@@ -404,12 +404,7 @@ const Admin = () => {
         }
         
         if (i === maxRetries - 1) {
-          let userMessage = error.message;
-          if (error.message.includes("fetch") || !error.message) userMessage = "Upload failed — weak connection. Move to a stronger network and try again.";
-          else if (error.message.includes("tus")) userMessage = "Upload interrupted. Please try again.";
-          else if (error.message.includes("read")) userMessage = "Could not read file. Please select it again.";
-          
-          return { publicUrl: null, error: { ...error, message: userMessage } };
+          return { publicUrl: null, error };
         }
         
         await new Promise(r => setTimeout(r, 2000));
@@ -478,7 +473,7 @@ const Admin = () => {
       if (vidError) {
         toast({
           title: "Video Upload Failed",
-          description: vidError.message,
+          description: vidError?.message || JSON.stringify(vidError) || "Unknown error",
           variant: "destructive",
         });
         setLoading(false);
