@@ -384,6 +384,43 @@ const Admin = () => {
   };
 
 
+  const uploadWithRetry = async (
+    filePath: string,
+    file: File | ArrayBuffer,
+    options: any,
+    maxRetries = 3
+  ): Promise<{ publicUrl: string | null; error: any }> => {
+    for (let i = 0; i < maxRetries; i++) {
+      try {
+        const { error } = await supabase.storage
+          .from("products")
+          .upload(filePath, file, options);
+        
+        if (!error) {
+          const { data: publicUrlData } = supabase.storage
+            .from("products")
+            .getPublicUrl(filePath);
+          return { publicUrl: publicUrlData.publicUrl, error: null };
+        }
+        
+        if (i === maxRetries - 1) {
+          let userMessage = error.message;
+          if (error.message.includes("fetch") || !error.message) userMessage = "Upload failed — weak connection. Move to a stronger network and try again.";
+          else if (error.message.includes("tus")) userMessage = "Upload interrupted. Please try again.";
+          else if (error.message.includes("read")) userMessage = "Could not read file. Please select it again.";
+          
+          return { publicUrl: null, error: { ...error, message: userMessage } };
+        }
+        
+        await new Promise(r => setTimeout(r, 2000));
+      } catch (err: any) {
+        if (i === maxRetries - 1) return { publicUrl: null, error: err };
+        await new Promise(r => setTimeout(r, 2000));
+      }
+    }
+    return { publicUrl: null, error: new Error("Upload failed after retries") };
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -395,12 +432,16 @@ const Admin = () => {
       const imageExt = imageFile.name.split(".").pop();
       const imagePath = `product-images/${Date.now()}.${imageExt}`;
 
-      const { error: imgError } = await supabase.storage
-        .from("products")
-        .upload(imagePath, imageFile, {
-          contentType: imageFile.type || "image/jpeg",
-          upsert: true,
-        });
+      const arrayBuffer = await imageFile.arrayBuffer();
+      const { publicUrl, error: imgError } = await uploadWithRetry(
+        imagePath,
+        arrayBuffer,
+        {
+          contentType: imageFile.type,
+          cacheControl: "3600",
+          upsert: false,
+        }
+      );
 
       if (imgError) {
         toast({
@@ -413,26 +454,31 @@ const Admin = () => {
         return;
       }
 
-      const { data: imgUrlData } = supabase.storage
-        .from("products")
-        .getPublicUrl(imagePath);
-      image_url = imgUrlData.publicUrl;
+      image_url = publicUrl || "";
     }
 
     let video_url = editingId ? products.find((p) => p.id === editingId)?.video_url : "";
 
     if (videoFile) {
-      setUploadProgress("Uploading video: 0%");
-
+      setUploadProgress("Uploading video... please wait");
+      
       const videoExt = videoFile.name.split(".").pop();
       const videoPath = `product-videos/${Date.now()}.${videoExt}`;
 
-      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      const { publicUrl, error: vidError } = await uploadWithRetry(
+        videoPath,
+        videoFile,
+        {
+          cacheControl: "3600",
+          upsert: false,
+          duplex: "half", // forces standard upload, not TUS
+        }
+      );
 
-      if (!currentSession?.access_token) {
+      if (vidError) {
         toast({
-          title: "Session Expired",
-          description: "Please log out and log back in, then try again.",
+          title: "Video Upload Failed",
+          description: vidError.message,
           variant: "destructive",
         });
         setLoading(false);
@@ -440,67 +486,7 @@ const Admin = () => {
         return;
       }
 
-      const uploadUrl = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/products/${videoPath}`;
-
-      const videoUploadResult = await new Promise<string | null>((resolve) => {
-        const xhr = new XMLHttpRequest();
-
-        xhr.upload.addEventListener("progress", (e) => {
-          if (e.lengthComputable) {
-            const pct = Math.round((e.loaded / e.total) * 100);
-            setUploadProgress(`Uploading video: ${pct}% — Please stay on this page`);
-          }
-        });
-
-        xhr.addEventListener("load", () => {
-          if (xhr.status === 200 || xhr.status === 201) {
-            const { data: vidUrlData } = supabase.storage
-              .from("products")
-              .getPublicUrl(videoPath);
-            resolve(vidUrlData.publicUrl);
-          } else {
-            toast({
-              title: "Video Upload Failed",
-              description: `Server responded with status ${xhr.status}. Please try again.`,
-              variant: "destructive",
-            });
-            resolve(null);
-          }
-        });
-
-        xhr.addEventListener("error", () => {
-          toast({
-            title: "Video Upload Failed",
-            description: "Connection error. Please check your internet and try again.",
-            variant: "destructive",
-          });
-          resolve(null);
-        });
-
-        xhr.addEventListener("timeout", () => {
-          toast({
-            title: "Video Upload Timed Out",
-            description: "The upload took too long. Try compressing the video first using Clideo.com.",
-            variant: "destructive",
-          });
-          resolve(null);
-        });
-
-        xhr.open("POST", uploadUrl);
-        xhr.setRequestHeader("Authorization", `Bearer ${currentSession.access_token}`);
-        xhr.setRequestHeader("Content-Type", videoFile.type || "video/mp4");
-        xhr.setRequestHeader("x-upsert", "true");
-        xhr.timeout = 120000; // 2 minute timeout
-        xhr.send(videoFile);
-      });
-
-      if (!videoUploadResult) {
-        setLoading(false);
-        setUploadProgress("");
-        return;
-      }
-
-      video_url = videoUploadResult;
+      video_url = publicUrl || "";
     }
 
     setUploadProgress("");
@@ -697,7 +683,7 @@ const Admin = () => {
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
       {uploadProgress && (
-        <div className="fixed top-0 left-0 right-0 z-50 bg-primary px-4 py-3 text-center text-sm font-medium text-primary-foreground">
+        <div className="fixed top-0 left-0 right-0 z-50 bg-primary px-4 py-3 text-center text-sm font-medium text-primary-foreground animate-pulse">
           ⏳ {uploadProgress}
         </div>
       )}
