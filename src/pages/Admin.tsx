@@ -383,47 +383,6 @@ const Admin = () => {
     setShowForm(false);
   };
 
-  const uploadWithRetry = async (
-    filePath: string,
-    buffer: ArrayBuffer,
-    contentType: string,
-    maxRetries = 3
-  ): Promise<{ publicUrl: string } | null> => {
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-      setUploadProgress(
-        attempt === 1 
-          ? "Uploading..." 
-          : `Retrying upload (attempt ${attempt} of ${maxRetries})...`
-      );
-      
-      const { error } = await supabase.storage
-        .from("products")
-        .upload(filePath, buffer, {
-          contentType,
-          upsert: true,
-        });
-
-      if (!error) {
-        const { data: publicUrlData } = supabase.storage
-          .from("products")
-          .getPublicUrl(filePath);
-        return { publicUrl: publicUrlData.publicUrl };
-      }
-
-      if (attempt < maxRetries) {
-        // Wait 2 seconds before retrying
-        await new Promise(resolve => setTimeout(resolve, 2000));
-      } else {
-        toast({
-          title: "Upload Failed",
-          description: `${error.message}. Please check your internet connection and try again.`,
-          variant: "destructive",
-        });
-        return null;
-      }
-    }
-    return null;
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -433,78 +392,74 @@ const Admin = () => {
 
     if (imageFile) {
       setUploadProgress("Uploading image...");
-      
-      const isReadable = await new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(true);
-        reader.onerror = () => resolve(false);
-        reader.readAsArrayBuffer(imageFile.slice(0, 1024));
-      });
+      const imageExt = imageFile.name.split(".").pop();
+      const imagePath = `product-images/${Date.now()}.${imageExt}`;
 
-      if (!isReadable) {
-        toast({ 
-          title: "File Error", 
-          description: "Could not read the image file. Please try selecting it again.",
-          variant: "destructive"
+      const { error: imgError } = await supabase.storage
+        .from("products")
+        .upload(imagePath, imageFile, {
+          contentType: imageFile.type || "image/jpeg",
+          upsert: true,
+        });
+
+      if (imgError) {
+        toast({
+          title: "Image Upload Failed",
+          description: imgError.message,
+          variant: "destructive",
         });
         setLoading(false);
         setUploadProgress("");
         return;
       }
 
-      const imageBuffer = await imageFile.arrayBuffer();
-      const imageResult = await uploadWithRetry(
-        `product-images/${Math.random()}.${imageFile.name.split(".").pop()}`,
-        imageBuffer,
-        imageFile.type
-      );
-      
-      if (!imageResult) {
-        setLoading(false);
-        setUploadProgress("");
-        return;
-      }
-      
-      image_url = imageResult.publicUrl;
+      const { data: imgUrlData } = supabase.storage
+        .from("products")
+        .getPublicUrl(imagePath);
+      image_url = imgUrlData.publicUrl;
     }
 
     let video_url = editingId ? products.find((p) => p.id === editingId)?.video_url : "";
 
     if (videoFile) {
       setUploadProgress("Uploading video... Please stay on this page.");
+      const videoExt = videoFile.name.split(".").pop();
+      const videoPath = `product-videos/${Date.now()}.${videoExt}`;
 
-      const isReadable = await new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(true);
-        reader.onerror = () => resolve(false);
-        reader.readAsArrayBuffer(videoFile.slice(0, 1024));
-      });
+      let uploadSuccess = false;
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        if (attempt > 1) {
+          setUploadProgress(`Retrying video upload (attempt ${attempt} of 3)...`);
+          await new Promise(r => setTimeout(r, 2000));
+        }
 
-      if (!isReadable) {
-        toast({ 
-          title: "File Error", 
-          description: "Could not read the video file. Please try selecting it again.",
-          variant: "destructive"
-        });
-        setLoading(false);
-        setUploadProgress("");
-        return;
+        const { error: vidError } = await supabase.storage
+          .from("products")
+          .upload(videoPath, videoFile, {
+            contentType: videoFile.type || "video/mp4",
+            upsert: true,
+          });
+
+        if (!vidError) {
+          const { data: vidUrlData } = supabase.storage
+            .from("products")
+            .getPublicUrl(videoPath);
+          video_url = vidUrlData.publicUrl;
+          uploadSuccess = true;
+          break;
+        }
+
+        if (attempt === 3) {
+          toast({
+            title: "Video Upload Failed",
+            description: `${vidError.message} — Try compressing the video or use a WiFi connection.`,
+            variant: "destructive",
+          });
+          setLoading(false);
+          setUploadProgress("");
+          return;
+        }
       }
-
-      const videoBuffer = await videoFile.arrayBuffer();
-      const videoResult = await uploadWithRetry(
-        `product-videos/${Math.random()}.${videoFile.name.split(".").pop()}`,
-        videoBuffer,
-        videoFile.type
-      );
-
-      if (!videoResult) {
-        setLoading(false);
-        setUploadProgress("");
-        return;
-      }
-      
-      video_url = videoResult.publicUrl;
     }
 
     setUploadProgress("");
