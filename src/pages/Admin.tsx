@@ -457,21 +457,47 @@ const Admin = () => {
     let video_url = editingId ? products.find((p) => p.id === editingId)?.video_url : "";
 
     if (videoFile) {
-      setUploadProgress("Uploading video... please wait");
+      setUploadProgress("Uploading video: 0%");
       const videoPath = `product-videos/${Date.now()}.${videoFile.name.split(".").pop()}`;
       
-      const { error: vidError } = await supabase.storage
-        .from("products")
-        .upload(videoPath, videoFile, {
-          contentType: videoFile.type,
-          cacheControl: "3600",
-          upsert: false,
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+
+      const uploadResult = await new Promise<{ error: any; publicUrl?: string }>((resolve) => {
+        const xhr = new XMLHttpRequest();
+        const uploadUrl = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/products/${videoPath}`;
+
+        xhr.upload.addEventListener("progress", (e) => {
+          if (e.lengthComputable) {
+            const pct = Math.round((e.loaded / e.total) * 100);
+            setUploadProgress(`Uploading video: ${pct}%`);
+          }
         });
 
-      if (vidError) {
+        xhr.addEventListener("load", () => {
+          if (xhr.status === 200 || xhr.status === 201) {
+            const { data: publicUrlData } = supabase.storage
+              .from("products")
+              .getPublicUrl(videoPath);
+            resolve({ error: null, publicUrl: publicUrlData.publicUrl });
+          } else {
+            resolve({ error: { message: `Upload failed with status ${xhr.status}` } });
+          }
+        });
+
+        xhr.addEventListener("error", () => resolve({ error: { message: "Network error during upload" } }));
+        
+        xhr.open("POST", uploadUrl);
+        xhr.setRequestHeader("Authorization", `Bearer ${currentSession?.access_token || ''}`);
+        xhr.setRequestHeader("apikey", import.meta.env.VITE_SUPABASE_ANON_KEY);
+        xhr.setRequestHeader("x-upsert", "false");
+        xhr.setRequestHeader("Content-Type", videoFile.type || 'video/mp4');
+        xhr.send(videoFile);
+      });
+
+      if (uploadResult.error) {
         toast({
           title: "Video Upload Failed",
-          description: vidError.message,
+          description: uploadResult.error.message,
           variant: "destructive",
         });
         setLoading(false);
@@ -479,11 +505,7 @@ const Admin = () => {
         return;
       }
 
-      const { data: publicUrlData } = supabase.storage
-        .from("products")
-        .getPublicUrl(videoPath);
-      
-      video_url = publicUrlData.publicUrl;
+      video_url = uploadResult.publicUrl || "";
     }
 
     setUploadProgress("");
