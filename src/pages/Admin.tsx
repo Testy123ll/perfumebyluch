@@ -383,6 +383,48 @@ const Admin = () => {
     setShowForm(false);
   };
 
+  const uploadWithRetry = async (
+    filePath: string,
+    buffer: ArrayBuffer,
+    contentType: string,
+    maxRetries = 3
+  ): Promise<{ publicUrl: string } | null> => {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      setUploadProgress(
+        attempt === 1 
+          ? "Uploading..." 
+          : `Retrying upload (attempt ${attempt} of ${maxRetries})...`
+      );
+      
+      const { error } = await supabase.storage
+        .from("products")
+        .upload(filePath, buffer, {
+          contentType,
+          upsert: true,
+        });
+
+      if (!error) {
+        const { data: publicUrlData } = supabase.storage
+          .from("products")
+          .getPublicUrl(filePath);
+        return { publicUrl: publicUrlData.publicUrl };
+      }
+
+      if (attempt < maxRetries) {
+        // Wait 2 seconds before retrying
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      } else {
+        toast({
+          title: "Upload Failed",
+          description: `${error.message}. Please check your internet connection and try again.`,
+          variant: "destructive",
+        });
+        return null;
+      }
+    }
+    return null;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -410,37 +452,26 @@ const Admin = () => {
         return;
       }
 
-      const fileExt = imageFile.name.split(".").pop();
-      const fileName = `${Math.random()}.${fileExt}`;
-      const filePath = `product-images/${fileName}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from("products")
-        .upload(filePath, imageFile, {
-          contentType: imageFile.type,
-          upsert: false,
-          duplex: 'half',
-        });
-
-      if (uploadError) {
-        toast({ 
-          title: "Upload Error", 
-          description: `${uploadError.message} — Check your internet connection and try again.`,
-          variant: "destructive" 
-        });
+      const imageBuffer = await imageFile.arrayBuffer();
+      const imageResult = await uploadWithRetry(
+        `product-images/${Math.random()}.${imageFile.name.split(".").pop()}`,
+        imageBuffer,
+        imageFile.type
+      );
+      
+      if (!imageResult) {
         setLoading(false);
         setUploadProgress("");
         return;
       }
-
-      const { data: publicUrlData } = supabase.storage.from("products").getPublicUrl(filePath);
-      image_url = publicUrlData.publicUrl;
+      
+      image_url = imageResult.publicUrl;
     }
 
     let video_url = editingId ? products.find((p) => p.id === editingId)?.video_url : "";
 
     if (videoFile) {
-      setUploadProgress("Uploading video... This may take a moment on mobile.");
+      setUploadProgress("Uploading video... Please stay on this page.");
 
       const isReadable = await new Promise((resolve) => {
         const reader = new FileReader();
@@ -460,30 +491,20 @@ const Admin = () => {
         return;
       }
 
-      const fileExt = videoFile.name.split(".").pop();
-      const fileName = `${Math.random()}.${fileExt}`;
-      const filePath = `product-videos/${fileName}`;
+      const videoBuffer = await videoFile.arrayBuffer();
+      const videoResult = await uploadWithRetry(
+        `product-videos/${Math.random()}.${videoFile.name.split(".").pop()}`,
+        videoBuffer,
+        videoFile.type
+      );
 
-      const { error: uploadError } = await supabase.storage
-        .from("products")
-        .upload(filePath, videoFile, {
-          contentType: videoFile.type,
-          upsert: false,
-          duplex: 'half',
-        });
-
-      if (uploadError) {
-        toast({ 
-          title: "Upload Error", 
-          description: `${uploadError.message} — Check your internet connection and try again.`,
-          variant: "destructive" 
-        });
+      if (!videoResult) {
         setLoading(false);
         setUploadProgress("");
         return;
       }
-      const { data: publicUrlData } = supabase.storage.from("products").getPublicUrl(filePath);
-      video_url = publicUrlData.publicUrl;
+      
+      video_url = videoResult.publicUrl;
     }
 
     setUploadProgress("");
@@ -679,6 +700,11 @@ const Admin = () => {
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
+      {uploadProgress && (
+        <div className="fixed top-0 left-0 right-0 z-50 bg-primary px-4 py-3 text-center text-sm font-medium text-primary-foreground animate-pulse">
+          ⏳ {uploadProgress} — Please do not close this page
+        </div>
+      )}
       <div className="mx-auto max-w-5xl w-full">
         <div className="mb-8 flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:gap-6">
