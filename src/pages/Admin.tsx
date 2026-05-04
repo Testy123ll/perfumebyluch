@@ -386,7 +386,7 @@ const Admin = () => {
 
   const uploadWithRetry = async (
     filePath: string,
-    file: File | ArrayBuffer,
+    file: ArrayBuffer,
     options: any,
     maxRetries = 3
   ): Promise<{ publicUrl: string | null; error: any }> => {
@@ -455,18 +455,20 @@ const Admin = () => {
     let video_url = editingId ? products.find((p) => p.id === editingId)?.video_url : "";
 
     if (videoFile) {
-      setUploadProgress("Uploading video... please wait");
+      setUploadProgress("Reading video file...");
+      const videoArrayBuffer = await videoFile.arrayBuffer();
       
       const videoExt = videoFile.name.split(".").pop();
       const videoPath = `product-videos/${Date.now()}.${videoExt}`;
 
+      setUploadProgress("Uploading video... please wait");
       const { publicUrl, error: vidError } = await uploadWithRetry(
         videoPath,
-        videoFile,
+        videoArrayBuffer,
         {
+          contentType: videoFile.type,
           cacheControl: "3600",
           upsert: false,
-          duplex: "half", // forces standard upload, not TUS
         }
       );
 
