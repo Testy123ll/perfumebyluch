@@ -8,8 +8,8 @@ const steps = [
   },
   {
     icon: ShoppingCart,
-    title: "Select",
-    description: "Choose your size. Every drop counts.",
+    title: "Confirm",
+    description: "Check the scent details and availability. Every choice counts.",
   },
   {
     icon: MessageSquare,

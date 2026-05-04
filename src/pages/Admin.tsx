@@ -613,26 +613,26 @@ const Admin = () => {
   if (!session || (userRole !== "admin" && userRole !== "owner")) return null;
 
   return (
-    <div className="min-h-screen bg-background p-8">
-      <div className="mx-auto max-w-5xl">
-        <div className="mb-8 flex items-center justify-between">
-          <div className="flex items-center gap-6">
-            <h1 className="font-serif text-3xl">Admin Dashboard</h1>
+    <div className="min-h-screen bg-background p-4 md:p-8">
+      <div className="mx-auto max-w-5xl w-full">
+        <div className="mb-8 flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:gap-6">
+            <h1 className="font-serif text-2xl md:text-3xl">Admin Dashboard</h1>
             
-            <div className="flex items-center gap-3 rounded-full border border-border bg-card px-4 py-1.5 shadow-sm">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary">
+            <div className="flex items-center gap-3 rounded-full border border-border bg-card px-4 py-1.5 shadow-sm w-fit">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
                 <User className="h-4 w-4" />
               </div>
-              <div className="flex flex-col leading-tight">
-                <span className="text-sm font-medium">{session?.user?.email}</span>
+              <div className="flex flex-col leading-tight min-w-0">
+                <span className="text-sm font-medium truncate max-w-[150px] md:max-w-none">{session?.user?.email}</span>
                 <span className="text-[10px] uppercase tracking-wider text-muted-foreground">{userRole}</span>
               </div>
             </div>
 
-            <div className="flex gap-2 rounded-lg bg-muted p-1">
+            <div className="flex gap-2 rounded-lg bg-muted p-1 overflow-x-auto no-scrollbar whitespace-nowrap">
               <button
                 onClick={() => setActiveTab("products")}
-                className={`rounded-md px-3 py-1 text-sm transition-all ${
+                className={`rounded-md px-3 py-1 text-sm transition-all flex-shrink-0 ${
                   activeTab === "products" ? "bg-background shadow-sm" : "hover:text-foreground/80"
                 }`}
               >
@@ -640,7 +640,7 @@ const Admin = () => {
               </button>
               <button
                 onClick={() => setActiveTab("reviews")}
-                className={`rounded-md px-3 py-1 text-sm transition-all ${
+                className={`rounded-md px-3 py-1 text-sm transition-all flex-shrink-0 ${
                   activeTab === "reviews" ? "bg-background shadow-sm" : "hover:text-foreground/80"
                 }`}
               >
@@ -650,7 +650,7 @@ const Admin = () => {
                 <>
                   <button
                     onClick={() => setActiveTab("team")}
-                    className={`rounded-md px-3 py-1 text-sm transition-all ${
+                    className={`rounded-md px-3 py-1 text-sm transition-all flex-shrink-0 ${
                       activeTab === "team" ? "bg-background shadow-sm" : "hover:text-foreground/80"
                     }`}
                   >
@@ -658,7 +658,7 @@ const Admin = () => {
                   </button>
                   <button
                     onClick={() => setActiveTab("activity")}
-                    className={`rounded-md px-3 py-1 text-sm transition-all ${
+                    className={`rounded-md px-3 py-1 text-sm transition-all flex-shrink-0 ${
                       activeTab === "activity" ? "bg-background shadow-sm" : "hover:text-foreground/80"
                     }`}
                   >
@@ -668,7 +668,7 @@ const Admin = () => {
               )}
             </div>
           </div>
-          <Button variant="outline" onClick={handleLogout}>
+          <Button variant="outline" onClick={handleLogout} className="w-full md:w-auto">
             <LogOut className="mr-2 h-4 w-4" /> Logout
           </Button>
         </div>
@@ -679,7 +679,7 @@ const Admin = () => {
           <div className="mb-8 rounded-xl border border-border bg-card p-6 shadow-sm">
             <h2 className="mb-4 text-xl font-medium">{editingId ? "Edit Product" : "Add Product"}</h2>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="mb-1 block text-sm">Name</label>
                   <input
@@ -798,7 +798,7 @@ const Admin = () => {
                 />
               </div>
               <div className="flex gap-2">
-                <Button type="submit" disabled={loading || (!!videoFile && videoFile.size > MAX_VIDEO_SIZE_BYTES)}>
+                <Button type="submit" disabled={loading || (!!videoFile && videoFile.size > MAX_VIDEO_SIZE_BYTES)} className="w-full md:w-auto">
                   {loading ? (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   ) : editingId ? (
@@ -807,7 +807,7 @@ const Admin = () => {
                     "Add"
                   )}
                 </Button>
-                <Button variant="ghost" onClick={resetForm}>
+                <Button variant="ghost" onClick={resetForm} className="w-full md:w-auto">
                   Cancel
                 </Button>
               </div>
@@ -816,22 +816,22 @@ const Admin = () => {
         ) : (
           <div className="mb-8 flex items-center justify-between">
             <div>
-              <h2 className="font-serif text-2xl">Product Catalog</h2>
-              <div className="mt-1 flex gap-3 text-[10px] uppercase tracking-wider text-muted-foreground">
+              <h2 className="font-serif text-xl md:text-2xl">Product Catalog</h2>
+              <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-[10px] uppercase tracking-wider text-muted-foreground">
                 <span className="flex items-center gap-1"><Eye className="h-3 w-3" /> Visible</span>
                 <span className="flex items-center gap-1 font-bold text-green-600">✓ In Stock</span>
                 <span className="flex items-center gap-1 text-primary">✨ New Arrival</span>
                 <span className="flex items-center gap-1 text-amber-500">🔥 Top Seller</span>
               </div>
             </div>
-            <Button onClick={() => setShowForm(true)} className="gap-2">
-              <Plus className="h-4 w-4" /> Add Product
+            <Button onClick={() => setShowForm(true)} className="gap-2 shrink-0" size="sm">
+              <Plus className="h-4 w-4" /> <span className="hidden sm:inline">Add Product</span>
             </Button>
           </div>
         )}
 
-        <div className="rounded-xl border border-border bg-card overflow-hidden">
-          <table className="w-full text-left text-sm">
+        <div className="rounded-xl border border-border bg-card overflow-x-auto no-scrollbar">
+          <table className="w-full text-left text-sm min-w-[600px] md:min-w-0">
             <thead className="bg-muted/50">
               <tr>
                 <th className="p-4 font-medium">Product</th>
@@ -852,31 +852,31 @@ const Admin = () => {
                 products.map((p) => (
                   <tr key={p.id} className="border-t border-border">
                     <td className="p-4">
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3 min-w-0">
                         {p.image_url && (
                           <img
                             src={p.image_url}
                             alt={p.name}
-                            className="h-10 w-10 rounded-md object-cover"
+                            className="h-8 w-8 md:h-10 md:w-10 rounded-md object-cover shrink-0"
                           />
                         )}
-                        <div className="flex flex-col">
+                        <div className="flex flex-col min-w-0">
                           <div className="flex items-center gap-2">
-                            <span className="font-medium">{p.name}</span>
+                            <span className="font-medium truncate">{p.name}</span>
                             {p.is_bestseller && <span title="Featured Top Seller" className="text-amber-500">🔥</span>}
                           </div>
-                          <div className="text-xs text-muted-foreground line-clamp-1">{p.description}</div>
+                          <div className="text-xs text-muted-foreground line-clamp-1 hidden md:block">{p.description}</div>
                         </div>
                       </div>
                     </td>
                     <td className="p-4">{p.category}</td>
-                    <td className="p-4">₦{p.price.toLocaleString()}</td>
+                    <td className="p-4 whitespace-nowrap">₦{p.price.toLocaleString()}</td>
                     <td className="p-4">
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <button
                           onClick={() => handleToggleStock(p)}
                           title={p.in_stock ? "Mark as Out of Stock" : "Mark as In Stock"}
-                          className={`flex h-8 w-16 items-center justify-center rounded-md border text-[10px] font-bold uppercase transition-all ${
+                          className={`flex h-7 md:h-8 w-14 md:w-16 items-center justify-center rounded-md border text-[9px] md:text-[10px] font-bold uppercase transition-all ${
                             p.in_stock
                               ? "border-green-500/50 bg-green-500/10 text-green-600"
                               : "border-red-500/50 bg-red-500/10 text-red-500"
@@ -887,7 +887,7 @@ const Admin = () => {
                         <button
                           onClick={() => handleToggleNewArrival(p)}
                           title={p.is_new ? "Remove from New Arrivals" : "Mark as New Arrival"}
-                          className={`flex h-8 w-8 items-center justify-center rounded-md border transition-all ${
+                          className={`flex h-7 w-7 md:h-8 md:w-8 items-center justify-center rounded-md border transition-all ${
                             p.is_new ? "border-primary/50 bg-primary/10 text-primary shadow-sm" : "border-border opacity-40 hover:opacity-100"
                           }`}
                         >
@@ -896,7 +896,7 @@ const Admin = () => {
                         <button
                           onClick={() => handleToggleBestSeller(p)}
                           title={p.is_bestseller ? "Remove from Top Sellers" : "Mark as Top Seller (max 6)"}
-                          className={`flex h-8 w-8 items-center justify-center rounded-md border transition-all ${
+                          className={`flex h-7 w-7 md:h-8 md:w-8 items-center justify-center rounded-md border transition-all ${
                             p.is_bestseller ? "border-amber-500/50 bg-amber-500/10 shadow-sm" : "border-border opacity-40 hover:opacity-100"
                           }`}
                         >
@@ -905,22 +905,22 @@ const Admin = () => {
                       </div>
                     </td>
                     <td className="p-4 text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button variant="ghost" size="icon" onClick={() => handleToggleVisibility(p)}>
+                      <div className="flex justify-end gap-1 md:gap-2">
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleToggleVisibility(p)}>
                           {p.visible ? (
                             <Eye className="h-4 w-4" />
                           ) : (
                             <EyeOff className="h-4 w-4 opacity-50" />
                           )}
                         </Button>
-                        <Button variant="ghost" size="icon" onClick={() => handleEdit(p)}>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEdit(p)}>
                           <Edit2 className="h-4 w-4" />
                         </Button>
                         <Button
                           variant="ghost"
                           size="icon"
+                          className="h-8 w-8 text-red-500 hover:text-red-600"
                           onClick={() => handleDelete(p.id, p.name)}
-                          className="text-red-500 hover:text-red-600"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -951,9 +951,9 @@ const Admin = () => {
               <div className="rounded-xl border border-border bg-card p-6">
                 <h2 className="mb-4 text-xl font-medium">Add Admin</h2>
                 <p className="mb-4 text-sm text-muted-foreground">
-                  Enter an email address to invite someone as an admin. They will automatically get admin rights when they sign up with this email.
+                  Enter an email address to invite someone as an admin.
                 </p>
-                <form onSubmit={handleAddInvite} className="flex gap-4">
+                <form onSubmit={handleAddInvite} className="flex flex-col md:flex-row gap-4">
                   <input
                     type="email"
                     placeholder="admin@example.com"
@@ -962,7 +962,7 @@ const Admin = () => {
                     className="flex-1 rounded-md border border-input bg-transparent px-3 py-2 text-sm"
                     required
                   />
-                  <Button type="submit">Invite Admin</Button>
+                  <Button type="submit" className="w-full md:w-auto">Invite Admin</Button>
                 </form>
               </div>
             ) : (
@@ -973,8 +973,8 @@ const Admin = () => {
               </div>
             )}
 
-            <div className="rounded-xl border border-border bg-card overflow-hidden">
-              <table className="w-full text-left text-sm">
+            <div className="rounded-xl border border-border bg-card overflow-x-auto no-scrollbar">
+              <table className="w-full text-left text-sm min-w-[500px] md:min-w-0">
                 <thead className="bg-muted/50">
                   <tr>
                     <th className="p-4 font-medium">Team Member</th>
@@ -987,8 +987,8 @@ const Admin = () => {
                   {team.map((member) => (
                     <tr key={member.id || member.email} className="border-t border-border">
                       <td className="p-4">
-                        <div className="font-medium">{member.email}</div>
-                        <div className="text-xs text-muted-foreground">
+                        <div className="font-medium truncate max-w-[200px] md:max-w-none">{member.email}</div>
+                        <div className="text-xs text-muted-foreground hidden md:block">
                           {new Date(member.created_at).toLocaleDateString()}
                         </div>
                       </td>
@@ -1011,7 +1011,7 @@ const Admin = () => {
                         </span>
                       </td>
                       <td className="p-4 text-right">
-                        <div className="flex justify-end gap-2">
+                        <div className="flex justify-end gap-1 md:gap-2">
                           {userRole === "owner" && member.role !== "owner" && (
                             <>
                               {member.status !== "pending" && (
@@ -1020,7 +1020,7 @@ const Admin = () => {
                                   size="icon"
                                   title={member.status === "restricted" ? "Unrestrict Admin" : "Restrict Admin"}
                                   onClick={() => handleToggleRestrict(member.id!, member.role, member.email || "")}
-                                  className={member.status === "restricted" ? "text-green-500" : "text-orange-500"}
+                                  className={`h-8 w-8 ${member.status === "restricted" ? "text-green-500" : "text-orange-500"}`}
                                 >
                                   {member.status === "restricted" ? <Shield className="h-4 w-4" /> : <ShieldOff className="h-4 w-4" />}
                                 </Button>
@@ -1030,7 +1030,7 @@ const Admin = () => {
                                 size="icon"
                                 title="Delete Account/Invite"
                                 onClick={() => member.status === "pending" ? handleDeleteInvite(member.email) : handleDeleteAdmin(member.id!, member.email)}
-                                className="text-red-500 hover:text-red-600"
+                                className="h-8 w-8 text-red-500 hover:text-red-600"
                               >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
@@ -1058,11 +1058,11 @@ const Admin = () => {
               )}
             </div>
 
-            <div className="flex gap-4">
+            <div className="flex flex-col md:flex-row gap-4">
               <select 
                 value={logFilterAdmin} 
                 onChange={(e) => { setLogFilterAdmin(e.target.value); fetchLogs(); }}
-                className="rounded-md border border-input bg-background px-3 py-1 text-sm"
+                className="rounded-md border border-input bg-background px-3 py-2 text-sm w-full md:w-auto"
               >
                 <option value="all">All Admins</option>
                 {Array.from(new Set(logs.map(l => l.admin_email))).map(email => (
@@ -1072,7 +1072,7 @@ const Admin = () => {
               <select 
                 value={logFilterAction} 
                 onChange={(e) => { setLogFilterAction(e.target.value); fetchLogs(); }}
-                className="rounded-md border border-input bg-background px-3 py-1 text-sm"
+                className="rounded-md border border-input bg-background px-3 py-2 text-sm w-full md:w-auto"
               >
                 <option value="all">All Actions</option>
                 {Array.from(new Set(logs.map(l => l.action))).map(action => (
@@ -1081,14 +1081,14 @@ const Admin = () => {
               </select>
             </div>
 
-            <div className="rounded-xl border border-border bg-card overflow-hidden">
-              <table className="w-full text-left text-sm">
+            <div className="rounded-xl border border-border bg-card overflow-x-auto no-scrollbar">
+              <table className="w-full text-left text-sm min-w-[600px] md:min-w-0">
                 <thead className="bg-muted/50">
                   <tr>
                     <th className="p-4 font-medium">Date & Time</th>
-                    <th className="p-4 font-medium">Admin Email</th>
+                    <th className="p-4 font-medium hidden md:table-cell">Admin Email</th>
                     <th className="p-4 font-medium">Action</th>
-                    <th className="p-4 font-medium">Product/Target Name</th>
+                    <th className="p-4 font-medium">Target</th>
                     {session?.user?.id === OWNER_ID && <th className="p-4 font-medium text-right">Actions</th>}
                   </tr>
                 </thead>
@@ -1100,19 +1100,19 @@ const Admin = () => {
                   ) : (
                     logs.map((log) => (
                       <tr key={log.id} className="border-t border-border">
-                        <td className="p-4 text-xs text-muted-foreground">
+                        <td className="p-4 text-[10px] md:text-xs text-muted-foreground whitespace-nowrap">
                           {new Date(log.created_at).toLocaleString()}
                         </td>
-                        <td className="p-4 font-medium">{log.admin_email}</td>
+                        <td className="p-4 font-medium hidden md:table-cell truncate max-w-[150px]">{log.admin_email}</td>
                         <td className="p-4">
-                          <span className="inline-flex rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                          <span className="inline-flex rounded-full bg-primary/10 px-2 py-0.5 text-[10px] md:text-xs font-medium text-primary whitespace-nowrap">
                             {log.action}
                           </span>
                         </td>
-                        <td className="p-4 text-muted-foreground">{log.target_name}</td>
+                        <td className="p-4 text-muted-foreground truncate max-w-[100px] md:max-w-none">{log.target_name}</td>
                         {session?.user?.id === OWNER_ID && (
                           <td className="p-4 text-right">
-                            <Button variant="ghost" size="icon" onClick={() => handleDeleteLog(log.id)} className="text-red-500">
+                            <Button variant="ghost" size="icon" onClick={() => handleDeleteLog(log.id)} className="text-red-500 h-8 w-8">
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           </td>
@@ -1127,9 +1127,9 @@ const Admin = () => {
         )}
         {activeTab === "reviews" && (
           <div className="space-y-8 animate-fade-in pb-20">
-            <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+            <div className="rounded-xl border border-border bg-card p-4 md:p-6 shadow-sm">
               <h2 className="mb-4 text-xl font-medium">Add Manual Review</h2>
-              <form onSubmit={handleAddReview} className="grid grid-cols-2 gap-4">
+              <form onSubmit={handleAddReview} className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <input
                   placeholder="Reviewer Name"
                   value={reviewFormData.reviewer_name}
@@ -1171,28 +1171,28 @@ const Admin = () => {
                   placeholder="Comment"
                   value={reviewFormData.comment}
                   onChange={(e) => setReviewFormData({ ...reviewFormData, comment: e.target.value })}
-                  className="col-span-2 rounded-md border border-input bg-transparent px-3 py-2 text-sm h-20"
+                  className="md:col-span-2 rounded-md border border-input bg-transparent px-3 py-2 text-sm h-20"
                 />
-                <Button type="submit" className="w-fit">Save Review</Button>
+                <Button type="submit" className="w-full md:w-fit">Save Review</Button>
               </form>
             </div>
 
-            <div className="rounded-xl border border-border bg-card overflow-hidden shadow-sm">
-              <div className="border-b border-border bg-muted/30 p-4 flex items-center justify-between">
+            <div className="rounded-xl border border-border bg-card overflow-x-auto no-scrollbar shadow-sm">
+              <div className="border-b border-border bg-muted/30 p-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
                 <h2 className="text-lg font-medium">Customer Reviews</h2>
-                <div className="flex gap-4 text-[10px] uppercase tracking-wider text-muted-foreground">
+                <div className="flex flex-wrap gap-x-4 gap-y-2 text-[10px] uppercase tracking-wider text-muted-foreground">
                   <span className="flex items-center gap-1"><Eye className="h-3 w-3" /> Visible</span>
                   <span className="flex items-center gap-1 font-bold text-green-600">✓ Verified</span>
                   <span className="flex items-center gap-1 text-amber-500">⭐ Featured Testimonial</span>
                 </div>
               </div>
-              <table className="w-full text-left text-sm">
+              <table className="w-full text-left text-sm min-w-[700px] md:min-w-0">
                 <thead className="bg-muted/50">
                   <tr>
                     <th className="p-4 font-medium">Reviewer</th>
                     <th className="p-4 font-medium">Product</th>
                     <th className="p-4 font-medium">Rating</th>
-                    <th className="p-4 font-medium">Comment</th>
+                    <th className="p-4 font-medium hidden md:table-cell">Comment</th>
                     <th className="p-4 font-medium">Status</th>
                     <th className="p-4 font-medium text-right">Actions</th>
                   </tr>
@@ -1208,35 +1208,35 @@ const Admin = () => {
                         <div className="text-[10px] text-muted-foreground uppercase">{new Date(r.created_at).toLocaleDateString()}</div>
                       </td>
                       <td className="p-4">{r.products?.name}</td>
-                      <td className="p-4 text-yellow-500 font-bold">{"★".repeat(r.rating)}</td>
-                      <td className="p-4 max-w-xs truncate">{r.comment}</td>
+                      <td className="p-4 text-yellow-500 font-bold whitespace-nowrap">{"★".repeat(r.rating)}</td>
+                      <td className="p-4 max-w-xs truncate hidden md:table-cell">{r.comment}</td>
                       <td className="p-4">
                         <div className="flex gap-2">
                           <button 
                             onClick={() => handleToggleReviewVisibility(r.id, r.visible, r.reviewer_name)}
                             title="Toggle Visibility"
-                            className={`flex h-8 w-8 items-center justify-center rounded-md border transition-all ${r.visible ? 'border-primary/50 bg-primary/10 text-primary' : 'border-red-500/50 bg-red-500/10 text-red-500'}`}
+                            className={`flex h-7 w-7 md:h-8 md:w-8 items-center justify-center rounded-md border transition-all ${r.visible ? 'border-primary/50 bg-primary/10 text-primary' : 'border-red-500/50 bg-red-500/10 text-red-500'}`}
                           >
                             <Eye className="h-4 w-4" />
                           </button>
                           <button 
                             onClick={() => handleToggleReviewVerified(r.id, r.verified, r.reviewer_name)}
                             title="Toggle Verified Badge"
-                            className={`flex h-8 w-8 items-center justify-center rounded-md border font-bold transition-all ${r.verified ? 'border-green-500/50 bg-green-500/10 text-green-600' : 'border-border opacity-40'}`}
+                            className={`flex h-7 w-7 md:h-8 md:w-8 items-center justify-center rounded-md border font-bold transition-all ${r.verified ? 'border-green-500/50 bg-green-500/10 text-green-600' : 'border-border opacity-40'}`}
                           >
                             ✓
                           </button>
                           <button 
                             onClick={() => handleToggleTestimonial(r.id, r.is_testimonial, r.reviewer_name)}
                             title="Feature as Testimonial (max 3)"
-                            className={`flex h-8 w-8 items-center justify-center rounded-md border transition-all ${r.is_testimonial ? 'border-amber-500/50 bg-amber-500/10 text-amber-500 shadow-sm' : 'border-border opacity-40'}`}
+                            className={`flex h-7 w-7 md:h-8 md:w-8 items-center justify-center rounded-md border transition-all ${r.is_testimonial ? 'border-amber-500/50 bg-amber-500/10 text-amber-500 shadow-sm' : 'border-border opacity-40'}`}
                           >
                             ⭐
                           </button>
                         </div>
                       </td>
                       <td className="p-4 text-right">
-                        <Button variant="ghost" size="icon" onClick={() => handleDeleteReview(r.id, r.reviewer_name)}>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDeleteReview(r.id, r.reviewer_name)}>
                           <Trash2 className="h-4 w-4 text-red-500" />
                         </Button>
                       </td>

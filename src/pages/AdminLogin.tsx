@@ -4,16 +4,16 @@ import { supabase, IS_SUPABASE_CONFIGURED } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 
-// Temporary test credentials — remove once real Supabase auth is set up
-const TEST_EMAIL = "luchpfume@gmail.com";
-const TEST_PASSWORD = "luchperfume";
+// Temporary test constants — values removed for security
+const TEST_EMAIL = "";
+const TEST_PASSWORD = "";
 const TEST_SESSION_KEY = "pbl_admin_test_session";
 
 
 const AdminLogin = () => {
   const [isSignUp, setIsSignUp] = useState(false);
-  const [email, setEmail] = useState("luchpfume@gmail.com");
-  const [password, setPassword] = useState("luchperfume");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -38,7 +38,7 @@ const AdminLogin = () => {
         const users = JSON.parse(localStorage.getItem("pbl_mock_users") || "[]");
         const user = users.find((u: any) => u.email === email && u.password === password);
 
-        if (user || (email === TEST_EMAIL && password === TEST_PASSWORD)) {
+        if (user || (TEST_EMAIL && email === TEST_EMAIL && password === TEST_PASSWORD)) {
           localStorage.setItem(TEST_SESSION_KEY, "true");
           navigate("/admin", { replace: true });
         } else {
@@ -95,14 +95,14 @@ const AdminLogin = () => {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="w-full max-w-sm rounded-xl border border-border bg-card p-8 shadow-card-luxe">
-        <h1 className="mb-2 text-center font-serif text-3xl">
+    <div className="flex min-h-screen items-center justify-center bg-background px-4 py-12 md:py-0">
+      <div className="w-full max-w-md rounded-xl border border-border bg-card p-6 md:p-8 shadow-card-luxe">
+        <h1 className="mb-2 text-center font-serif text-2xl md:text-3xl">
           {isSignUp ? "Admin Sign Up" : "Admin Login"}
         </h1>
         {!IS_SUPABASE_CONFIGURED && (
           <p className="mb-6 text-center text-xs text-muted-foreground">
-            Test mode — using local credentials
+            Test mode active
           </p>
         )}
         <form onSubmit={handleLogin} className="space-y-4">
@@ -110,6 +110,7 @@ const AdminLogin = () => {
             <label className="mb-1 block text-sm font-medium">Email</label>
             <input
               type="email"
+              placeholder="Enter your email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
@@ -120,6 +121,7 @@ const AdminLogin = () => {
             <label className="mb-1 block text-sm font-medium">Password</label>
             <input
               type="password"
+              placeholder="Enter your password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
@@ -133,7 +135,7 @@ const AdminLogin = () => {
         <div className="mt-6 text-center text-sm">
           <button
             onClick={() => setIsSignUp(!isSignUp)}
-            className="text-muted-foreground transition-smooth hover:text-primary"
+            className="text-muted-foreground transition-smooth hover:text-primary w-full"
           >
             {isSignUp ? "Already have an account? Sign In" : "Invited? Create an account"}
           </button>

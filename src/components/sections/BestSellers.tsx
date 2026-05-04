@@ -43,7 +43,7 @@ const BestSellers = () => {
 
   return (
     <section 
-      className="py-14 md:py-20"
+      className="py-14 md:py-20 bg-background"
     >
       <div className="container">
         <div className="mb-12 text-center">

@@ -20,7 +20,7 @@ const Guarantee = () => {
 
   return (
     <section 
-      className="bg-card/30 py-16"
+      className="bg-card py-16"
     >
       <div className="container">
         <div className="mx-auto max-w-3xl text-center">

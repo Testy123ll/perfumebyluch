@@ -24,9 +24,12 @@ const Index = () => {
         <main>
           <Hero />
           <SectionDivider />
-          <RevealWrapper>
-            <BestSellers />
-          </RevealWrapper>
+          <section className="relative bg-background">
+            <div className="absolute top-0 left-0 right-0 h-16 bg-gradient-to-b from-background to-transparent pointer-events-none z-10" />
+            <RevealWrapper>
+              <BestSellers />
+            </RevealWrapper>
+          </section>
           <SectionDivider />
           <RevealWrapper>
             <HowToOrder />

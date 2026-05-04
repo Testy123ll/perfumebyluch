@@ -63,7 +63,7 @@ const Testimonials = () => {
 
   return (
     <section 
-      className="py-14 md:py-20 overflow-hidden"
+      className="py-14 md:py-20 overflow-hidden bg-background"
     >
       <div className="container">
         <div className="mb-16 text-center">

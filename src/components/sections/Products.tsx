@@ -120,7 +120,7 @@ const Products = () => {
     .filter((p) => p.name.toLowerCase().includes(search.toLowerCase()));
 
   return (
-    <section id="products" className="py-14 md:py-20">
+    <section id="products" className="py-14 md:py-20 bg-background">
       <div className="container">
         <div className="mx-auto max-w-2xl text-center">
           <p className="text-xs uppercase tracking-[0.3em] text-primary">The Collection</p>
