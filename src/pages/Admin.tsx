@@ -7,7 +7,7 @@ import { Trash2, Edit2, Eye, EyeOff, Plus, LogOut, Loader2, Shield, ShieldOff, M
 
 const OWNER_ID = "7a7f1bb0-6aa6-42e6-80e3-7e4f7a48491e";
 const TEST_SESSION_KEY = "pbl_admin_test_session";
-const MAX_VIDEO_SIZE_MB = 20;
+const MAX_VIDEO_SIZE_MB = 5;
 const MAX_VIDEO_SIZE_BYTES = MAX_VIDEO_SIZE_MB * 1024 * 1024;
 
 
@@ -416,51 +416,50 @@ const Admin = () => {
     return { publicUrl: null, error: new Error("Upload failed after retries") };
   };
 
-  const uploadVideoInChunks = async (
+  const uploadVideoDirectly = async (
     file: File,
     filePath: string,
     onProgress: (msg: string) => void
   ): Promise<{ publicUrl: string | null; error: any }> => {
-    const CHUNK_SIZE = 1 * 1024 * 1024; // 1MB chunks
-    const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
-    const chunks: ArrayBuffer[] = [];
+    try {
+      onProgress("Preparing video upload...");
 
-    // Read file in chunks
-    for (let i = 0; i < totalChunks; i++) {
-      const start = i * CHUNK_SIZE;
-      const end = Math.min(start + CHUNK_SIZE, file.size);
-      const blob = file.slice(start, end);
-      const buffer = await blob.arrayBuffer();
-      chunks.push(buffer);
-      onProgress(`Reading video... ${Math.round(((i + 1) / totalChunks) * 50)}%`);
-    }
+      // Step 1: Get a signed upload URL from Supabase
+      const { data: signedData, error: signedError } = await supabase.storage
+        .from("products")
+        .createSignedUploadUrl(filePath);
 
-    // Combine chunks
-    const totalLength = chunks.reduce((sum, c) => sum + c.byteLength, 0);
-    const combined = new Uint8Array(totalLength);
-    let offset = 0;
-    for (const chunk of chunks) {
-      combined.set(new Uint8Array(chunk), offset);
-      offset += chunk.byteLength;
-    }
+      if (signedError || !signedData?.signedUrl) {
+        return { publicUrl: null, error: signedError || new Error("Could not get upload URL") };
+      }
 
-    onProgress("Uploading video... please wait");
+      onProgress("Uploading video... please wait");
 
-    const { error } = await supabase.storage
-      .from("products")
-      .upload(filePath, combined.buffer, {
-        contentType: file.type,
-        cacheControl: "3600",
-        upsert: false,
+      // Step 2: Upload directly via raw fetch PUT — completely bypasses TUS
+      const uploadResponse = await fetch(signedData.signedUrl, {
+        method: "PUT",
+        headers: {
+          "Content-Type": file.type,
+          "x-upsert": "false",
+        },
+        body: file,
       });
 
-    if (error) return { publicUrl: null, error };
+      if (!uploadResponse.ok) {
+        const errorText = await uploadResponse.text();
+        return { publicUrl: null, error: new Error(`Upload failed: ${uploadResponse.status} ${errorText}`) };
+      }
 
-    const { data: publicUrlData } = supabase.storage
-      .from("products")
-      .getPublicUrl(filePath);
+      // Step 3: Get the public URL
+      const { data: publicUrlData } = supabase.storage
+        .from("products")
+        .getPublicUrl(filePath);
 
-    return { publicUrl: publicUrlData.publicUrl, error: null };
+      return { publicUrl: publicUrlData.publicUrl, error: null };
+
+    } catch (err: any) {
+      return { publicUrl: null, error: err };
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -503,7 +502,7 @@ const Admin = () => {
 
     if (videoFile) {
       const videoPath = `product-videos/${Date.now()}.${videoFile.name.split(".").pop()}`;
-      const { publicUrl, error: vidError } = await uploadVideoInChunks(
+      const { publicUrl, error: vidError } = await uploadVideoDirectly(
         videoFile,
         videoPath,
         setUploadProgress
