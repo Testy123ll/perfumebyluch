@@ -416,6 +416,53 @@ const Admin = () => {
     return { publicUrl: null, error: new Error("Upload failed after retries") };
   };
 
+  const uploadVideoInChunks = async (
+    file: File,
+    filePath: string,
+    onProgress: (msg: string) => void
+  ): Promise<{ publicUrl: string | null; error: any }> => {
+    const CHUNK_SIZE = 1 * 1024 * 1024; // 1MB chunks
+    const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+    const chunks: ArrayBuffer[] = [];
+
+    // Read file in chunks
+    for (let i = 0; i < totalChunks; i++) {
+      const start = i * CHUNK_SIZE;
+      const end = Math.min(start + CHUNK_SIZE, file.size);
+      const blob = file.slice(start, end);
+      const buffer = await blob.arrayBuffer();
+      chunks.push(buffer);
+      onProgress(`Reading video... ${Math.round(((i + 1) / totalChunks) * 50)}%`);
+    }
+
+    // Combine chunks
+    const totalLength = chunks.reduce((sum, c) => sum + c.byteLength, 0);
+    const combined = new Uint8Array(totalLength);
+    let offset = 0;
+    for (const chunk of chunks) {
+      combined.set(new Uint8Array(chunk), offset);
+      offset += chunk.byteLength;
+    }
+
+    onProgress("Uploading video... please wait");
+
+    const { error } = await supabase.storage
+      .from("products")
+      .upload(filePath, combined.buffer, {
+        contentType: file.type,
+        cacheControl: "3600",
+        upsert: false,
+      });
+
+    if (error) return { publicUrl: null, error };
+
+    const { data: publicUrlData } = supabase.storage
+      .from("products")
+      .getPublicUrl(filePath);
+
+    return { publicUrl: publicUrlData.publicUrl, error: null };
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -455,21 +502,11 @@ const Admin = () => {
     let video_url = editingId ? products.find((p) => p.id === editingId)?.video_url : "";
 
     if (videoFile) {
-      setUploadProgress("Reading video file...");
-      const videoArrayBuffer = await videoFile.arrayBuffer();
-      
-      const videoExt = videoFile.name.split(".").pop();
-      const videoPath = `product-videos/${Date.now()}.${videoExt}`;
-
-      setUploadProgress("Uploading video... please wait");
-      const { publicUrl, error: vidError } = await uploadWithRetry(
+      const videoPath = `product-videos/${Date.now()}.${videoFile.name.split(".").pop()}`;
+      const { publicUrl, error: vidError } = await uploadVideoInChunks(
+        videoFile,
         videoPath,
-        videoArrayBuffer,
-        {
-          contentType: videoFile.type,
-          cacheControl: "3600",
-          upsert: false,
-        }
+        setUploadProgress
       );
 
       if (vidError) {
