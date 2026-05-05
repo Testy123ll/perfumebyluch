@@ -7,7 +7,7 @@ import { Trash2, Edit2, Eye, EyeOff, Plus, LogOut, Loader2, Shield, ShieldOff, M
 
 const OWNER_ID = "7a7f1bb0-6aa6-42e6-80e3-7e4f7a48491e";
 const TEST_SESSION_KEY = "pbl_admin_test_session";
-const MAX_VIDEO_SIZE_MB = 50;
+const MAX_VIDEO_SIZE_MB = 15;
 const MAX_VIDEO_SIZE_BYTES = MAX_VIDEO_SIZE_MB * 1024 * 1024;
 
 
@@ -48,7 +48,6 @@ const Admin = () => {
     scent_mood: "",
   });
   const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imageData, setImageData] = useState<ArrayBuffer | null>(null);
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [reviews, setReviews] = useState<any[]>([]);
   const [reviewFormData, setReviewFormData] = useState({
@@ -380,7 +379,6 @@ const Admin = () => {
       scent_mood: "",
     });
     setImageFile(null);
-    setImageData(null);
     setVideoFile(null);
     setShowForm(false);
   };
@@ -388,24 +386,15 @@ const Admin = () => {
 
   const uploadWithRetry = async (
     filePath: string,
-    file: File | ArrayBuffer,
+    file: ArrayBuffer,
     options: any,
     maxRetries = 3
   ): Promise<{ publicUrl: string | null; error: any }> => {
     for (let i = 0; i < maxRetries; i++) {
       try {
-        const buffer = file instanceof File ? await file.arrayBuffer() : file;
-        
-        const uploadPromise = supabase.storage
+        const { error } = await supabase.storage
           .from("products")
-          .upload(filePath, buffer, options);
-
-        const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error("Upload timed out after 30s")), 30000)
-        );
-
-        const result = await Promise.race([uploadPromise, timeoutPromise]) as any;
-        const error = result.error;
+          .upload(filePath, file, options);
         
         if (!error) {
           const { data: publicUrlData } = supabase.storage
@@ -418,10 +407,10 @@ const Admin = () => {
           return { publicUrl: null, error };
         }
         
-        await new Promise(r => setTimeout(r, 3000));
+        await new Promise(r => setTimeout(r, 2000));
       } catch (err: any) {
         if (i === maxRetries - 1) return { publicUrl: null, error: err };
-        await new Promise(r => setTimeout(r, 3000));
+        await new Promise(r => setTimeout(r, 2000));
       }
     }
     return { publicUrl: null, error: new Error("Upload failed after retries") };
@@ -443,16 +432,14 @@ const Admin = () => {
     // Step 1: Create resumable upload
     onProgress("Preparing video upload...");
     
-    const mimeType = file.type && file.type !== "" ? file.type : "video/mp4";
-
     const createRes = await new Promise<{ ok: boolean; url: string | null; error: string | null }>((resolve) => {
       const xhr = new XMLHttpRequest();
       xhr.open("POST", `${supabaseUrl}/storage/v1/upload/resumable`, true);
       xhr.setRequestHeader("Authorization", `Bearer ${authToken}`);
-      xhr.setRequestHeader("x-upsert", "true");
+      xhr.setRequestHeader("x-upsert", "false");
       xhr.setRequestHeader("Content-Type", "application/json");
       xhr.setRequestHeader("Upload-Length", file.size.toString());
-      xhr.setRequestHeader("Upload-Metadata", `bucketName ${btoa("products")},objectName ${btoa(filePath)},contentType ${btoa(mimeType)},cacheControl ${btoa("3600")}`);
+      xhr.setRequestHeader("Upload-Metadata", `bucketName ${btoa("products")},objectName ${btoa(filePath)},contentType ${btoa(file.type || "video/mp4")}`);
       xhr.setRequestHeader("Tus-Resumable", "1.0.0");
 
       xhr.onload = () => {
@@ -534,9 +521,10 @@ const Admin = () => {
       const imageExt = imageFile.name.split(".").pop();
       const imagePath = `product-images/${Date.now()}.${imageExt}`;
 
+      const arrayBuffer = await imageFile.arrayBuffer();
       const { publicUrl, error: imgError } = await uploadWithRetry(
         imagePath,
-        imageData || imageFile,
+        arrayBuffer,
         {
           contentType: imageFile.type,
           cacheControl: "3600",
@@ -887,16 +875,7 @@ const Admin = () => {
                   <input
                     type="file"
                     accept="image/*"
-                    onChange={async (e) => {
-                      const file = e.target.files?.[0] || null;
-                      setImageFile(file);
-                      if (file) {
-                        const buffer = await file.arrayBuffer();
-                        setImageData(buffer);
-                      } else {
-                        setImageData(null);
-                      }
-                    }}
+                    onChange={(e) => setImageFile(e.target.files?.[0] || null)}
                     required={!editingId}
                     className="w-full text-sm"
                   />
@@ -907,7 +886,7 @@ const Admin = () => {
                   </label>
                   <input
                     type="file"
-                    accept="video/*"
+                    accept="video/mp4,video/quicktime,video/webm"
                     onChange={(e) => {
                       const file = e.target.files?.[0] || null;
                       if (file && file.size > MAX_VIDEO_SIZE_BYTES) {
