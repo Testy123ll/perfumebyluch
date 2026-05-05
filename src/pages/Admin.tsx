@@ -441,6 +441,8 @@ const Admin = () => {
       xhr.setRequestHeader("Upload-Length", file.size.toString());
       xhr.setRequestHeader("Upload-Metadata", `bucketName ${btoa("products")},objectName ${btoa(filePath)},contentType ${btoa(file.type || "video/mp4")},cacheControl ${btoa("3600")}`);
       xhr.setRequestHeader("Tus-Resumable", "1.0.0");
+      xhr.setRequestHeader("Cache-Control", "no-cache");
+      xhr.timeout = 30000;
 
       xhr.onload = () => {
         if (xhr.status === 201) {
@@ -451,6 +453,7 @@ const Admin = () => {
         }
       };
       xhr.onerror = () => resolve({ ok: false, url: null, error: "Network error creating upload" });
+      xhr.ontimeout = () => resolve({ ok: false, url: null, error: "Upload creation timed out. Please try again on a stable connection." });
       xhr.send();
     });
 
