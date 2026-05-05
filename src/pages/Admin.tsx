@@ -445,37 +445,34 @@ const Admin = () => {
     // Step 1: Create resumable upload
     onProgress("Preparing video upload...");
     
-    const createRes = await new Promise<{ ok: boolean; url: string | null; error: string | null }>((resolve) => {
-      try {
-        const xhr = new XMLHttpRequest();
-        const safeBtoa = (str: string) => btoa(unescape(encodeURIComponent(str)));
-        
-        xhr.open("POST", `${supabaseUrl}/storage/v1/upload/resumable`, true);
-        xhr.setRequestHeader("Authorization", `Bearer ${authToken}`);
-        xhr.setRequestHeader("x-upsert", "true");
-        xhr.setRequestHeader("Content-Type", "application/octet-stream");
-        xhr.setRequestHeader("Upload-Length", file.size.toString());
-        xhr.setRequestHeader("Upload-Metadata", `bucketName ${safeBtoa("products")},objectName ${safeBtoa(filePath)},contentType ${safeBtoa(file.type || "video/mp4")},cacheControl ${safeBtoa("3600")}`);
-        xhr.setRequestHeader("Tus-Resumable", "1.0.0");
-        xhr.setRequestHeader("Cache-Control", "no-cache");
-        xhr.timeout = 30000;
+    const safeBtoa = (str: string) => btoa(unescape(encodeURIComponent(str)));
+    const metadata = `bucketName ${safeBtoa("products")},objectName ${safeBtoa(filePath)},contentType ${safeBtoa(file.type || "video/mp4")}`;
 
-        xhr.onload = () => {
-          if (xhr.status === 201) {
-            const location = xhr.getResponseHeader("Location");
-            resolve({ ok: true, url: location, error: null });
-          } else {
-            resolve({ ok: false, url: null, error: `Failed to create upload: ${xhr.status} ${xhr.statusText}` });
+    const createRes = await (async () => {
+      try {
+        const response = await fetch(`${supabaseUrl}/storage/v1/upload/resumable`, {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${authToken}`,
+            "x-upsert": "true",
+            "Tus-Resumable": "1.0.0",
+            "Upload-Length": file.size.toString(),
+            "Upload-Metadata": metadata,
+            "Cache-Control": "no-cache"
           }
-        };
-        xhr.onerror = () => resolve({ ok: false, url: null, error: "Network error creating upload. Check your connection." });
-        xhr.ontimeout = () => resolve({ ok: false, url: null, error: "Upload creation timed out. Please try again on a stable connection." });
-        xhr.send();
+        });
+
+        if (response.ok) {
+          const location = response.headers.get("Location");
+          return { ok: true, url: location, error: null };
+        } else {
+          const errorText = await response.text();
+          return { ok: false, url: null, error: `Failed to create upload: ${response.status} ${errorText}` };
+        }
       } catch (err) {
-        console.error("XHR Setup Error:", err);
-        resolve({ ok: false, url: null, error: `Upload setup error: ${err}` });
+        return { ok: false, url: null, error: `Network error during handshake: ${err}` };
       }
-    });
+    })();
 
     if (!createRes.ok || !createRes.url) {
       return { publicUrl: null, error: createRes.error };
