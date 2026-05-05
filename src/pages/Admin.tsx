@@ -508,6 +508,14 @@ const Admin = () => {
       onProgress(`Uploading video... ${percent}%`);
 
       const chunkResult = await new Promise<{ ok: boolean; error: string | null }>((resolve) => {
+        let chunkResolved = false;
+        const doChunkResolve = (val: { ok: boolean; error: string | null }) => {
+          if (!chunkResolved) {
+            chunkResolved = true;
+            resolve(val);
+          }
+        };
+
         const xhr = new XMLHttpRequest();
         xhr.open("PATCH", uploadUrl, true);
         xhr.setRequestHeader("Authorization", `Bearer ${authToken}`);
@@ -518,13 +526,18 @@ const Admin = () => {
 
         xhr.onload = () => {
           if (xhr.status === 204) {
-            resolve({ ok: true, error: null });
+            doChunkResolve({ ok: true, error: null });
           } else {
-            resolve({ ok: false, error: `Chunk ${chunkIndex + 1} failed: ${xhr.status} ${xhr.responseText}` });
+            doChunkResolve({ ok: false, error: `Chunk ${chunkIndex + 1} failed: ${xhr.status} ${xhr.responseText}` });
           }
         };
-        xhr.onerror = () => resolve({ ok: false, error: `Network error on chunk ${chunkIndex + 1}` });
-        xhr.ontimeout = () => resolve({ ok: false, error: `Chunk ${chunkIndex + 1} timed out` });
+        xhr.onerror = () => doChunkResolve({ ok: false, error: `Network error on chunk ${chunkIndex + 1}` });
+        xhr.ontimeout = () => doChunkResolve({ ok: false, error: `Chunk ${chunkIndex + 1} timed out` });
+        xhr.onloadend = () => {
+          setTimeout(() => {
+            if (!chunkResolved) doChunkResolve({ ok: false, error: `Chunk ${chunkIndex + 1} ended without response` });
+          }, 1000);
+        };
         xhr.send(chunkBuffer);
       });
 
@@ -550,6 +563,8 @@ const Admin = () => {
 
     const { data: { session: currentSession } } = await supabase.auth.getSession();
     const authToken = currentSession?.access_token || import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+    let image_url = editingId ? products.find((p) => p.id === editingId)?.image_url : "";
 
     if (imageFile) {
       setUploadProgress("Uploading image...");
