@@ -441,14 +441,16 @@ const Admin = () => {
     // Step 1: Create resumable upload
     onProgress("Preparing video upload...");
     
+    const mimeType = file.type && file.type !== "" ? file.type : "video/mp4";
+
     const createRes = await new Promise<{ ok: boolean; url: string | null; error: string | null }>((resolve) => {
       const xhr = new XMLHttpRequest();
       xhr.open("POST", `${supabaseUrl}/storage/v1/upload/resumable`, true);
       xhr.setRequestHeader("Authorization", `Bearer ${authToken}`);
-      xhr.setRequestHeader("x-upsert", "false");
+      xhr.setRequestHeader("x-upsert", "true");
       xhr.setRequestHeader("Content-Type", "application/json");
       xhr.setRequestHeader("Upload-Length", file.size.toString());
-      xhr.setRequestHeader("Upload-Metadata", `bucketName ${btoa("products")},objectName ${btoa(filePath)},contentType ${btoa(file.type || "video/mp4")}`);
+      xhr.setRequestHeader("Upload-Metadata", `bucketName ${btoa("products")},objectName ${btoa(filePath)},contentType ${btoa(mimeType)},cacheControl ${btoa("3600")}`);
       xhr.setRequestHeader("Tus-Resumable", "1.0.0");
 
       xhr.onload = () => {
