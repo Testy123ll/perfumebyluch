@@ -48,6 +48,7 @@ const Admin = () => {
     scent_mood: "",
   });
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imageData, setImageData] = useState<ArrayBuffer | null>(null);
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [reviews, setReviews] = useState<any[]>([]);
   const [reviewFormData, setReviewFormData] = useState({
@@ -379,6 +380,7 @@ const Admin = () => {
       scent_mood: "",
     });
     setImageFile(null);
+    setImageData(null);
     setVideoFile(null);
     setShowForm(false);
   };
@@ -534,7 +536,7 @@ const Admin = () => {
 
       const { publicUrl, error: imgError } = await uploadWithRetry(
         imagePath,
-        imageFile,
+        imageData || imageFile,
         {
           contentType: imageFile.type,
           cacheControl: "3600",
@@ -885,7 +887,16 @@ const Admin = () => {
                   <input
                     type="file"
                     accept="image/*"
-                    onChange={(e) => setImageFile(e.target.files?.[0] || null)}
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0] || null;
+                      setImageFile(file);
+                      if (file) {
+                        const buffer = await file.arrayBuffer();
+                        setImageData(buffer);
+                      } else {
+                        setImageData(null);
+                      }
+                    }}
                     required={!editingId}
                     className="w-full text-sm"
                   />
