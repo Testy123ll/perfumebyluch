@@ -392,9 +392,18 @@ const Admin = () => {
   ): Promise<{ publicUrl: string | null; error: any }> => {
     for (let i = 0; i < maxRetries; i++) {
       try {
-        const { error } = await supabase.storage
+        const buffer = file instanceof File ? await file.arrayBuffer() : file;
+        
+        const uploadPromise = supabase.storage
           .from("products")
-          .upload(filePath, file, options);
+          .upload(filePath, buffer, options);
+
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("Upload timed out after 30s")), 30000)
+        );
+
+        const result = await Promise.race([uploadPromise, timeoutPromise]) as any;
+        const error = result.error;
         
         if (!error) {
           const { data: publicUrlData } = supabase.storage
@@ -407,10 +416,10 @@ const Admin = () => {
           return { publicUrl: null, error };
         }
         
-        await new Promise(r => setTimeout(r, 2000));
+        await new Promise(r => setTimeout(r, 3000));
       } catch (err: any) {
         if (i === maxRetries - 1) return { publicUrl: null, error: err };
-        await new Promise(r => setTimeout(r, 2000));
+        await new Promise(r => setTimeout(r, 3000));
       }
     }
     return { publicUrl: null, error: new Error("Upload failed after retries") };
