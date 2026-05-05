@@ -207,20 +207,25 @@ const Admin = () => {
         }
         setUserRole(profile.role);
       }
-
-      // Successful auth - load data
-      fetchProducts();
-      fetchReviews();
-      fetchLogs();
-      if (profile?.role === "owner" || (userRole === "owner")) {
-        fetchTeam();
-      }
       
       setAuthChecking(false);
     };
 
     checkAuth();
+  }, [navigate]);
 
+  useEffect(() => {
+    if (session) {
+      fetchProducts();
+      fetchReviews();
+      fetchLogs();
+      if (userRole === "owner") {
+        fetchTeam();
+      }
+    }
+  }, [session, userRole]);
+
+  useEffect(() => {
     const { data: authListener } = supabase.auth.onAuthStateChange(
       (event, newSession) => {
         if (!newSession) {
@@ -232,7 +237,7 @@ const Admin = () => {
     );
 
     return () => authListener.subscription.unsubscribe();
-  }, [navigate, fetchProducts, fetchReviews, fetchLogs, fetchTeam, userRole]);
+  }, [navigate]);
 
   useEffect(() => {
     if (session) fetchLogs();
@@ -550,8 +555,8 @@ const Admin = () => {
         xhr.ontimeout = () => doChunkResolve({ ok: false, error: `Chunk ${chunkIndex + 1} timed out` });
         xhr.onloadend = () => {
           setTimeout(() => {
-            if (!chunkResolved) doChunkResolve({ ok: false, error: `Chunk ${chunkIndex + 1} ended without response` });
-          }, 1000);
+            if (!chunkResolved) doChunkResolve({ ok: false, error: `Chunk ${chunkIndex + 1} ended (buffer check)` });
+          }, 2000);
         };
         xhr.send(chunkBuffer);
       });
