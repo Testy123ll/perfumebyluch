@@ -439,7 +439,7 @@ const Admin = () => {
       xhr.setRequestHeader("x-upsert", "false");
       xhr.setRequestHeader("Content-Type", "application/json");
       xhr.setRequestHeader("Upload-Length", file.size.toString());
-      xhr.setRequestHeader("Upload-Metadata", `bucketName ${btoa("products")},objectName ${btoa(filePath)},contentType ${btoa(file.type || "video/mp4")}`);
+      xhr.setRequestHeader("Upload-Metadata", `bucketName ${btoa("products")},objectName ${btoa(filePath)},contentType ${btoa(file.type && file.type !== "" ? file.type : "video/mp4")}`);
       xhr.setRequestHeader("Tus-Resumable", "1.0.0");
 
       xhr.onload = () => {
