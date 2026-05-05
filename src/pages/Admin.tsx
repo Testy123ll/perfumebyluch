@@ -436,10 +436,10 @@ const Admin = () => {
       const xhr = new XMLHttpRequest();
       xhr.open("POST", `${supabaseUrl}/storage/v1/upload/resumable`, true);
       xhr.setRequestHeader("Authorization", `Bearer ${authToken}`);
-      xhr.setRequestHeader("x-upsert", "false");
-      xhr.setRequestHeader("Content-Type", "application/json");
+      xhr.setRequestHeader("x-upsert", "true");
+      xhr.setRequestHeader("Content-Type", "application/octet-stream");
       xhr.setRequestHeader("Upload-Length", file.size.toString());
-      xhr.setRequestHeader("Upload-Metadata", `bucketName ${btoa("products")},objectName ${btoa(filePath)},contentType ${btoa(file.type && file.type !== "" ? file.type : "video/mp4")}`);
+      xhr.setRequestHeader("Upload-Metadata", `bucketName ${btoa("products")},objectName ${btoa(filePath)},contentType ${btoa(file.type || "video/mp4")},cacheControl ${btoa("3600")}`);
       xhr.setRequestHeader("Tus-Resumable", "1.0.0");
 
       xhr.onload = () => {
