@@ -384,36 +384,49 @@ const Admin = () => {
   };
 
 
-  const uploadWithRetry = async (
+  const uploadImageXHR = (
     filePath: string,
     file: ArrayBuffer,
-    options: any,
-    maxRetries = 3
-  ): Promise<{ publicUrl: string | null; error: any }> => {
-    for (let i = 0; i < maxRetries; i++) {
+    contentType: string,
+    onProgress: (msg: string) => void
+  ): Promise<{ publicUrl: string | null; error: string | null }> => {
+    return new Promise(async (resolve) => {
       try {
-        const { error } = await supabase.storage
-          .from("products")
-          .upload(filePath, file, options);
-        
-        if (!error) {
-          const { data: publicUrlData } = supabase.storage
-            .from("products")
-            .getPublicUrl(filePath);
-          return { publicUrl: publicUrlData.publicUrl, error: null };
-        }
-        
-        if (i === maxRetries - 1) {
-          return { publicUrl: null, error };
-        }
-        
-        await new Promise(r => setTimeout(r, 2000));
-      } catch (err: any) {
-        if (i === maxRetries - 1) return { publicUrl: null, error: err };
-        await new Promise(r => setTimeout(r, 2000));
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+        const { data: { session } } = await supabase.auth.getSession();
+        const authToken = session?.access_token || supabaseKey;
+
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", `${supabaseUrl}/storage/v1/object/products/${filePath}`, true);
+        xhr.setRequestHeader("Authorization", `Bearer ${authToken}`);
+        xhr.setRequestHeader("x-upsert", "false");
+        xhr.setRequestHeader("Content-Type", contentType);
+
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable) {
+            const percent = Math.round((e.loaded / e.total) * 100);
+            onProgress(`Uploading image... ${percent}%`);
+          }
+        };
+
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            const { data: publicUrlData } = supabase.storage
+              .from("products")
+              .getPublicUrl(filePath);
+            resolve({ publicUrl: publicUrlData.publicUrl, error: null });
+          } else {
+            resolve({ publicUrl: null, error: `Upload failed: ${xhr.status} ${xhr.responseText}` });
+          }
+        };
+
+        xhr.onerror = () => resolve({ publicUrl: null, error: "Network error during image upload" });
+        xhr.send(file);
+      } catch (err) {
+        resolve({ publicUrl: null, error: `Setup error: ${err}` });
       }
-    }
-    return { publicUrl: null, error: new Error("Upload failed after retries") };
+    });
   };
 
 
@@ -532,20 +545,17 @@ const Admin = () => {
       const imagePath = `product-images/${Date.now()}.${imageExt}`;
 
       const arrayBuffer = await imageFile.arrayBuffer();
-      const { publicUrl, error: imgError } = await uploadWithRetry(
+      const { publicUrl, error: imgError } = await uploadImageXHR(
         imagePath,
         arrayBuffer,
-        {
-          contentType: imageFile.type,
-          cacheControl: "3600",
-          upsert: false,
-        }
+        imageFile.type,
+        setUploadProgress
       );
 
       if (imgError) {
         toast({
           title: "Image Upload Failed",
-          description: imgError.message,
+          description: imgError,
           variant: "destructive",
         });
         setLoading(false);
