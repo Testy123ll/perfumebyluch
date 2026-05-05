@@ -207,25 +207,20 @@ const Admin = () => {
         }
         setUserRole(profile.role);
       }
+
+      // Successful auth - load data
+      fetchProducts();
+      fetchReviews();
+      fetchLogs();
+      if (profile?.role === "owner" || (userRole === "owner")) {
+        fetchTeam();
+      }
       
       setAuthChecking(false);
     };
 
     checkAuth();
-  }, [navigate]);
 
-  useEffect(() => {
-    if (session) {
-      fetchProducts();
-      fetchReviews();
-      fetchLogs();
-      if (userRole === "owner") {
-        fetchTeam();
-      }
-    }
-  }, [session, userRole]);
-
-  useEffect(() => {
     const { data: authListener } = supabase.auth.onAuthStateChange(
       (event, newSession) => {
         if (!newSession) {
@@ -237,7 +232,7 @@ const Admin = () => {
     );
 
     return () => authListener.subscription.unsubscribe();
-  }, [navigate]);
+  }, [navigate, fetchProducts, fetchReviews, fetchLogs, fetchTeam, userRole]);
 
   useEffect(() => {
     if (session) fetchLogs();
@@ -389,6 +384,14 @@ const Admin = () => {
   };
 
 
+  const uploadWithRetry = async (
+    path: string,
+    data: ArrayBuffer,
+    options: { contentType: string; cacheControl: string; upsert: boolean }
+  ) => {
+    return await supabase.storage.from("products").upload(path, data, options);
+  };
+
   const uploadImageXHR = (
     filePath: string,
     file: ArrayBuffer,
@@ -510,6 +513,77 @@ const Admin = () => {
         doResolve({ publicUrl: null, error: `Setup error: ${err}` });
       }
     });
+<<<<<<< HEAD
+=======
+
+    if (!createRes.ok || !createRes.url) {
+      return { publicUrl: null, error: createRes.error };
+    }
+
+    const uploadUrl = createRes.url.startsWith("http")
+      ? createRes.url
+      : `${supabaseUrl}${createRes.url}`;
+
+    // Step 2: Upload chunks one by one via XHR PATCH
+    let offset = 0;
+    let chunkIndex = 0;
+    const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+
+    while (offset < file.size) {
+      const chunk = file.slice(offset, offset + CHUNK_SIZE);
+      const chunkBuffer = await chunk.arrayBuffer();
+      const percent = Math.round(((chunkIndex + 1) / totalChunks) * 100);
+      onProgress(`Uploading video... ${percent}%`);
+
+      const chunkResult = await new Promise<{ ok: boolean; error: string | null }>((resolve) => {
+        let chunkResolved = false;
+        const doChunkResolve = (val: { ok: boolean; error: string | null }) => {
+          if (!chunkResolved) {
+            chunkResolved = true;
+            resolve(val);
+          }
+        };
+
+        const xhr = new XMLHttpRequest();
+        xhr.open("PATCH", uploadUrl, true);
+        xhr.setRequestHeader("Authorization", `Bearer ${authToken}`);
+        xhr.setRequestHeader("Content-Type", "application/offset+octet-stream");
+        xhr.setRequestHeader("Upload-Offset", offset.toString());
+        xhr.setRequestHeader("Tus-Resumable", "1.0.0");
+        xhr.timeout = 30000;
+
+        xhr.onload = () => {
+          if (xhr.status === 204) {
+            doChunkResolve({ ok: true, error: null });
+          } else {
+            doChunkResolve({ ok: false, error: `Chunk ${chunkIndex + 1} failed: ${xhr.status} ${xhr.responseText}` });
+          }
+        };
+        xhr.onerror = () => doChunkResolve({ ok: false, error: `Network error on chunk ${chunkIndex + 1}` });
+        xhr.ontimeout = () => doChunkResolve({ ok: false, error: `Chunk ${chunkIndex + 1} timed out` });
+        xhr.onloadend = () => {
+          setTimeout(() => {
+            if (!chunkResolved) doChunkResolve({ ok: false, error: `Chunk ${chunkIndex + 1} ended without response` });
+          }, 1000);
+        };
+        xhr.send(chunkBuffer);
+      });
+
+      if (!chunkResult.ok) {
+        return { publicUrl: null, error: chunkResult.error };
+      }
+
+      offset += CHUNK_SIZE;
+      chunkIndex++;
+    }
+
+    // Step 3: Get public URL
+    const { data: publicUrlData } = supabase.storage
+      .from("products")
+      .getPublicUrl(filePath);
+
+    return { publicUrl: publicUrlData.publicUrl, error: null };
+>>>>>>> 480b63a (Implement conditional mobile video upload strategy and revert performance optimizations)
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -553,26 +627,33 @@ const Admin = () => {
 
     if (videoFile) {
       const videoPath = `product-videos/${Date.now()}.${videoFile.name.split(".").pop()}`;
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
-      const { publicUrl, error: vidError } = await uploadVideoXHR(
-        videoPath,
-        videoFile,
-        authToken,
-        setUploadProgress
-      );
-
-      if (vidError) {
-        toast({
-          title: "Video Upload Failed",
-          description: vidError,
-          variant: "destructive",
-        });
-        setLoading(false);
-        setUploadProgress("");
-        return;
+      if (isMobile) {
+        setUploadProgress("Uploading video...");
+        const arrayBuffer = await videoFile.arrayBuffer();
+        const { publicUrl, error: vidError } = await uploadWithRetry(
+          videoPath,
+          arrayBuffer,
+          { contentType: videoFile.type || "video/mp4", cacheControl: "3600", upsert: true }
+        );
+        if (vidError) {
+          toast({ title: "Video Upload Failed", description: vidError.message, variant: "destructive" });
+          setLoading(false);
+          setUploadProgress("");
+          return;
+        }
+        video_url = publicUrl || "";
+      } else {
+        const { publicUrl, error: vidError } = await uploadVideoChunked(videoFile, videoPath, authToken, setUploadProgress);
+        if (vidError) {
+          toast({ title: "Video Upload Failed", description: vidError, variant: "destructive" });
+          setLoading(false);
+          setUploadProgress("");
+          return;
+        }
+        video_url = publicUrl || "";
       }
-
-      video_url = publicUrl || "";
     }
 
     setUploadProgress("");
