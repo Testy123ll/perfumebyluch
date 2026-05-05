@@ -250,6 +250,21 @@ const ProductCard = ({ product, priority, isTopSelling }: { product: Product; pr
             </div>
           )}
 
+          {product.video_url && (
+            <video
+              src={product.video_url}
+              muted
+              loop
+              playsInline
+              className="absolute inset-0 h-full w-full object-cover opacity-0 transition-opacity duration-700 group-hover:opacity-100"
+              onMouseEnter={(e) => e.currentTarget.play()}
+              onMouseLeave={(e) => {
+                e.currentTarget.pause();
+                e.currentTarget.currentTime = 0;
+              }}
+            />
+          )}
+
           {/* Video Play Button */}
           {product.video_url && (
             <button
@@ -364,10 +379,11 @@ const ProductCard = ({ product, priority, isTopSelling }: { product: Product; pr
                 preload={videoOpen ? "auto" : "metadata"}
                 playsInline
                 autoPlay
+                muted
                 controls
                 className="h-full w-full"
               >
-                <source src={product.video_url} type="video/mp4" />
+                <source src={product.video_url} />
                 Your browser does not support the video tag.
               </video>
             )}
