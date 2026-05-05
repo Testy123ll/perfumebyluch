@@ -7,7 +7,7 @@ import { Trash2, Edit2, Eye, EyeOff, Plus, LogOut, Loader2, Shield, ShieldOff, M
 
 const OWNER_ID = "7a7f1bb0-6aa6-42e6-80e3-7e4f7a48491e";
 const TEST_SESSION_KEY = "pbl_admin_test_session";
-const MAX_VIDEO_SIZE_MB = 15;
+const MAX_VIDEO_SIZE_MB = 50;
 const MAX_VIDEO_SIZE_BYTES = MAX_VIDEO_SIZE_MB * 1024 * 1024;
 
 
@@ -886,7 +886,7 @@ const Admin = () => {
                   </label>
                   <input
                     type="file"
-                    accept="video/mp4,video/quicktime,video/webm"
+                    accept="video/*"
                     onChange={(e) => {
                       const file = e.target.files?.[0] || null;
                       if (file && file.size > MAX_VIDEO_SIZE_BYTES) {
