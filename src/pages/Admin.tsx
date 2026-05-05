@@ -455,14 +455,13 @@ const Admin = () => {
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 
     // Step 1: Create resumable upload
-    onProgress("Preparing video upload (Initializing)...");
+    onProgress("Preparing video upload...");
     
     const safeBtoa = (str: string) => btoa(unescape(encodeURIComponent(str)));
     const metadata = `bucketName ${safeBtoa("products")},objectName ${safeBtoa(filePath)},contentType ${safeBtoa(file.type || "video/mp4")}`;
 
     const createRes = await new Promise<{ ok: boolean; url: string | null; error: string | null }>((resolve) => {
       try {
-        onProgress("Preparing video upload (Sending request)...");
         const xhr = new XMLHttpRequest();
         xhr.open("POST", `${supabaseUrl}/storage/v1/upload/resumable`, true);
         xhr.setRequestHeader("Authorization", `Bearer ${authToken}`);
@@ -471,10 +470,10 @@ const Admin = () => {
         xhr.setRequestHeader("Upload-Length", file.size.toString());
         xhr.setRequestHeader("Upload-Metadata", metadata);
         xhr.setRequestHeader("Cache-Control", "no-cache");
-        xhr.timeout = 45000;
+        xhr.timeout = 30000;
 
         xhr.onload = () => {
-          if (xhr.status === 201 || xhr.status === 200) {
+          if (xhr.status === 201) {
             const location = xhr.getResponseHeader("Location");
             resolve({ ok: true, url: location, error: null });
           } else {
@@ -483,7 +482,7 @@ const Admin = () => {
         };
         xhr.onerror = () => resolve({ ok: false, url: null, error: "Network error during handshake" });
         xhr.ontimeout = () => resolve({ ok: false, url: null, error: "Handshake timed out" });
-        xhr.send("");
+        xhr.send();
       } catch (err) {
         resolve({ ok: false, url: null, error: `Handshake setup error: ${err}` });
       }
