@@ -451,7 +451,7 @@ const Admin = () => {
     authToken: string,
     onProgress: (msg: string) => void
   ): Promise<{ publicUrl: string | null; error: string | null }> => {
-    const CHUNK_SIZE = 1 * 1024 * 1024; // 1MB per chunk
+    const CHUNK_SIZE = 5 * 1024 * 1024; // 5MB per chunk for better speed
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 
     // Step 1: Create resumable upload
@@ -522,7 +522,7 @@ const Admin = () => {
         xhr.setRequestHeader("Content-Type", "application/offset+octet-stream");
         xhr.setRequestHeader("Upload-Offset", offset.toString());
         xhr.setRequestHeader("Tus-Resumable", "1.0.0");
-        xhr.timeout = 30000;
+        xhr.timeout = 120000; // 120s for 5MB chunks
 
         xhr.onload = () => {
           if (xhr.status === 204) {
