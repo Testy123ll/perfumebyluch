@@ -463,13 +463,15 @@ const Admin = () => {
     const createRes = await new Promise<{ ok: boolean; url: string | null; error: string | null }>((resolve) => {
       try {
         const xhr = new XMLHttpRequest();
-        xhr.open("POST", `${supabaseUrl}/storage/v1/upload/resumable`, true);
+        xhr.open("POST", `${supabaseUrl}/storage/v1/upload/resumable?t=${Date.now()}`, true);
         xhr.setRequestHeader("Authorization", `Bearer ${authToken}`);
         xhr.setRequestHeader("x-upsert", "true");
         xhr.setRequestHeader("Tus-Resumable", "1.0.0");
         xhr.setRequestHeader("Upload-Length", file.size.toString());
         xhr.setRequestHeader("Upload-Metadata", metadata);
-        xhr.setRequestHeader("Cache-Control", "no-cache");
+        xhr.setRequestHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+        xhr.setRequestHeader("Pragma", "no-cache");
+        xhr.setRequestHeader("Expires", "0");
         xhr.timeout = 30000;
 
         xhr.onload = () => {
