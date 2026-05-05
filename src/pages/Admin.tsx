@@ -208,19 +208,24 @@ const Admin = () => {
         setUserRole(profile.role);
       }
 
-      // Successful auth - load data
-      fetchProducts();
-      fetchReviews();
-      fetchLogs();
-      if (profile?.role === "owner" || (userRole === "owner")) {
-        fetchTeam();
-      }
-      
       setAuthChecking(false);
     };
 
     checkAuth();
+  }, [navigate]);
 
+  useEffect(() => {
+    if (session) {
+      fetchProducts();
+      fetchReviews();
+      fetchLogs();
+      if (userRole === "owner") {
+        fetchTeam();
+      }
+    }
+  }, [session, userRole]);
+
+  useEffect(() => {
     const { data: authListener } = supabase.auth.onAuthStateChange(
       (event, newSession) => {
         if (!newSession) {
@@ -232,7 +237,7 @@ const Admin = () => {
     );
 
     return () => authListener.subscription.unsubscribe();
-  }, [navigate, fetchProducts, fetchReviews, fetchLogs, fetchTeam, userRole]);
+  }, [navigate]);
 
   useEffect(() => {
     if (session) fetchLogs();
@@ -388,8 +393,12 @@ const Admin = () => {
     path: string,
     data: ArrayBuffer,
     options: { contentType: string; cacheControl: string; upsert: boolean }
-  ) => {
-    return await supabase.storage.from("products").upload(path, data, options);
+  ): Promise<{ publicUrl: string | null; error: any }> => {
+    const { error } = await supabase.storage.from("products").upload(path, data, options);
+    if (error) return { publicUrl: null, error };
+    
+    const { data: publicUrlData } = supabase.storage.from("products").getPublicUrl(path);
+    return { publicUrl: publicUrlData.publicUrl, error: null };
   };
 
   const uploadImageXHR = (
@@ -583,7 +592,6 @@ const Admin = () => {
       .getPublicUrl(filePath);
 
     return { publicUrl: publicUrlData.publicUrl, error: null };
->>>>>>> 480b63a (Implement conditional mobile video upload strategy and revert performance optimizations)
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
