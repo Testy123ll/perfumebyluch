@@ -462,71 +462,66 @@ const Admin = () => {
 
 
 
-  const uploadVideoXHR = (
-    filePath: string,
+  const uploadVideoChunked = async (
     file: File,
+    filePath: string,
     authToken: string,
     onProgress: (msg: string) => void
   ): Promise<{ publicUrl: string | null; error: string | null }> => {
-    return new Promise((resolve) => {
-      let resolved = false;
-      const doResolve = (val: { publicUrl: string | null; error: string | null }) => {
-        if (!resolved) {
-          resolved = true;
+    const CHUNK_SIZE = 1 * 1024 * 1024; // 1MB per chunk
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+
+    // Step 1: Create resumable upload
+    onProgress("Preparing video upload...");
+    
+    const safeBtoa = (str: string) => btoa(unescape(encodeURIComponent(str)));
+    const metadata = `bucketName ${safeBtoa("products")},objectName ${safeBtoa(filePath)},contentType ${safeBtoa(file.type || "video/mp4")}`;
+
+    const createRes = await new Promise<{ ok: boolean; url: string | null; error: string | null }>((resolve) => {
+      let handshakeResolved = false;
+      const doHandshakeResolve = (val: { ok: boolean; url: string | null; error: string | null }) => {
+        if (!handshakeResolved) {
+          handshakeResolved = true;
           resolve(val);
         }
       };
 
       try {
-        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
         const xhr = new XMLHttpRequest();
-
-        xhr.open("POST", `${supabaseUrl}/storage/v1/object/products/${filePath}`, true);
+        xhr.open("POST", `${supabaseUrl}/storage/v1/upload/resumable?t=${Date.now()}`, true);
         xhr.setRequestHeader("Authorization", `Bearer ${authToken}`);
         xhr.setRequestHeader("x-upsert", "true");
-        xhr.setRequestHeader("Cache-Control", "no-cache");
-        // Do NOT set Content-Type manually — let FormData set it with boundary
-        xhr.timeout = 300000; // 5 min for large mobile uploads
-
-        xhr.upload.onprogress = (e) => {
-          if (e.lengthComputable) {
-            const percent = Math.round((e.loaded / e.total) * 100);
-            onProgress(`Uploading video... ${percent}%`);
-          }
-        };
+        xhr.setRequestHeader("Tus-Resumable", "1.0.0");
+        xhr.setRequestHeader("Upload-Length", file.size.toString());
+        xhr.setRequestHeader("Upload-Metadata", metadata);
+        xhr.setRequestHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+        xhr.setRequestHeader("Pragma", "no-cache");
+        xhr.setRequestHeader("Expires", "0");
+        xhr.timeout = 30000;
 
         xhr.onload = () => {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            const { data: publicUrlData } = supabase.storage
-              .from("products")
-              .getPublicUrl(filePath);
-            doResolve({ publicUrl: publicUrlData.publicUrl, error: null });
+          if (xhr.status === 201 || xhr.status === 200) {
+            const location = xhr.getResponseHeader("Location");
+            doHandshakeResolve({ ok: true, url: location, error: null });
           } else {
-            doResolve({ publicUrl: null, error: `Upload failed: ${xhr.status} ${xhr.responseText}` });
+            doHandshakeResolve({ ok: false, url: null, error: `Handshake failed: ${xhr.status} ${xhr.responseText}` });
           }
         };
-
-        xhr.onerror = () => doResolve({ publicUrl: null, error: "Network error during video upload" });
-        xhr.ontimeout = () => doResolve({ publicUrl: null, error: "Video upload timed out. Check your connection." });
+        xhr.onerror = () => doHandshakeResolve({ ok: false, url: null, error: "Network error during handshake" });
+        xhr.ontimeout = () => doHandshakeResolve({ ok: false, url: null, error: "Handshake timed out" });
         xhr.onloadend = () => {
           setTimeout(() => {
-            if (!resolved) doResolve({ publicUrl: null, error: "Upload ended without success response" });
+            if (!handshakeResolved) doHandshakeResolve({ ok: false, url: null, error: "Handshake ended" });
           }, 1000);
         };
-
-        // Use FormData — universally supported on all mobile browsers
-        const formData = new FormData();
-        formData.append("", file, file.name);
-        xhr.send(formData);
+        xhr.send("");
       } catch (err) {
-        doResolve({ publicUrl: null, error: `Setup error: ${err}` });
+        doHandshakeResolve({ ok: false, url: null, error: `Handshake setup error: ${err}` });
       }
     });
-<<<<<<< HEAD
-=======
 
     if (!createRes.ok || !createRes.url) {
-      return { publicUrl: null, error: createRes.error };
+      return { publicUrl: null, error: createRes.error || "Handshake failed" };
     }
 
     const uploadUrl = createRes.url.startsWith("http")
