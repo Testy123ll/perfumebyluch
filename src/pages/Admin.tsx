@@ -392,16 +392,24 @@ const Admin = () => {
     onProgress: (msg: string) => void
   ): Promise<{ publicUrl: string | null; error: string | null }> => {
     return new Promise((resolve) => {
+      let resolved = false;
+      const doResolve = (val: { publicUrl: string | null; error: string | null }) => {
+        if (!resolved) {
+          resolved = true;
+          resolve(val);
+        }
+      };
+
       try {
         const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
         const xhr = new XMLHttpRequest();
         
         xhr.open("POST", `${supabaseUrl}/storage/v1/object/products/${filePath}`, true);
         xhr.setRequestHeader("Authorization", `Bearer ${authToken}`);
-        xhr.setRequestHeader("x-upsert", "false");
+        xhr.setRequestHeader("x-upsert", "true");
         xhr.setRequestHeader("Content-Type", contentType);
         xhr.setRequestHeader("Cache-Control", "no-cache");
-        xhr.timeout = 60000; // 60s timeout for images
+        xhr.timeout = 120000; // 120s timeout
 
         xhr.upload.onprogress = (e) => {
           if (e.lengthComputable) {
@@ -415,17 +423,22 @@ const Admin = () => {
             const { data: publicUrlData } = supabase.storage
               .from("products")
               .getPublicUrl(filePath);
-            resolve({ publicUrl: publicUrlData.publicUrl, error: null });
+            doResolve({ publicUrl: publicUrlData.publicUrl, error: null });
           } else {
-            resolve({ publicUrl: null, error: `Upload failed: ${xhr.status} ${xhr.responseText}` });
+            doResolve({ publicUrl: null, error: `Upload failed: ${xhr.status} ${xhr.responseText}` });
           }
         };
 
-        xhr.onerror = () => resolve({ publicUrl: null, error: "Network error during image upload" });
-        xhr.ontimeout = () => resolve({ publicUrl: null, error: "Image upload timed out. Check your connection." });
+        xhr.onerror = () => doResolve({ publicUrl: null, error: "Network error during image upload" });
+        xhr.ontimeout = () => doResolve({ publicUrl: null, error: "Image upload timed out. Check your connection." });
+        xhr.onloadend = () => {
+          setTimeout(() => {
+            if (!resolved) doResolve({ publicUrl: null, error: "Upload ended without success response" });
+          }, 1000);
+        };
         xhr.send(file);
       } catch (err) {
-        resolve({ publicUrl: null, error: `Setup error: ${err}` });
+        doResolve({ publicUrl: null, error: `Setup error: ${err}` });
       }
     });
   };
@@ -447,31 +460,33 @@ const Admin = () => {
     const safeBtoa = (str: string) => btoa(unescape(encodeURIComponent(str)));
     const metadata = `bucketName ${safeBtoa("products")},objectName ${safeBtoa(filePath)},contentType ${safeBtoa(file.type || "video/mp4")}`;
 
-    const createRes = await (async () => {
+    const createRes = await new Promise<{ ok: boolean; url: string | null; error: string | null }>((resolve) => {
       try {
-        const response = await fetch(`${supabaseUrl}/storage/v1/upload/resumable`, {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${authToken}`,
-            "x-upsert": "true",
-            "Tus-Resumable": "1.0.0",
-            "Upload-Length": file.size.toString(),
-            "Upload-Metadata": metadata,
-            "Cache-Control": "no-cache"
-          }
-        });
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", `${supabaseUrl}/storage/v1/upload/resumable`, true);
+        xhr.setRequestHeader("Authorization", `Bearer ${authToken}`);
+        xhr.setRequestHeader("x-upsert", "true");
+        xhr.setRequestHeader("Tus-Resumable", "1.0.0");
+        xhr.setRequestHeader("Upload-Length", file.size.toString());
+        xhr.setRequestHeader("Upload-Metadata", metadata);
+        xhr.setRequestHeader("Cache-Control", "no-cache");
+        xhr.timeout = 30000;
 
-        if (response.ok) {
-          const location = response.headers.get("Location");
-          return { ok: true, url: location, error: null };
-        } else {
-          const errorText = await response.text();
-          return { ok: false, url: null, error: `Failed to create upload: ${response.status} ${errorText}` };
-        }
+        xhr.onload = () => {
+          if (xhr.status === 201) {
+            const location = xhr.getResponseHeader("Location");
+            resolve({ ok: true, url: location, error: null });
+          } else {
+            resolve({ ok: false, url: null, error: `Handshake failed: ${xhr.status} ${xhr.responseText}` });
+          }
+        };
+        xhr.onerror = () => resolve({ ok: false, url: null, error: "Network error during handshake" });
+        xhr.ontimeout = () => resolve({ ok: false, url: null, error: "Handshake timed out" });
+        xhr.send();
       } catch (err) {
-        return { ok: false, url: null, error: `Network error during handshake: ${err}` };
+        resolve({ ok: false, url: null, error: `Handshake setup error: ${err}` });
       }
-    })();
+    });
 
     if (!createRes.ok || !createRes.url) {
       return { publicUrl: null, error: createRes.error };
