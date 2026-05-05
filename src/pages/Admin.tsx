@@ -386,7 +386,7 @@ const Admin = () => {
 
   const uploadWithRetry = async (
     filePath: string,
-    file: ArrayBuffer,
+    file: File | ArrayBuffer,
     options: any,
     maxRetries = 3
   ): Promise<{ publicUrl: string | null; error: any }> => {
@@ -521,10 +521,9 @@ const Admin = () => {
       const imageExt = imageFile.name.split(".").pop();
       const imagePath = `product-images/${Date.now()}.${imageExt}`;
 
-      const arrayBuffer = await imageFile.arrayBuffer();
       const { publicUrl, error: imgError } = await uploadWithRetry(
         imagePath,
-        arrayBuffer,
+        imageFile,
         {
           contentType: imageFile.type,
           cacheControl: "3600",
