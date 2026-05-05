@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase, Product, IS_SUPABASE_CONFIGURED } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { useToast, toast } from "@/components/ui/use-toast";
-import { Trash2, Edit2, Eye, EyeOff, Plus, LogOut, Loader2, Shield, ShieldOff, Mail, History, User } from "lucide-react";
+import { Trash2, CreditCard as Edit2, Eye, EyeOff, Plus, LogOut, Loader as Loader2, Shield, ShieldOff, Mail, History, User } from "lucide-react";
 
 const OWNER_ID = "7a7f1bb0-6aa6-42e6-80e3-7e4f7a48491e";
 const TEST_SESSION_KEY = "pbl_admin_test_session";
@@ -450,131 +450,66 @@ const Admin = () => {
 
 
 
-  const uploadVideoChunked = async (
-    file: File,
+  const uploadVideoXHR = (
     filePath: string,
+    file: File,
     authToken: string,
     onProgress: (msg: string) => void
   ): Promise<{ publicUrl: string | null; error: string | null }> => {
-    const CHUNK_SIZE = 1 * 1024 * 1024; // 1MB per chunk
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-
-    // Step 1: Create resumable upload
-    onProgress("Preparing video upload...");
-    
-    const safeBtoa = (str: string) => btoa(unescape(encodeURIComponent(str)));
-    const metadata = `bucketName ${safeBtoa("products")},objectName ${safeBtoa(filePath)},contentType ${safeBtoa(file.type || "video/mp4")}`;
-
-    const createRes = await new Promise<{ ok: boolean; url: string | null; error: string | null }>((resolve) => {
-      let handshakeResolved = false;
-      const doHandshakeResolve = (val: { ok: boolean; url: string | null; error: string | null }) => {
-        if (!handshakeResolved) {
-          handshakeResolved = true;
+    return new Promise((resolve) => {
+      let resolved = false;
+      const doResolve = (val: { publicUrl: string | null; error: string | null }) => {
+        if (!resolved) {
+          resolved = true;
           resolve(val);
         }
       };
 
       try {
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
         const xhr = new XMLHttpRequest();
-        xhr.open("POST", `${supabaseUrl}/storage/v1/upload/resumable?t=${Date.now()}`, true);
+
+        xhr.open("POST", `${supabaseUrl}/storage/v1/object/products/${filePath}`, true);
         xhr.setRequestHeader("Authorization", `Bearer ${authToken}`);
         xhr.setRequestHeader("x-upsert", "true");
-        xhr.setRequestHeader("Tus-Resumable", "1.0.0");
-        xhr.setRequestHeader("Upload-Length", file.size.toString());
-        xhr.setRequestHeader("Upload-Metadata", metadata);
-        xhr.setRequestHeader("Cache-Control", "no-cache, no-store, must-revalidate");
-        xhr.setRequestHeader("Pragma", "no-cache");
-        xhr.setRequestHeader("Expires", "0");
-        xhr.timeout = 30000;
+        xhr.setRequestHeader("Cache-Control", "no-cache");
+        // Do NOT set Content-Type manually — let FormData set it with boundary
+        xhr.timeout = 300000; // 5 min for large mobile uploads
 
-        xhr.onload = () => {
-          if (xhr.status === 201 || xhr.status === 200) {
-            const location = xhr.getResponseHeader("Location");
-            doHandshakeResolve({ ok: true, url: location, error: null });
-          } else {
-            doHandshakeResolve({ ok: false, url: null, error: `Handshake failed: ${xhr.status} ${xhr.responseText}` });
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable) {
+            const percent = Math.round((e.loaded / e.total) * 100);
+            onProgress(`Uploading video... ${percent}%`);
           }
         };
-        xhr.onerror = () => doHandshakeResolve({ ok: false, url: null, error: "Network error during handshake" });
-        xhr.ontimeout = () => doHandshakeResolve({ ok: false, url: null, error: "Handshake timed out" });
+
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            const { data: publicUrlData } = supabase.storage
+              .from("products")
+              .getPublicUrl(filePath);
+            doResolve({ publicUrl: publicUrlData.publicUrl, error: null });
+          } else {
+            doResolve({ publicUrl: null, error: `Upload failed: ${xhr.status} ${xhr.responseText}` });
+          }
+        };
+
+        xhr.onerror = () => doResolve({ publicUrl: null, error: "Network error during video upload" });
+        xhr.ontimeout = () => doResolve({ publicUrl: null, error: "Video upload timed out. Check your connection." });
         xhr.onloadend = () => {
           setTimeout(() => {
-            if (!handshakeResolved) doHandshakeResolve({ ok: false, url: null, error: "Handshake ended" });
+            if (!resolved) doResolve({ publicUrl: null, error: "Upload ended without success response" });
           }, 1000);
         };
-        xhr.send("");
+
+        // Use FormData — universally supported on all mobile browsers
+        const formData = new FormData();
+        formData.append("", file, file.name);
+        xhr.send(formData);
       } catch (err) {
-        doHandshakeResolve({ ok: false, url: null, error: `Handshake setup error: ${err}` });
+        doResolve({ publicUrl: null, error: `Setup error: ${err}` });
       }
     });
-
-    if (!createRes.ok || !createRes.url) {
-      return { publicUrl: null, error: createRes.error };
-    }
-
-    const uploadUrl = createRes.url.startsWith("http")
-      ? createRes.url
-      : `${supabaseUrl}${createRes.url}`;
-
-    // Step 2: Upload chunks one by one via XHR PATCH
-    let offset = 0;
-    let chunkIndex = 0;
-    const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
-
-    while (offset < file.size) {
-      const chunk = file.slice(offset, offset + CHUNK_SIZE);
-      const chunkBuffer = await chunk.arrayBuffer();
-      const percent = Math.round(((chunkIndex + 1) / totalChunks) * 100);
-      onProgress(`Uploading video... ${percent}%`);
-
-      const chunkResult = await new Promise<{ ok: boolean; error: string | null }>((resolve) => {
-        let chunkResolved = false;
-        const doChunkResolve = (val: { ok: boolean; error: string | null }) => {
-          if (!chunkResolved) {
-            chunkResolved = true;
-            resolve(val);
-          }
-        };
-
-        const xhr = new XMLHttpRequest();
-        xhr.open("PATCH", uploadUrl, true);
-        xhr.setRequestHeader("Authorization", `Bearer ${authToken}`);
-        xhr.setRequestHeader("Content-Type", "application/offset+octet-stream");
-        xhr.setRequestHeader("Upload-Offset", offset.toString());
-        xhr.setRequestHeader("Tus-Resumable", "1.0.0");
-        xhr.timeout = 30000;
-
-        xhr.onload = () => {
-          if (xhr.status === 204) {
-            doChunkResolve({ ok: true, error: null });
-          } else {
-            doChunkResolve({ ok: false, error: `Chunk ${chunkIndex + 1} failed: ${xhr.status} ${xhr.responseText}` });
-          }
-        };
-        xhr.onerror = () => doChunkResolve({ ok: false, error: `Network error on chunk ${chunkIndex + 1}` });
-        xhr.ontimeout = () => doChunkResolve({ ok: false, error: `Chunk ${chunkIndex + 1} timed out` });
-        xhr.onloadend = () => {
-          setTimeout(() => {
-            if (!chunkResolved) doChunkResolve({ ok: false, error: `Chunk ${chunkIndex + 1} ended (buffer check)` });
-          }, 2000);
-        };
-        xhr.send(chunkBuffer);
-      });
-
-      if (!chunkResult.ok) {
-        return { publicUrl: null, error: chunkResult.error };
-      }
-
-      offset += CHUNK_SIZE;
-      chunkIndex++;
-    }
-
-    // Step 3: Get public URL
-    const { data: publicUrlData } = supabase.storage
-      .from("products")
-      .getPublicUrl(filePath);
-
-    return { publicUrl: publicUrlData.publicUrl, error: null };
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -618,10 +553,10 @@ const Admin = () => {
 
     if (videoFile) {
       const videoPath = `product-videos/${Date.now()}.${videoFile.name.split(".").pop()}`;
-      
-      const { publicUrl, error: vidError } = await uploadVideoChunked(
-        videoFile,
+
+      const { publicUrl, error: vidError } = await uploadVideoXHR(
         videoPath,
+        videoFile,
         authToken,
         setUploadProgress
       );
