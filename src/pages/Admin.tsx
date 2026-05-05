@@ -388,20 +388,20 @@ const Admin = () => {
     filePath: string,
     file: ArrayBuffer,
     contentType: string,
+    authToken: string,
     onProgress: (msg: string) => void
   ): Promise<{ publicUrl: string | null; error: string | null }> => {
-    return new Promise(async (resolve) => {
+    return new Promise((resolve) => {
       try {
         const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-        const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-        const { data: { session } } = await supabase.auth.getSession();
-        const authToken = session?.access_token || supabaseKey;
-
         const xhr = new XMLHttpRequest();
+        
         xhr.open("POST", `${supabaseUrl}/storage/v1/object/products/${filePath}`, true);
         xhr.setRequestHeader("Authorization", `Bearer ${authToken}`);
         xhr.setRequestHeader("x-upsert", "false");
         xhr.setRequestHeader("Content-Type", contentType);
+        xhr.setRequestHeader("Cache-Control", "no-cache");
+        xhr.timeout = 60000; // 60s timeout for images
 
         xhr.upload.onprogress = (e) => {
           if (e.lengthComputable) {
@@ -422,6 +422,7 @@ const Admin = () => {
         };
 
         xhr.onerror = () => resolve({ publicUrl: null, error: "Network error during image upload" });
+        xhr.ontimeout = () => resolve({ publicUrl: null, error: "Image upload timed out. Check your connection." });
         xhr.send(file);
       } catch (err) {
         resolve({ publicUrl: null, error: `Setup error: ${err}` });
@@ -434,13 +435,11 @@ const Admin = () => {
   const uploadVideoChunked = async (
     file: File,
     filePath: string,
+    authToken: string,
     onProgress: (msg: string) => void
   ): Promise<{ publicUrl: string | null; error: string | null }> => {
     const CHUNK_SIZE = 1 * 1024 * 1024; // 1MB per chunk
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-    const { data: { session } } = await supabase.auth.getSession();
-    const authToken = session?.access_token || supabaseKey;
 
     // Step 1: Create resumable upload
     onProgress("Preparing video upload...");
@@ -534,7 +533,8 @@ const Admin = () => {
     e.preventDefault();
     setLoading(true);
 
-    let image_url = editingId ? products.find((p) => p.id === editingId)?.image_url : "";
+    const { data: { session: currentSession } } = await supabase.auth.getSession();
+    const authToken = currentSession?.access_token || import.meta.env.VITE_SUPABASE_ANON_KEY;
 
     if (imageFile) {
       setUploadProgress("Uploading image...");
@@ -546,6 +546,7 @@ const Admin = () => {
         imagePath,
         arrayBuffer,
         imageFile.type,
+        authToken,
         setUploadProgress
       );
 
@@ -571,6 +572,7 @@ const Admin = () => {
       const { publicUrl, error: vidError } = await uploadVideoChunked(
         videoFile,
         videoPath,
+        authToken,
         setUploadProgress
       );
 
