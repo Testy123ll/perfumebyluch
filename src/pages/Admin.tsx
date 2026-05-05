@@ -461,14 +461,6 @@ const Admin = () => {
     const metadata = `bucketName ${safeBtoa("products")},objectName ${safeBtoa(filePath)},contentType ${safeBtoa(file.type || "video/mp4")}`;
 
     const createRes = await new Promise<{ ok: boolean; url: string | null; error: string | null }>((resolve) => {
-      let handshakeResolved = false;
-      const doHandshakeResolve = (val: { ok: boolean; url: string | null; error: string | null }) => {
-        if (!handshakeResolved) {
-          handshakeResolved = true;
-          resolve(val);
-        }
-      };
-
       try {
         const xhr = new XMLHttpRequest();
         xhr.open("POST", `${supabaseUrl}/storage/v1/upload/resumable`, true);
@@ -478,26 +470,21 @@ const Admin = () => {
         xhr.setRequestHeader("Upload-Length", file.size.toString());
         xhr.setRequestHeader("Upload-Metadata", metadata);
         xhr.setRequestHeader("Cache-Control", "no-cache");
-        xhr.timeout = 60000; // 60s for handshake
+        xhr.timeout = 30000;
 
         xhr.onload = () => {
-          if (xhr.status === 201 || xhr.status === 200) {
+          if (xhr.status === 201) {
             const location = xhr.getResponseHeader("Location");
-            doHandshakeResolve({ ok: true, url: location, error: null });
+            resolve({ ok: true, url: location, error: null });
           } else {
-            doHandshakeResolve({ ok: false, url: null, error: `Handshake failed: ${xhr.status} ${xhr.responseText}` });
+            resolve({ ok: false, url: null, error: `Handshake failed: ${xhr.status} ${xhr.responseText}` });
           }
         };
-        xhr.onerror = () => doHandshakeResolve({ ok: false, url: null, error: "Network error during handshake" });
-        xhr.ontimeout = () => doHandshakeResolve({ ok: false, url: null, error: "Handshake timed out" });
-        xhr.onloadend = () => {
-          setTimeout(() => {
-            if (!handshakeResolved) doHandshakeResolve({ ok: false, url: null, error: "Handshake ended without response" });
-          }, 1000);
-        };
+        xhr.onerror = () => resolve({ ok: false, url: null, error: "Network error during handshake" });
+        xhr.ontimeout = () => resolve({ ok: false, url: null, error: "Handshake timed out" });
         xhr.send();
       } catch (err) {
-        doHandshakeResolve({ ok: false, url: null, error: `Handshake setup error: ${err}` });
+        resolve({ ok: false, url: null, error: `Handshake setup error: ${err}` });
       }
     });
 
