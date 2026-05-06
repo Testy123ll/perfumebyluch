@@ -82,7 +82,7 @@ const Admin = () => {
     scent_mood: "",
   });
   const [imageFile, setImageFile] = useState<File | null>(null);
-  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [videoUrl, setVideoUrl] = useState(""); // Replaces videoFile for Widget support
 
   // Reviews State
   const [reviews, setReviews] = useState<any[]>([]);
@@ -276,8 +276,33 @@ const Admin = () => {
       in_stock: true, visible: true, is_new: false, size: "", scent_mood: ""
     });
     setImageFile(null);
-    setVideoFile(null);
+    setVideoUrl(""); // Reset widget URL
     setShowForm(false);
+  };
+
+  // --- Cloudinary Widget Handler ---
+  const handleUploadVideo = () => {
+    // @ts-ignore - Cloudinary is loaded via script tag
+    const widget = window.cloudinary.createUploadWidget(
+      {
+        cloudName: "dp4auwl1h",
+        uploadPreset: "Perfumeluch",
+        sources: ["local", "url", "camera"],
+        multiple: false,
+        resourceType: "video",
+        clientAllowedFormats: ["mp4", "mov", "avi"],
+        maxFileSize: 100000000, // 100MB
+      },
+      (error: any, result: any) => {
+        if (!error && result && result.event === "success") {
+          setVideoUrl(result.info.secure_url);
+          toast({ title: "Video Uploaded", description: "Video ready to be saved." });
+        } else if (error) {
+          toast({ title: "Upload Widget Error", description: error.message, variant: "destructive" });
+        }
+      }
+    );
+    widget.open();
   };
 
   // --- Product Handlers ---
@@ -295,7 +320,7 @@ const Admin = () => {
       scent_mood: product.scent_mood || "",
     });
     setImageFile(null);
-    setVideoFile(null);
+    setVideoUrl(product.video_url || ""); // Set existing video URL
     setShowForm(true);
   };
 
@@ -364,53 +389,8 @@ const Admin = () => {
       image_url = res.url;
     }
 
-    // Video Upload (via upload-video Edge Function)
-    if (videoFile) {
-      setUploadProgress("Uploading video...");
-
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-      const formDataPayload = new FormData();
-      formDataPayload.append("file", videoFile, videoFile.name);
-
-      const result = await new Promise<{ url: string | null; error: string | null }>((resolve) => {
-        const xhr = new XMLHttpRequest();
-
-        xhr.upload.onprogress = (e) => {
-          if (e.lengthComputable) {
-            const pct = Math.round((e.loaded / e.total) * 100);
-            setUploadProgress(`Uploading video... ${pct}%`);
-          }
-        };
-
-        xhr.onload = () => {
-          if (xhr.status === 200) {
-            const res = JSON.parse(xhr.responseText);
-            resolve({ url: res.url, error: null });
-          } else {
-            resolve({ url: null, error: `Upload failed: ${xhr.status} ${xhr.responseText}` });
-          }
-        };
-
-        xhr.onerror   = () => resolve({ url: null, error: "Network error" });
-        xhr.ontimeout = () => resolve({ url: null, error: "Upload timed out" });
-        xhr.timeout = 600000; // 10 minutes
-
-        xhr.open("POST", `${supabaseUrl}/functions/v1/upload-video`, true);
-        xhr.setRequestHeader("Authorization", `Bearer ${supabaseKey}`);
-        xhr.setRequestHeader("apikey", supabaseKey);
-        xhr.send(formDataPayload);
-      });
-
-      if (result.error) {
-        toast({ title: "Video Upload Failed", description: result.error, variant: "destructive" });
-        setLoading(false); setUploadProgress(""); return;
-      }
-
-      video_url = result.url || "";
-      setUploadProgress("");
-    }
+    // Video is now handled by the Cloudinary Widget (videoUrl state)
+    let final_video_url = videoUrl || (editingId ? products.find(p => p.id === editingId)?.video_url || "" : "");
 
     const payload = {
       name: formData.name,
@@ -420,7 +400,7 @@ const Admin = () => {
       in_stock: formData.in_stock,
       visible: formData.visible,
       is_new: formData.is_new,
-      video_url,
+      video_url: final_video_url,
       size: formData.size,
       scent_mood: formData.scent_mood,
       ...(image_url ? { image_url } : {}),
@@ -637,18 +617,18 @@ const Admin = () => {
                         className="w-full text-xs" />
                     </div>
                     <div>
-                      <label className="mb-1 block text-sm font-medium">Video (Max {MAX_VIDEO_SIZE_MB}MB)</label>
-                      <input type="file" accept="video/*"
-                        onChange={(e) => {
-                          const f = e.target.files?.[0] || null;
-                          if (f && f.size > MAX_VIDEO_SIZE_BYTES) {
-                            toast({ title: "Too large", description: `Limit is ${MAX_VIDEO_SIZE_MB}MB`, variant: "destructive" });
-                            e.target.value = ""; setVideoFile(null); return;
-                          }
-                          setVideoFile(f);
-                        }}
-                        className="w-full text-xs" />
-                      {videoFile && <p className="mt-1 text-[10px] text-green-600 font-bold">Selected: {videoFile.name}</p>}
+                      <label className="mb-1 block text-sm font-medium">Video Content</label>
+                      <div className="flex flex-col gap-2">
+                        <Button type="button" variant="secondary" size="sm" onClick={handleUploadVideo} className="w-full">
+                          {videoUrl ? "Change Video" : "Upload Video (Widget)"}
+                        </Button>
+                        {videoUrl && (
+                          <div className="flex items-center gap-2 overflow-hidden rounded border border-green-500/50 bg-green-500/5 p-2">
+                            <CheckCircle2 className="h-4 w-4 shrink-0 text-green-600" />
+                            <span className="truncate text-[10px] text-green-700">Video Uploaded Successfully</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                   <div>
