@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { useToast, toast } from "@/components/ui/use-toast";
 import {
   Trash2, Edit2, Eye, EyeOff, Plus, LogOut, Loader2,
-  Shield, ShieldOff, Mail, History, User, Star, CheckCircle2
+  Shield, ShieldOff, Mail, History, User, Star, CheckCircle2,
+  ArrowUpRight
 } from "lucide-react";
 import logo from "@/assets/logo.webp";
 
@@ -64,6 +65,8 @@ const Admin = () => {
 
   // UI State
   const [activeTab, setActiveTab] = useState<Tab>("products");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [uploadProgress, setUploadProgress] = useState("");
   const [loading, setLoading] = useState(true);
 
@@ -555,16 +558,20 @@ const Admin = () => {
             <div className="h-10 w-px bg-border/50 hidden sm:block" />
             <div>
               <h1 className="font-serif text-xl sm:text-2xl tracking-tight">Admin Console</h1>
-              <div className="mt-1 flex items-center gap-2 text-[10px] text-muted-foreground uppercase tracking-widest">
+              <div className="mt-1 flex items-center flex-wrap gap-y-2 gap-x-3 text-[10px] text-muted-foreground uppercase tracking-widest">
                 <span className="flex items-center gap-1"><User className="h-2.5 w-2.5" /> {session?.user?.email}</span>
                 <span className="h-1 w-1 rounded-full bg-border" />
                 <span className="font-bold text-primary">{userRole}</span>
+                <button 
+                  onClick={handleLogout}
+                  className="flex items-center gap-1.5 text-muted-foreground/60 hover:text-red-500 transition-colors ml-2 border-l border-border/50 pl-3"
+                >
+                  <LogOut className="h-2.5 w-2.5" />
+                  <span>Logout</span>
+                </button>
               </div>
             </div>
           </div>
-          <Button variant="ghost" size="sm" onClick={handleLogout} className="h-8 text-xs text-muted-foreground hover:text-red-500 hover:bg-red-50 transition-all">
-            <LogOut className="mr-2 h-3 w-3" /> <span className="sm:inline">Logout</span>
-          </Button>
         </div>
 
         {/* Navigation Tabs */}
