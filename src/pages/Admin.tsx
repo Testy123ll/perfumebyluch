@@ -547,16 +547,19 @@ const Admin = () => {
       <div className="mx-auto max-w-6xl w-full">
         {/* Header */}
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-border/40 pb-6">
-          <a href="/" className="flex items-center gap-2" aria-label="Perfumes By Luch home">
-            <img src={logo} alt="Perfumes By Luch logo" className="h-12 w-auto md:h-16" width={160} height={64} />
-            <span className="sr-only">Perfumes By Luch</span>
-          </a>
-          <div>
-            <h1 className="font-serif text-xl sm:text-2xl tracking-tight">Admin Console</h1>
-            <div className="mt-1 flex items-center gap-2 text-[10px] text-muted-foreground uppercase tracking-widest">
-              <span className="flex items-center gap-1"><User className="h-2.5 w-2.5" /> {session?.user?.email}</span>
-              <span className="h-1 w-1 rounded-full bg-border" />
-              <span className="font-bold text-primary">{userRole}</span>
+          <div className="flex items-center gap-4">
+            <a href="/" className="flex items-center gap-2" aria-label="Perfumes By Luch home">
+              <img src={logo} alt="Perfumes By Luch logo" className="h-12 w-auto md:h-16" width={160} height={64} />
+              <span className="sr-only">Perfumes By Luch</span>
+            </a>
+            <div className="h-10 w-px bg-border/50 hidden sm:block" />
+            <div>
+              <h1 className="font-serif text-xl sm:text-2xl tracking-tight">Admin Console</h1>
+              <div className="mt-1 flex items-center gap-2 text-[10px] text-muted-foreground uppercase tracking-widest">
+                <span className="flex items-center gap-1"><User className="h-2.5 w-2.5" /> {session?.user?.email}</span>
+                <span className="h-1 w-1 rounded-full bg-border" />
+                <span className="font-bold text-primary">{userRole}</span>
+              </div>
             </div>
           </div>
           <Button variant="ghost" size="sm" onClick={handleLogout} className="h-8 text-xs text-muted-foreground hover:text-red-500 hover:bg-red-50 transition-all">
