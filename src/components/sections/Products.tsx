@@ -253,10 +253,12 @@ const ProductCard = ({ product, priority, isTopSelling }: { product: Product; pr
           {product.video_url && (
             <video
               src={getOptimisedImageUrl(product.video_url, 400)}
+              poster={getOptimisedImageUrl(product.image_url, 400)}
               muted
               loop
               playsInline
-              className="absolute inset-0 h-full w-full object-cover opacity-0 transition-opacity duration-700 group-hover:opacity-100"
+              preload="metadata"
+              className="absolute inset-0 h-full w-full object-cover opacity-0 transition-opacity duration-500 group-hover:opacity-100"
               onMouseEnter={(e) => e.currentTarget.play()}
               onMouseLeave={(e) => {
                 e.currentTarget.pause();
