@@ -389,348 +389,57 @@ const Admin = () => {
   };
 
 
-  const uploadWithRetry = async (
-    path: string,
-    data: ArrayBuffer,
-    options: { contentType: string; cacheControl: string; upsert: boolean }
-  ): Promise<{ publicUrl: string | null; error: any }> => {
-    const { error } = await supabase.storage.from("products").upload(path, data, options);
-    if (error) return { publicUrl: null, error };
-    
-    const { data: publicUrlData } = supabase.storage.from("products").getPublicUrl(path);
-    return { publicUrl: publicUrlData.publicUrl, error: null };
-  };
-
-  const uploadImageXHR = (
-    filePath: string,
-    file: ArrayBuffer,
-    contentType: string,
-    authToken: string,
-    onProgress: (msg: string) => void
-  ): Promise<{ publicUrl: string | null; error: string | null }> => {
-    return new Promise((resolve) => {
-      let resolved = false;
-      const doResolve = (val: { publicUrl: string | null; error: string | null }) => {
-        if (!resolved) {
-          resolved = true;
-          resolve(val);
-        }
-      };
-
-      try {
-        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-        const xhr = new XMLHttpRequest();
-        
-        xhr.open("POST", `${supabaseUrl}/storage/v1/object/products/${filePath}`, true);
-        xhr.setRequestHeader("Authorization", `Bearer ${authToken}`);
-        xhr.setRequestHeader("x-upsert", "true");
-        xhr.setRequestHeader("Content-Type", contentType);
-        xhr.setRequestHeader("Cache-Control", "no-cache");
-        xhr.timeout = 120000; // 120s timeout
-
-        xhr.upload.onprogress = (e) => {
-          if (e.lengthComputable) {
-            const percent = Math.round((e.loaded / e.total) * 100);
-            onProgress(`Uploading image... ${percent}%`);
-          }
-        };
-
-        xhr.onload = () => {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            const { data: publicUrlData } = supabase.storage
-              .from("products")
-              .getPublicUrl(filePath);
-            doResolve({ publicUrl: publicUrlData.publicUrl, error: null });
-          } else {
-            doResolve({ publicUrl: null, error: `Upload failed: ${xhr.status} ${xhr.responseText}` });
-          }
-        };
-
-        xhr.onerror = () => doResolve({ publicUrl: null, error: "Network error during image upload" });
-        xhr.ontimeout = () => doResolve({ publicUrl: null, error: "Image upload timed out. Check your connection." });
-        xhr.onloadend = () => {
-          setTimeout(() => {
-            if (!resolved) doResolve({ publicUrl: null, error: "Upload ended without success response" });
-          }, 1000);
-        };
-        xhr.send(file);
-      } catch (err) {
-        doResolve({ publicUrl: null, error: `Setup error: ${err}` });
-      }
-    });
-  };
-
-  const uploadVideoSimpleXHR = (
-    filePath: string,
-    file: File,
-    authToken: string,
-    onProgress: (msg: string) => void
-  ): Promise<{ publicUrl: string | null; error: string | null }> => {
-    return new Promise((resolve) => {
-      let resolved = false;
-      const doResolve = (val: { publicUrl: string | null; error: string | null }) => {
-        if (!resolved) {
-          resolved = true;
-          resolve(val);
-        }
-      };
-
-      try {
-        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-        const xhr = new XMLHttpRequest();
-
-        xhr.open("POST", `${supabaseUrl}/storage/v1/object/products/${filePath}`, true);
-        xhr.setRequestHeader("Authorization", `Bearer ${authToken}`);
-        xhr.setRequestHeader("x-upsert", "true");
-        xhr.setRequestHeader("Cache-Control", "no-cache");
-        xhr.timeout = 300000; // 5 min timeout for mobile uploads
-
-        xhr.upload.onprogress = (e) => {
-          if (e.lengthComputable) {
-            const percent = Math.round((e.loaded / e.total) * 100);
-            onProgress(`Uploading video... ${percent}%`);
-          }
-        };
-
-        xhr.onload = () => {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            const { data: publicUrlData } = supabase.storage
-              .from("products")
-              .getPublicUrl(filePath);
-            doResolve({ publicUrl: publicUrlData.publicUrl, error: null });
-          } else {
-            doResolve({ publicUrl: null, error: `Upload failed: ${xhr.status} ${xhr.responseText}` });
-          }
-        };
-
-        xhr.onerror = () => doResolve({ publicUrl: null, error: "Network error during video upload" });
-        xhr.ontimeout = () => doResolve({ publicUrl: null, error: "Video upload timed out. Check your connection." });
-        xhr.onloadend = () => {
-          setTimeout(() => {
-            if (!resolved) doResolve({ publicUrl: null, error: "Upload ended without success response" });
-          }, 1000);
-        };
-
-        const formData = new FormData();
-        formData.append("", file, file.name);
-        xhr.send(formData);
-      } catch (err) {
-        doResolve({ publicUrl: null, error: `Setup error: ${err}` });
-      }
-    });
-  };
-
-
-
-  const uploadVideoChunked = async (
-    file: File,
-    filePath: string,
-    authToken: string,
-    onProgress: (msg: string) => void
-  ): Promise<{ publicUrl: string | null; error: string | null }> => {
-    const CHUNK_SIZE = 6 * 1024 * 1024; // 6MB per chunk (Supabase recommended)
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    // Use direct storage domain for better performance as per Supabase docs
-    const storageEndpoint = supabaseUrl.replace("supabase.co", "storage.supabase.co");
-
-    // Step 1: Create resumable upload
-    onProgress("Preparing video upload...");
-    
-    const safeBtoa = (str: string) => btoa(unescape(encodeURIComponent(str)));
-    const metadata = `bucketName ${safeBtoa("products")},objectName ${safeBtoa(filePath)},contentType ${safeBtoa(file.type || "video/mp4")}`;
-
-    const createRes = await new Promise<{ ok: boolean; url: string | null; error: string | null }>((resolve) => {
-      let handshakeResolved = false;
-      const doHandshakeResolve = (val: { ok: boolean; url: string | null; error: string | null }) => {
-        if (!handshakeResolved) {
-          console.log("Handshake resolved with:", val);
-          handshakeResolved = true;
-          resolve(val);
-        }
-      };
-
-      try {
-        const xhr = new XMLHttpRequest();
-        console.log("Starting TUS Handshake at:", storageEndpoint);
-        xhr.open("POST", `${storageEndpoint}/storage/v1/upload/resumable?t=${Date.now()}`, true);
-        xhr.setRequestHeader("Authorization", `Bearer ${authToken}`);
-        xhr.setRequestHeader("x-upsert", "true");
-        xhr.setRequestHeader("Tus-Resumable", "1.0.0");
-        xhr.setRequestHeader("Upload-Length", file.size.toString());
-        xhr.setRequestHeader("Upload-Metadata", metadata);
-        xhr.setRequestHeader("Cache-Control", "no-cache, no-store, must-revalidate");
-        xhr.setRequestHeader("Pragma", "no-cache");
-        xhr.setRequestHeader("Expires", "0");
-        xhr.timeout = 45000;
-
-        xhr.onload = () => {
-          console.log("Handshake onload status:", xhr.status);
-          if (xhr.status === 201 || xhr.status === 200) {
-            const location = xhr.getResponseHeader("Location");
-            console.log("Handshake location header:", location);
-            doHandshakeResolve({ ok: true, url: location, error: null });
-          } else {
-            doHandshakeResolve({ ok: false, url: null, error: `Handshake failed: ${xhr.status} ${xhr.responseText}` });
-          }
-        };
-        xhr.onerror = (e) => {
-          console.error("Handshake network error:", e);
-          doHandshakeResolve({ ok: false, url: null, error: "Network error during handshake" });
-        };
-        xhr.ontimeout = () => {
-          console.error("Handshake timeout");
-          doHandshakeResolve({ ok: false, url: null, error: "Handshake timed out" });
-        };
-        xhr.onloadend = () => {
-          setTimeout(() => {
-            if (!handshakeResolved) doHandshakeResolve({ ok: false, url: null, error: "Handshake ended" });
-          }, 1000);
-        };
-        xhr.send("");
-      } catch (err) {
-        doHandshakeResolve({ ok: false, url: null, error: `Handshake setup error: ${err}` });
-      }
-    });
-
-    if (!createRes.ok || !createRes.url) {
-      return { publicUrl: null, error: createRes.error || "Handshake failed" };
-    }
-
-    const uploadUrl = createRes.url.startsWith("http")
-      ? createRes.url
-      : `${supabaseUrl}${createRes.url}`;
-
-    // Step 2: Upload chunks one by one via XHR PATCH
-    let offset = 0;
-    let chunkIndex = 0;
-    const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
-
-    while (offset < file.size) {
-      const chunk = file.slice(offset, offset + CHUNK_SIZE);
-      const chunkBuffer = await chunk.arrayBuffer();
-      const percent = Math.round(((chunkIndex + 1) / totalChunks) * 100);
-      onProgress(`Uploading video... ${percent}%`);
-
-      const chunkResult = await new Promise<{ ok: boolean; error: string | null }>((resolve) => {
-        let chunkResolved = false;
-        const doChunkResolve = (val: { ok: boolean; error: string | null }) => {
-          if (!chunkResolved) {
-            chunkResolved = true;
-            resolve(val);
-          }
-        };
-
-        const xhr = new XMLHttpRequest();
-        xhr.open("PATCH", uploadUrl, true);
-        xhr.setRequestHeader("Authorization", `Bearer ${authToken}`);
-        xhr.setRequestHeader("Content-Type", "application/offset+octet-stream");
-        xhr.setRequestHeader("Upload-Offset", offset.toString());
-        xhr.setRequestHeader("Tus-Resumable", "1.0.0");
-        xhr.timeout = 30000;
-
-        xhr.onload = () => {
-          if (xhr.status === 204) {
-            doChunkResolve({ ok: true, error: null });
-          } else {
-            doChunkResolve({ ok: false, error: `Chunk ${chunkIndex + 1} failed: ${xhr.status} ${xhr.responseText}` });
-          }
-        };
-        xhr.onerror = () => doChunkResolve({ ok: false, error: `Network error on chunk ${chunkIndex + 1}` });
-        xhr.ontimeout = () => doChunkResolve({ ok: false, error: `Chunk ${chunkIndex + 1} timed out` });
-        xhr.onloadend = () => {
-          setTimeout(() => {
-            if (!chunkResolved) doChunkResolve({ ok: false, error: `Chunk ${chunkIndex + 1} ended without response` });
-          }, 1000);
-        };
-        xhr.send(chunkBuffer);
-      });
-
-      if (!chunkResult.ok) {
-        return { publicUrl: null, error: chunkResult.error };
-      }
-
-      offset += CHUNK_SIZE;
-      chunkIndex++;
-    }
-
-    // Step 3: Get public URL
-    const { data: publicUrlData } = supabase.storage
+  const uploadFile = async (file: File, folder: string) => {
+    const ext = file.name.split(".").pop();
+    const path = `${folder}/${Date.now()}.${ext}`;
+    const { error } = await supabase.storage
       .from("products")
-      .getPublicUrl(filePath);
-
-    return { publicUrl: publicUrlData.publicUrl, error: null };
+      .upload(path, file, { contentType: file.type, cacheControl: "3600", upsert: true });
+    if (error) return { url: "", error: error.message };
+    const { data } = supabase.storage.from("products").getPublicUrl(path);
+    return { url: data.publicUrl, error: null };
   };
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
-    const { data: { session: currentSession } } = await supabase.auth.getSession();
-    const authToken = currentSession?.access_token || import.meta.env.VITE_SUPABASE_ANON_KEY;
-
     let image_url = editingId ? products.find((p) => p.id === editingId)?.image_url : "";
+    let video_url = editingId ? products.find((p) => p.id === editingId)?.video_url : "";
 
     if (imageFile) {
       setUploadProgress("Uploading image...");
-      const imageExt = imageFile.name.split(".").pop();
-      const imagePath = `product-images/${Date.now()}.${imageExt}`;
-
-      const arrayBuffer = await imageFile.arrayBuffer();
-      const { publicUrl, error: imgError } = await uploadImageXHR(
-        imagePath,
-        arrayBuffer,
-        imageFile.type,
-        authToken,
-        setUploadProgress
-      );
-
-      if (imgError) {
+      const r = await uploadFile(imageFile, "product-images");
+      if (r.error) {
         toast({
           title: "Image Upload Failed",
-          description: imgError,
+          description: r.error,
           variant: "destructive",
         });
         setLoading(false);
         setUploadProgress("");
         return;
       }
-
-      image_url = publicUrl || "";
+      image_url = r.url;
     }
-
-    let video_url = editingId ? products.find((p) => p.id === editingId)?.video_url : "";
 
     if (videoFile) {
-      const videoPath = `product-videos/${Date.now()}.${videoFile.name.split(".").pop()}`;
-      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-
-      if (isMobile) {
-        setUploadProgress("Uploading video...");
-        const { publicUrl, error: vidError } = await uploadVideoSimpleXHR(
-          videoPath,
-          videoFile,
-          authToken,
-          setUploadProgress
-        );
-
-        if (vidError) {
-          toast({ title: "Video Upload Failed", description: vidError, variant: "destructive" });
-          setLoading(false);
-          setUploadProgress("");
-          return;
-        }
-        video_url = publicUrl || "";
-      } else {
-        const { publicUrl, error: vidError } = await uploadVideoChunked(videoFile, videoPath, authToken, setUploadProgress);
-        if (vidError) {
-          toast({ title: "Video Upload Failed", description: vidError, variant: "destructive" });
-          setLoading(false);
-          setUploadProgress("");
-          return;
-        }
-        video_url = publicUrl || "";
+      setUploadProgress("Uploading video...");
+      const r = await uploadFile(videoFile, "product-videos");
+      if (r.error) {
+        toast({
+          title: "Video Upload Failed",
+          description: r.error,
+          variant: "destructive",
+        });
+        setLoading(false);
+        setUploadProgress("");
+        return;
       }
+      video_url = r.url;
     }
+
 
     setUploadProgress("");
 
