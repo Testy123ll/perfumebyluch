@@ -58,6 +58,22 @@ const uploadImageSimple = async (file: File, folder: string) => {
 const Admin = () => {
   const navigate = useNavigate();
 
+  useEffect(() => {
+    // Lazy load Cloudinary upload widget script only for the Admin page
+    const script = document.createElement("script");
+    script.src = "https://upload-widget.cloudinary.com/global/all.js";
+    script.async = true;
+    script.type = "text/javascript";
+    document.head.appendChild(script);
+
+    return () => {
+      // Clean up the script when the component unmounts
+      if (document.head.contains(script)) {
+        document.head.removeChild(script);
+      }
+    };
+  }, []);
+
   // Auth & Session State
   const [session, setSession] = useState<any>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
