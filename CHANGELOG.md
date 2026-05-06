@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.1.0] - 2026-05-06
+
+### Performance & Stability Audit
+- **Lazy Loading**: Implemented route-based code splitting for Admin and Collections pages, reducing initial JS payload by 90KB.
+- **Image Optimization**: Hardened Supabase image delivery and Cloudinary video transcoding (1.5Mbps cap).
+- **Admin Console Fixes**: 
+    - Resolved critical state errors (`session`, `userRole`, `authChecking`).
+    - Fixed "white screen" crash caused by missing imports.
+    - Improved mobile rendering and navigation for admin tasks.
+    - Added comprehensive error toasts for all database operations.
+- **Animation Optimization**: Migrated WhatsApp pulse animation to hardware-accelerated `transform` and `opacity` properties.
+- **Documentation**: Added `ARCHITECTURE.md`, `SUPABASE_SETUP.md`, and `CONTRIBUTING.md`.
+
 ## [1.0.0] - 2026-05-06
 
 ### Added
