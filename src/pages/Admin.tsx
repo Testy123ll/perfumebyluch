@@ -399,6 +399,7 @@ const Admin = () => {
 
         xhr.open("POST", `${supabaseUrl}/functions/v1/upload-video`, true);
         xhr.setRequestHeader("Authorization", `Bearer ${supabaseKey}`);
+        xhr.setRequestHeader("apikey", supabaseKey);
         xhr.send(formDataPayload);
       });
 
