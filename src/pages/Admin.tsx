@@ -437,9 +437,10 @@ const Admin = () => {
 
       const formData = new FormData();
       formData.append("file", videoFile);
-      formData.append("upload_preset", uploadPreset);
+      formData.append("upload_preset", "Perfumeluch");
       formData.append("folder", "perfumebyluch/videos");
       formData.append("resource_type", "video");
+      formData.append("overwrite", "true");
 
       const result = await new Promise<{ url: string | null; error: string | null }>((resolve) => {
         const xhr = new XMLHttpRequest();
@@ -464,7 +465,7 @@ const Admin = () => {
         xhr.ontimeout = () => resolve({ url: null, error: "Upload timed out." });
         xhr.timeout = 600000; // 10 minutes
 
-        xhr.open("POST", `https://api.cloudinary.com/v1_1/${cloudName}/video/upload`, true);
+        xhr.open("POST", `https://api.cloudinary.com/v1_1/dp4auwl1h/video/upload`, true);
         xhr.send(formData);
       });
 
