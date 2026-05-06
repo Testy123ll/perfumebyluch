@@ -430,20 +430,25 @@ const Admin = () => {
 
     // Video Upload (XHR FormData)
     if (videoFile) {
-      if (videoFile.size > MAX_VIDEO_SIZE_BYTES) {
-        toast({ title: "File too large", description: `Video must be under ${MAX_VIDEO_SIZE_MB}MB`, variant: "destructive" });
-        setLoading(false); return;
-      }
+      setUploadProgress("Uploading video...");
       const videoPath = `product-videos/${Date.now()}.${videoFile.name.split(".").pop()}`;
-      setUploadProgress("Preparing video...");
-      const res = await uploadViaFormData(
-        videoFile, videoPath, authToken, supabaseUrl, supabaseKey, setUploadProgress
-      );
-      if (res.error) {
-        toast({ title: "Video failed", description: res.error, variant: "destructive" });
+
+      const { error: vidError } = await supabase.storage
+        .from("products")
+        .upload(videoPath, videoFile, {
+          contentType: videoFile.type || "video/mp4",
+          cacheControl: "3600",
+          upsert: true,
+        });
+
+      if (vidError) {
+        toast({ title: "Video Upload Failed", description: vidError.message, variant: "destructive" });
         setLoading(false); setUploadProgress(""); return;
       }
-      video_url = res.publicUrl || "";
+
+      const { data: publicUrlData } = supabase.storage.from("products").getPublicUrl(videoPath);
+      video_url = publicUrlData.publicUrl;
+      setUploadProgress("");
     }
 
     setUploadProgress("");
