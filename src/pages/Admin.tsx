@@ -37,65 +37,6 @@ interface ActivityLog {
 // ─── Upload Helpers ───────────────────────────────────────────────────────────
 
 /**
- * Specialized video upload using XHR + FormData.
- * Bypasses binary size limitations on certain mobile browsers.
- */
-const uploadViaFormData = (
-  file: File,
-  storagePath: string,
-  authToken: string,
-  supabaseUrl: string,
-  supabaseKey: string,
-  onProgress: (msg: string) => void
-): Promise<{ publicUrl: string | null; error: string | null }> => {
-  return new Promise((resolve) => {
-    let done = false;
-    const finish = (val: { publicUrl: string | null; error: string | null }) => {
-      if (!done) { done = true; resolve(val); }
-    };
-
-    const formData = new FormData();
-    // Use 'file' as the standard key for Supabase storage multipart uploads
-    formData.append("file", file, file.name);
-
-    const xhr = new XMLHttpRequest();
-    xhr.timeout = 600000; // 10 minutes
-
-    xhr.upload.onprogress = (e) => {
-      if (e.lengthComputable) {
-        const pct = Math.round((e.loaded / e.total) * 100);
-        onProgress(`Uploading video... ${pct}%`);
-      }
-    };
-
-    xhr.onload = () => {
-      if (xhr.status >= 200 && xhr.status < 300) {
-        const { data } = supabase.storage.from("products").getPublicUrl(storagePath);
-        finish({ publicUrl: data.publicUrl, error: null });
-      } else {
-        finish({ publicUrl: null, error: `Upload failed: ${xhr.status} ${xhr.statusText} - ${xhr.responseText}` });
-      }
-    };
-
-    xhr.onerror = () => finish({ publicUrl: null, error: "Network error during upload. Please check your file size (Max 100MB) and internet connection." });
-    xhr.ontimeout = () => finish({ publicUrl: null, error: "Upload timed out. Please try a smaller file or faster network." });
-
-    // Sanitize URL to avoid double slashes
-    const baseUrl = supabaseUrl.replace(/\/$/, "");
-    // Use PUT with x-upsert for more reliable overwrites/uploads
-    xhr.open("PUT", `${baseUrl}/storage/v1/object/products/${storagePath}`, true);
-    
-    xhr.setRequestHeader("Authorization", `Bearer ${authToken}`);
-    xhr.setRequestHeader("apikey", supabaseKey);
-    xhr.setRequestHeader("x-upsert", "true");
-    xhr.setRequestHeader("cache-control", "3600");
-    
-    // Note: Do NOT set Content-Type; let the browser set the multipart boundary automatically
-    xhr.send(formData);
-  });
-};
-
-/**
  * Standard SDK upload for images.
  */
 const uploadImageSimple = async (file: File, folder: string) => {
@@ -409,11 +350,6 @@ const Admin = () => {
     e.preventDefault();
     setLoading(true);
 
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-    const { data: { session: s } } = await supabase.auth.getSession();
-    const authToken = s?.access_token || supabaseKey;
-
     let image_url = editingId ? products.find(p => p.id === editingId)?.image_url || "" : "";
     let video_url = editingId ? products.find(p => p.id === editingId)?.video_url || "" : "";
 
@@ -428,12 +364,9 @@ const Admin = () => {
       image_url = res.url;
     }
 
-    // Video Upload (XHR FormData)
+    // Video Upload
     if (videoFile) {
       setUploadProgress("Uploading video...");
-
-      const cloudName = "dp4auwl1h";
-      const uploadPreset = "Perfumeluch";
 
       const formData = new FormData();
       formData.append("file", videoFile);
