@@ -101,17 +101,27 @@ const Hero = () => {
             ))}
           </div>
 
-          <div className="mt-10 flex items-center gap-8 text-sm text-muted-foreground">
+          <div className="mt-10 flex flex-wrap items-center gap-x-8 gap-y-6 text-sm text-muted-foreground">
             <div>
               <p className="font-serif text-2xl text-foreground">100%</p>
               <p>Authentic</p>
             </div>
-            <div className="h-10 w-px bg-border" />
+            <div className="h-10 w-px bg-border hidden sm:block" />
             <div>
               <p className="font-serif text-2xl text-foreground">1 to 2</p>
               <p>Days Lagos</p>
             </div>
-            <div className="h-10 w-px bg-border" />
+            <div className="h-10 w-px bg-border hidden sm:block" />
+            <div>
+              <p className="font-serif text-2xl text-foreground">2 to 7</p>
+              <p>Days NG</p>
+            </div>
+            <div className="h-10 w-px bg-border hidden sm:block" />
+            <div>
+              <p className="font-serif text-2xl text-foreground">5 to 14</p>
+              <p>Days GH & CM</p>
+            </div>
+            <div className="h-10 w-px bg-border hidden sm:block" />
             <div>
               <p className="font-serif text-2xl text-foreground">500+</p>
               <p>Happy clients</p>
