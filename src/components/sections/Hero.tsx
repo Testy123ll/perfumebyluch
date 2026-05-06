@@ -6,11 +6,11 @@ import { WhatsAppIcon } from "@/components/WhatsAppFloat";
 import heroImage from "@/assets/hero-perfume.jpg";
 
 const heroImages = [
-  "https://images.unsplash.com/photo-1541643600914-78b084683702?w=1600&q=80",
-  "https://images.unsplash.com/photo-1588405748880-12d1d2a59f75?w=1600&q=80",
-  "https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?w=1600&q=80",
-  "https://images.unsplash.com/photo-1563170351-be82bc888aa4?w=1600&q=80",
-  "https://images.unsplash.com/photo-1615634260167-c8cdede054de?w=1600&q=80",
+  "https://images.unsplash.com/photo-1541643600914-78b084683702?w=1200&q=45&fm=webp",
+  "https://images.unsplash.com/photo-1588405748880-12d1d2a59f75?w=1200&q=45&fm=webp",
+  "https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?w=1200&q=45&fm=webp",
+  "https://images.unsplash.com/photo-1563170351-be82bc888aa4?w=1200&q=45&fm=webp",
+  "https://images.unsplash.com/photo-1615634260167-c8cdede054de?w=1200&q=45&fm=webp",
 ];
 
 const Hero = () => {
@@ -25,7 +25,6 @@ const Hero = () => {
 
   return (
     <section className="relative overflow-hidden pt-20 pb-12 md:pt-28 md:pb-16 min-h-[90vh] flex items-center">
-      {/* Background Slideshow */}
       <div className="absolute inset-0 z-0 overflow-hidden">
         {heroImages.map((src, i) => (
           <div
@@ -38,15 +37,13 @@ const Hero = () => {
               alt=""
               className="h-full w-full object-cover"
               loading={i === 0 ? "eager" : "lazy"}
+              fetchPriority={i === 0 ? "high" : "auto"}
               aria-hidden="true"
             />
           </div>
         ))}
 
-        {/* Transparent gradient to let image colors breathe */}
         <div className="absolute inset-0 bg-gradient-to-b from-background/30 via-background/20 to-background/60" />
-
-        {/* Deep gradient fade at bottom to blend into page */}
         <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-background via-background/80 to-transparent" />
       </div>
 
@@ -86,7 +83,6 @@ const Hero = () => {
             Join 500+ customers who found their signature scent with us.
           </p>
 
-          {/* Slide Indicators */}
           <div className="mt-6 flex items-center justify-center md:justify-start gap-2">
             {heroImages.map((_, i) => (
               <button
@@ -128,7 +124,6 @@ const Hero = () => {
             </div>
           </div>
 
-          {/* Trust Bar */}
           <div className="mt-12 flex flex-wrap items-center gap-x-4 gap-y-2 text-[10px] uppercase tracking-[0.25em] text-muted-foreground/60 animate-fade-in [animation-delay:600ms]">
             <span>✦ Boxed & Unboxed Originals</span>
             <span className="text-primary/40">•</span>

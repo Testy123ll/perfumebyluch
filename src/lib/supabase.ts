@@ -58,16 +58,13 @@ export type Product = {
   created_at: string;
 };
 
-export const getOptimisedImageUrl = (url: string, width = 400, quality = 60) => {
+export const getOptimisedImageUrl = (url: string, width = 280, quality = 40) => {
   if (!url) return '';
   if (url.includes('supabase')) {
-    // If url already has parameters, we should handle them, but assuming base URL here for simplicity
-    // If it already has width=400, ensure quality is 60.
     const baseUrl = url.split('?')[0];
     return `${baseUrl}?width=${width}&quality=${quality}&format=webp`;
   }
   if (url.includes('cloudinary.com')) {
-    // Inject f_auto,q_auto for automatic format and quality optimization
     return url.replace('/upload/', `/upload/f_auto,q_auto,w_${width}/`);
   }
   return url;

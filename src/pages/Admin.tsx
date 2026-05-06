@@ -10,13 +10,11 @@ import {
 } from "lucide-react";
 import logo from "@/assets/logo.webp";
 
-// ─── Constants ───────────────────────────────────────────────────────────────
 const OWNER_ID = "7a7f1bb0-6aa6-42e6-80e3-7e4f7a48491e";
 const TEST_SESSION_KEY = "pbl_admin_test_session";
 const MAX_VIDEO_SIZE_MB = 100;
 const MAX_VIDEO_SIZE_BYTES = MAX_VIDEO_SIZE_MB * 1024 * 1024;
 
-// ─── Types ────────────────────────────────────────────────────────────────────
 type Tab = "products" | "reviews" | "team" | "activity";
 
 interface TeamMember {
@@ -36,8 +34,6 @@ interface ActivityLog {
   created_at: string;
 }
 
-// ─── Upload Helpers ───────────────────────────────────────────────────────────
-
 /**
  * Standard SDK upload for images.
  */
@@ -52,8 +48,6 @@ const uploadImageSimple = async (file: File, folder: string) => {
   const { data } = supabase.storage.from("products").getPublicUrl(path);
   return { url: data.publicUrl, error: null };
 };
-
-// ─── Component ────────────────────────────────────────────────────────────────
 
 const Admin = () => {
   const navigate = useNavigate();
@@ -74,19 +68,12 @@ const Admin = () => {
     };
   }, []);
 
-  // Auth & Session State
-  const [session, setSession] = useState<any>(null);
-  const [userRole, setUserRole] = useState<string | null>(null);
-  const [authChecking, setAuthChecking] = useState(true);
-
-  // UI State
   const [activeTab, setActiveTab] = useState<Tab>("products");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [uploadProgress, setUploadProgress] = useState("");
   const [loading, setLoading] = useState(true);
 
-  // Products State
   const [products, setProducts] = useState<Product[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -104,7 +91,6 @@ const Admin = () => {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [videoUrl, setVideoUrl] = useState(""); // Replaces videoFile for Widget support
 
-  // Reviews State
   const [reviews, setReviews] = useState<any[]>([]);
   const [reviewFormData, setReviewFormData] = useState({
     reviewer_name: "",
@@ -114,16 +100,12 @@ const Admin = () => {
     verified: false,
   });
 
-  // Team State
   const [team, setTeam] = useState<TeamMember[]>([]);
   const [newInviteEmail, setNewInviteEmail] = useState("");
 
-  // Activity Log State
   const [logs, setLogs] = useState<ActivityLog[]>([]);
   const [logFilterAdmin, setLogFilterAdmin] = useState("all");
   const [logFilterAction, setLogFilterAction] = useState("all");
-
-  // ─── Data Fetching ──────────────────────────────────────────────────────────
 
   const fetchProducts = useCallback(async () => {
     setLoading(true);
@@ -197,8 +179,6 @@ const Admin = () => {
     fetchLogs();
   };
 
-  // ─── Authentication ─────────────────────────────────────────────────────────
-
   useEffect(() => {
     const checkAuth = async () => {
       setAuthChecking(true);
@@ -212,7 +192,6 @@ const Admin = () => {
 
       setSession(currentSession);
       
-      // Role & Profile Check
       const { data: profile, error: pErr } = await supabase
         .from("profiles")
         .select("role")
@@ -281,8 +260,6 @@ const Admin = () => {
     if (session) fetchLogs();
   }, [logFilterAdmin, logFilterAction]);
 
-  // ─── Handlers ───────────────────────────────────────────────────────────────
-
   const handleLogout = async () => {
     localStorage.removeItem(TEST_SESSION_KEY);
     if (IS_SUPABASE_CONFIGURED) await supabase.auth.signOut();
@@ -301,7 +278,6 @@ const Admin = () => {
     setShowForm(false);
   };
 
-  // --- Cloudinary Widget Handler ---
   const handleUploadVideo = () => {
     // @ts-ignore - Cloudinary is loaded via script tag
     if (!window.cloudinary) {
@@ -333,7 +309,6 @@ const Admin = () => {
     widget.open();
   };
 
-  // --- Product Handlers ---
   const handleEdit = (product: Product) => {
     setEditingId(product.id);
     setFormData({
@@ -406,7 +381,6 @@ const Admin = () => {
     let image_url = editingId ? products.find(p => p.id === editingId)?.image_url || "" : "";
     let video_url = editingId ? products.find(p => p.id === editingId)?.video_url || "" : "";
 
-    // Image Upload (SDK)
     if (imageFile) {
       setUploadProgress("Uploading image...");
       const res = await uploadImageSimple(imageFile, "product-images");
@@ -456,7 +430,6 @@ const Admin = () => {
     setUploadProgress(""); // Final clear
   };
 
-  // --- Review Handlers ---
   const handleAddReview = async (e: React.FormEvent) => {
     e.preventDefault();
     const { error } = await supabase.from("reviews").insert([reviewFormData]);
@@ -494,7 +467,6 @@ const Admin = () => {
     if (!error) { logAction("Deleted review", "review", name); fetchReviews(); }
   };
 
-  // --- Team Handlers ---
   const handleAddInvite = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newInviteEmail) return;
@@ -528,7 +500,6 @@ const Admin = () => {
     if (!error) { logAction("Removed admin", "admin", email); fetchTeam(); }
   };
 
-  // --- Log Handlers ---
   const handleDeleteLog = async (id: string) => {
     if (session?.user?.id !== OWNER_ID) return;
     const { error } = await supabase.from("activity_log").delete().eq("id", id);
@@ -541,8 +512,6 @@ const Admin = () => {
     const { error } = await supabase.from("activity_log").delete().neq("id", "00000000-0000-0000-0000-000000000000");
     if (!error) { toast({ title: "Logs cleared" }); fetchLogs(); }
   };
-
-  // ─── Render ─────────────────────────────────────────────────────────────────
 
   if (authChecking) {
     return (
@@ -612,9 +581,6 @@ const Admin = () => {
           ))}
         </div>
 
-        {/* ══════════════════════════════════════════════════════
-            PRODUCTS TAB
-        ══════════════════════════════════════════════════════ */}
         {activeTab === "products" && (
           <>
             {showForm ? (
@@ -784,9 +750,6 @@ const Admin = () => {
           </>
         )}
 
-        {/* ══════════════════════════════════════════════════════
-            REVIEWS TAB
-        ══════════════════════════════════════════════════════ */}
         {activeTab === "reviews" && (
           <div className="space-y-6">
             <div className="rounded-xl border border-border bg-card p-4 sm:p-6 shadow-sm">

@@ -267,11 +267,11 @@ const ProductCard = ({ product, priority, isTopSelling }: { product: Product; pr
             />
           )}
 
-          {/* Video Play Button */}
           {product.video_url && (
             <button
               onClick={() => setVideoOpen(true)}
               className="absolute inset-0 z-10 flex items-center justify-center bg-black/20 opacity-0 transition-opacity group-hover:opacity-100"
+              aria-label="Play product video"
             >
               <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white/20 backdrop-blur-md text-white border border-white/30">
                 <Play className="h-8 w-8 fill-current" />
@@ -279,14 +279,12 @@ const ProductCard = ({ product, priority, isTopSelling }: { product: Product; pr
             </button>
           )}
 
-          {/* Emotional Hover Overlay */}
           <div className="absolute inset-x-0 bottom-0 z-20 bg-gradient-to-t from-black/80 to-transparent p-4 text-center opacity-0 transition-opacity duration-300 group-hover:opacity-100 pointer-events-none">
             <p className="font-serif text-sm italic text-white/90">
               {product.scent_mood || "Discover your next signature scent"}
             </p>
           </div>
 
-          {/* "New" or "Top Selling" badge */}
           {product.is_new ? (
             <span className="absolute left-3 top-3 rounded-full bg-amber-400/90 px-3 py-1 text-xs font-semibold text-amber-950 backdrop-blur">
               New
@@ -297,12 +295,10 @@ const ProductCard = ({ product, priority, isTopSelling }: { product: Product; pr
             </span>
           ) : null}
 
-          {/* Category label */}
           <span className="absolute bottom-3 left-3 rounded-full bg-background/80 px-3 py-1 text-xs text-foreground backdrop-blur">
             {product.category}
           </span>
 
-          {/* Sold Out badge */}
           {soldOut && (
             <span className="absolute right-3 top-3 rounded-full bg-red-500/80 px-3 py-1 text-xs font-semibold text-white backdrop-blur">
               Sold Out
