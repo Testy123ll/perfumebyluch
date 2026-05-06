@@ -13,7 +13,7 @@ const Nav = () => (
       </a>
       <nav className="hidden items-center gap-8 text-sm text-muted-foreground md:flex">
         <a href="/collections" className="transition-smooth hover:text-primary">Collections</a>
-        <a href="/#products" className="transition-smooth hover:text-primary">Shop</a>
+        <a href="/#products" className="transition-smooth hover:text-primary">All Products</a>
         <a href="/#about" className="transition-smooth hover:text-primary">About</a>
         <a href="/#faq" className="transition-smooth hover:text-primary">FAQ</a>
       </nav>
