@@ -432,15 +432,15 @@ const Admin = () => {
     if (videoFile) {
       setUploadProgress("Uploading video...");
 
-      const cloudName = "dp4auwl1h";
-      const uploadPreset = "Perfumeluch";
+      const timestamp = Date.now();
+      const ext = videoFile.name.split(".").pop();
+      const uniqueName = `video_${timestamp}.${ext}`;
 
       const formData = new FormData();
       formData.append("file", videoFile);
       formData.append("upload_preset", "Perfumeluch");
-      formData.append("folder", "perfumebyluch/videos");
+      formData.append("public_id", uniqueName);
       formData.append("resource_type", "video");
-      formData.append("overwrite", "true");
 
       const result = await new Promise<{ url: string | null; error: string | null }>((resolve) => {
         const xhr = new XMLHttpRequest();
