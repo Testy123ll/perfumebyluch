@@ -364,17 +364,18 @@ const Admin = () => {
       image_url = res.url;
     }
 
-    // Video Upload
+    // Video Upload (via Supabase Edge Function Bridge)
     if (videoFile) {
-      setUploadProgress("Uploading video...");
+      setUploadProgress("Uploading video... (via secure bridge)");
 
-      const formData = new FormData();
-      formData.append("file", videoFile);
-      formData.append("upload_preset", "Perfumeluch");
+      const { data: { session: s } } = await supabase.auth.getSession();
+      const authToken = s?.access_token;
+
+      const formDataPayload = new FormData();
+      formDataPayload.append("file", videoFile);
 
       const result = await new Promise<{ url: string | null; error: string | null }>((resolve) => {
         const xhr = new XMLHttpRequest();
-
         xhr.upload.onprogress = (e) => {
           if (e.lengthComputable) {
             const pct = Math.round((e.loaded / e.total) * 100);
@@ -387,16 +388,21 @@ const Admin = () => {
             const res = JSON.parse(xhr.responseText);
             resolve({ url: res.secure_url, error: null });
           } else {
-            resolve({ url: null, error: `Upload failed: ${xhr.status}` });
+            let errMsg = `Upload failed: ${xhr.status}`;
+            try {
+              const errRes = JSON.parse(xhr.responseText);
+              errMsg = errRes.error || errMsg;
+            } catch (e) {}
+            resolve({ url: null, error: errMsg });
           }
         };
 
-        xhr.onerror   = () => resolve({ url: null, error: "Network error — check your connection." });
-        xhr.ontimeout = () => resolve({ url: null, error: "Upload timed out." });
-        xhr.timeout = 600000; // 10 minutes
+        xhr.onerror = () => resolve({ url: null, error: "Connection to upload bridge failed." });
+        xhr.timeout = 600000;
 
-        xhr.open("POST", `https://api.cloudinary.com/v1_1/dp4auwl1h/video/upload`, true);
-        xhr.send(formData);
+        xhr.open("POST", `https://hmxijqaddxvcrssgcaaz.supabase.co/functions/v1/cloudinary-upload`, true);
+        xhr.setRequestHeader("Authorization", `Bearer ${authToken}`);
+        xhr.send(formDataPayload);
       });
 
       if (result.error) {
