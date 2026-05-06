@@ -62,8 +62,7 @@ export const getOptimisedImageUrl = (url: string, width = 280, quality = 40) => 
   if (!url) return '';
   if (url.includes('supabase.co')) {
     const baseUrl = url.split('?')[0];
-    const transformedUrl = baseUrl.replace('/object/public/', '/render/image/public/');
-    return `${transformedUrl}?width=${width}&quality=${quality}&format=webp`;
+    return `${baseUrl}?width=${width}&quality=${quality}&format=webp`;
   }
   if (url.includes('cloudinary.com')) {
     const isVideo = url.includes('/video/upload/');
