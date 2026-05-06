@@ -439,39 +439,33 @@ const Admin = () => {
       formData.append("file", videoFile);
       formData.append("upload_preset", "Perfumeluch");
 
-      const result = await new Promise<{ url: string | null; error: string | null }>((resolve) => {
-        const xhr = new XMLHttpRequest();
+      try {
+        setUploadProgress("Uploading video... (this may take a minute)");
+        const response = await fetch(`https://api.cloudinary.com/v1_1/dp4auwl1h/video/upload`, {
+          method: "POST",
+          body: formData,
+        });
 
-        xhr.upload.onprogress = (e) => {
-          if (e.lengthComputable) {
-            const pct = Math.round((e.loaded / e.total) * 100);
-            setUploadProgress(`Uploading video... ${pct}%`);
-          }
-        };
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({ error: { message: "Unknown error" } }));
+          toast({ 
+            title: "Upload Failed", 
+            description: errorData.error?.message || `Error: ${response.status}`, 
+            variant: "destructive" 
+          });
+          setLoading(false); setUploadProgress(""); return;
+        }
 
-        xhr.onload = () => {
-          if (xhr.status === 200) {
-            const res = JSON.parse(xhr.responseText);
-            resolve({ url: res.secure_url, error: null });
-          } else {
-            resolve({ url: null, error: `Upload failed: ${xhr.status}` });
-          }
-        };
-
-        xhr.onerror   = () => resolve({ url: null, error: "Network error — check your connection." });
-        xhr.ontimeout = () => resolve({ url: null, error: "Upload timed out." });
-        xhr.timeout = 600000; // 10 minutes
-
-        xhr.open("POST", `https://api.cloudinary.com/v1_1/dp4auwl1h/video/upload`, true);
-        xhr.send(formData);
-      });
-
-      if (result.error) {
-        toast({ title: "Video Upload Failed", description: result.error, variant: "destructive" });
+        const data = await response.json();
+        video_url = data.secure_url;
+      } catch (err: any) {
+        toast({ 
+          title: "Network Error", 
+          description: "Connection failed. Please check your signal and try again.", 
+          variant: "destructive" 
+        });
         setLoading(false); setUploadProgress(""); return;
       }
-
-      video_url = result.url || "";
       setUploadProgress("");
     }
 
