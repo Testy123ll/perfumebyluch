@@ -60,12 +60,17 @@ export type Product = {
 
 export const getOptimisedImageUrl = (url: string, width = 280, quality = 40) => {
   if (!url) return '';
-  if (url.includes('supabase')) {
+  if (url.includes('supabase.co')) {
     const baseUrl = url.split('?')[0];
-    return `${baseUrl}?width=${width}&quality=${quality}&format=webp`;
+    const transformedUrl = baseUrl.replace('/object/public/', '/render/image/public/');
+    return `${transformedUrl}?width=${width}&quality=${quality}&format=webp`;
   }
   if (url.includes('cloudinary.com')) {
-    return url.replace('/upload/', `/upload/f_auto,q_auto,w_${width}/`);
+    const isVideo = url.includes('/video/upload/');
+    const optimizationParams = isVideo 
+      ? `f_auto,q_auto,w_${width},br_1.5m` 
+      : `f_auto,q_auto,w_${width}`;
+    return url.replace('/upload/', `/upload/${optimizationParams}/`);
   }
   return url;
 };
