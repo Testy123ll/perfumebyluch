@@ -77,7 +77,7 @@ const uploadViaFormData = (
       }
     };
 
-    xhr.onerror = () => finish({ publicUrl: null, error: "Network error during upload. Please check your connection or file size (Max 100MB)." });
+    xhr.onerror = () => finish({ publicUrl: null, error: "Network error during upload. Please check your file size (Max 100MB) and internet connection." });
     xhr.ontimeout = () => finish({ publicUrl: null, error: "Upload timed out. Please try a smaller file or faster network." });
 
     // Sanitize URL to avoid double slashes
@@ -430,6 +430,10 @@ const Admin = () => {
 
     // Video Upload (XHR FormData)
     if (videoFile) {
+      if (videoFile.size > MAX_VIDEO_SIZE_BYTES) {
+        toast({ title: "File too large", description: `Video must be under ${MAX_VIDEO_SIZE_MB}MB`, variant: "destructive" });
+        setLoading(false); return;
+      }
       const videoPath = `product-videos/${Date.now()}.${videoFile.name.split(".").pop()}`;
       setUploadProgress("Preparing video...");
       const res = await uploadViaFormData(
