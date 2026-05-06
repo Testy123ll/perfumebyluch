@@ -252,7 +252,7 @@ const ProductCard = ({ product, priority, isTopSelling }: { product: Product; pr
 
           {product.video_url && (
             <video
-              src={product.video_url}
+              src={getOptimisedImageUrl(product.video_url, 400)}
               muted
               loop
               playsInline
@@ -383,7 +383,7 @@ const ProductCard = ({ product, priority, isTopSelling }: { product: Product; pr
                 controls
                 className="h-full w-full"
               >
-                <source src={product.video_url} />
+                <source src={getOptimisedImageUrl(product.video_url, 1080)} />
                 Your browser does not support the video tag.
               </video>
             )}

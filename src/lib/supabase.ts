@@ -63,5 +63,9 @@ export const getOptimisedImageUrl = (url: string, width = 400, quality = 75) => 
   if (url.includes('supabase')) {
     return `${url}?width=${width}&quality=${quality}&format=webp`;
   }
+  if (url.includes('cloudinary.com')) {
+    // Inject f_auto,q_auto for automatic format and quality optimization
+    return url.replace('/upload/', `/upload/f_auto,q_auto,w_${width}/`);
+  }
   return url;
 };
