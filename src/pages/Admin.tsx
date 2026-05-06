@@ -55,7 +55,8 @@ const uploadViaFormData = (
     };
 
     const formData = new FormData();
-    formData.append("", file, file.name);
+    // Use 'file' as the standard key for Supabase storage multipart uploads
+    formData.append("file", file, file.name);
 
     const xhr = new XMLHttpRequest();
     xhr.timeout = 600000; // 10 minutes
@@ -72,17 +73,23 @@ const uploadViaFormData = (
         const { data } = supabase.storage.from("products").getPublicUrl(storagePath);
         finish({ publicUrl: data.publicUrl, error: null });
       } else {
-        finish({ publicUrl: null, error: `Upload failed: ${xhr.status} ${xhr.responseText}` });
+        finish({ publicUrl: null, error: `Upload failed: ${xhr.status} ${xhr.statusText} - ${xhr.responseText}` });
       }
     };
 
-    xhr.onerror = () => finish({ publicUrl: null, error: "Network error during upload." });
-    xhr.ontimeout = () => finish({ publicUrl: null, error: "Upload timed out." });
+    xhr.onerror = () => finish({ publicUrl: null, error: "Network error during upload. Please check your connection or file size (Max 100MB)." });
+    xhr.ontimeout = () => finish({ publicUrl: null, error: "Upload timed out. Please try a smaller file or faster network." });
 
-    xhr.open("POST", `${supabaseUrl}/storage/v1/object/products/${storagePath}`, true);
+    // Sanitize URL to avoid double slashes
+    const baseUrl = supabaseUrl.replace(/\/$/, "");
+    // Use PUT with x-upsert for more reliable overwrites/uploads
+    xhr.open("PUT", `${baseUrl}/storage/v1/object/products/${storagePath}`, true);
+    
     xhr.setRequestHeader("Authorization", `Bearer ${authToken}`);
     xhr.setRequestHeader("apikey", supabaseKey);
     xhr.setRequestHeader("x-upsert", "true");
+    xhr.setRequestHeader("cache-control", "3600");
+    
     // Note: Do NOT set Content-Type; let the browser set the multipart boundary automatically
     xhr.send(formData);
   });
