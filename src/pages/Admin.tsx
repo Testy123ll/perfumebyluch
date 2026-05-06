@@ -430,39 +430,50 @@ const Admin = () => {
 
     // Video Upload (XHR FormData)
     if (videoFile) {
-      setUploadProgress("Preparing upload...");
-      const videoPath = `product-videos/${Date.now()}.${videoFile.name.split(".").pop()}`;
-
-      // Step 1: Get signed upload URL from Supabase
-      const { data: signedData, error: signedError } = await supabase.storage
-        .from("products")
-        .createSignedUploadUrl(videoPath);
-
-      if (signedError || !signedData?.signedUrl) {
-        toast({ title: "Video Upload Failed", description: signedError?.message || "Could not get upload URL", variant: "destructive" });
-        setLoading(false); setUploadProgress(""); return;
-      }
-
-      // Step 2: PUT the file directly to the signed URL
       setUploadProgress("Uploading video...");
-      const uploadRes = await fetch(signedData.signedUrl, {
-        method: "PUT",
-        body: videoFile,
-        headers: {
-          "Content-Type": videoFile.type || "video/mp4",
-        },
+
+      const cloudName = "dp4auwl1h";
+      const uploadPreset = "Perfumeluch";
+
+      const formData = new FormData();
+      formData.append("file", videoFile);
+      formData.append("upload_preset", uploadPreset);
+      formData.append("folder", "perfumebyluch/videos");
+      formData.append("resource_type", "video");
+
+      const result = await new Promise<{ url: string | null; error: string | null }>((resolve) => {
+        const xhr = new XMLHttpRequest();
+
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable) {
+            const pct = Math.round((e.loaded / e.total) * 100);
+            setUploadProgress(`Uploading video... ${pct}%`);
+          }
+        };
+
+        xhr.onload = () => {
+          if (xhr.status === 200) {
+            const res = JSON.parse(xhr.responseText);
+            resolve({ url: res.secure_url, error: null });
+          } else {
+            resolve({ url: null, error: `Upload failed: ${xhr.status}` });
+          }
+        };
+
+        xhr.onerror   = () => resolve({ url: null, error: "Network error — check your connection." });
+        xhr.ontimeout = () => resolve({ url: null, error: "Upload timed out." });
+        xhr.timeout = 600000; // 10 minutes
+
+        xhr.open("POST", `https://api.cloudinary.com/v1_1/${cloudName}/video/upload`, true);
+        xhr.send(formData);
       });
 
-      if (!uploadRes.ok) {
-        toast({ title: "Video Upload Failed", description: `Upload failed: ${uploadRes.status}`, variant: "destructive" });
+      if (result.error) {
+        toast({ title: "Video Upload Failed", description: result.error, variant: "destructive" });
         setLoading(false); setUploadProgress(""); return;
       }
 
-      // Step 3: Get public URL
-      const { data: publicUrlData } = supabase.storage
-        .from("products")
-        .getPublicUrl(videoPath);
-      video_url = publicUrlData.publicUrl;
+      video_url = result.url || "";
       setUploadProgress("");
     }
 
