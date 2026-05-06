@@ -430,23 +430,38 @@ const Admin = () => {
 
     // Video Upload (XHR FormData)
     if (videoFile) {
-      setUploadProgress("Uploading video...");
+      setUploadProgress("Preparing upload...");
       const videoPath = `product-videos/${Date.now()}.${videoFile.name.split(".").pop()}`;
 
-      const { error: vidError } = await supabase.storage
+      // Step 1: Get signed upload URL from Supabase
+      const { data: signedData, error: signedError } = await supabase.storage
         .from("products")
-        .upload(videoPath, videoFile, {
-          contentType: videoFile.type || "video/mp4",
-          cacheControl: "3600",
-          upsert: true,
-        });
+        .createSignedUploadUrl(videoPath);
 
-      if (vidError) {
-        toast({ title: "Video Upload Failed", description: vidError.message, variant: "destructive" });
+      if (signedError || !signedData?.signedUrl) {
+        toast({ title: "Video Upload Failed", description: signedError?.message || "Could not get upload URL", variant: "destructive" });
         setLoading(false); setUploadProgress(""); return;
       }
 
-      const { data: publicUrlData } = supabase.storage.from("products").getPublicUrl(videoPath);
+      // Step 2: PUT the file directly to the signed URL
+      setUploadProgress("Uploading video...");
+      const uploadRes = await fetch(signedData.signedUrl, {
+        method: "PUT",
+        body: videoFile,
+        headers: {
+          "Content-Type": videoFile.type || "video/mp4",
+        },
+      });
+
+      if (!uploadRes.ok) {
+        toast({ title: "Video Upload Failed", description: `Upload failed: ${uploadRes.status}`, variant: "destructive" });
+        setLoading(false); setUploadProgress(""); return;
+      }
+
+      // Step 3: Get public URL
+      const { data: publicUrlData } = supabase.storage
+        .from("products")
+        .getPublicUrl(videoPath);
       video_url = publicUrlData.publicUrl;
       setUploadProgress("");
     }
