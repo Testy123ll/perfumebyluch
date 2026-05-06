@@ -397,11 +397,13 @@ const Admin = () => {
           }
         };
 
-        xhr.onerror = () => resolve({ url: null, error: "Connection to upload bridge failed." });
+        xhr.onerror = () => resolve({ url: null, error: "Connection to upload bridge failed. Check your internet signal." });
         xhr.timeout = 600000;
 
         xhr.open("POST", `https://hmxijqaddxvcrssgcaaz.supabase.co/functions/v1/cloudinary-upload`, true);
         xhr.setRequestHeader("Authorization", `Bearer ${authToken}`);
+        // Mandatory for Supabase Edge Functions
+        xhr.setRequestHeader("apikey", import.meta.env.VITE_SUPABASE_ANON_KEY); 
         xhr.send(formDataPayload);
       });
 
