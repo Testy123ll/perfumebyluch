@@ -69,6 +69,10 @@ const Admin = () => {
   }, []);
 
   const [activeTab, setActiveTab] = useState<Tab>("products");
+  const [session, setSession] = useState<any>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [authChecking, setAuthChecking] = useState(true);
+  const { toast } = useToast();
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [uploadProgress, setUploadProgress] = useState("");
@@ -85,6 +89,7 @@ const Admin = () => {
     in_stock: true,
     visible: true,
     is_new: false,
+    is_bestseller: false,
     size: "",
     scent_mood: "",
   });
@@ -270,7 +275,7 @@ const Admin = () => {
     setEditingId(null);
     setFormData({
       name: "", price: "", description: "", category: "Unboxed",
-      in_stock: true, visible: true, is_new: false, size: "", scent_mood: ""
+      in_stock: true, visible: true, is_new: false, is_bestseller: false, size: "", scent_mood: ""
     });
     setImageFile(null);
     setVideoUrl(""); // Reset widget URL
@@ -280,13 +285,13 @@ const Admin = () => {
 
   const handleUploadVideo = () => {
     // @ts-ignore - Cloudinary is loaded via script tag
-    if (!window.cloudinary) {
+    if (!(window as any).cloudinary) {
       toast({ title: "Widget Error", description: "Cloudinary library not ready. Please refresh the page.", variant: "destructive" });
       return;
     }
 
     // @ts-ignore
-    const widget = window.cloudinary.createUploadWidget(
+    const widget = (window as any).cloudinary.createUploadWidget(
       {
         cloudName: "dvmefdiu3",
         uploadPreset: "Perfume",
@@ -321,6 +326,7 @@ const Admin = () => {
       is_new: product.is_new ?? false,
       size: product.size || "",
       scent_mood: product.scent_mood || "",
+      is_bestseller: product.is_bestseller ?? false,
     });
     setImageFile(null);
     setVideoUrl(product.video_url || ""); // Set existing video URL
@@ -343,6 +349,8 @@ const Admin = () => {
     if (!error) {
       logAction(p.visible ? "Hid product" : "Showed product", "product", p.name);
       fetchProducts();
+    } else {
+      toast({ title: "Update Failed", description: error.message, variant: "destructive" });
     }
   };
 
@@ -351,6 +359,8 @@ const Admin = () => {
     if (!error) {
       logAction("Toggled stock", "product", p.name);
       fetchProducts();
+    } else {
+      toast({ title: "Update Failed", description: error.message, variant: "destructive" });
     }
   };
 
@@ -359,6 +369,8 @@ const Admin = () => {
     if (!error) {
       logAction(p.is_new ? "Removed from New" : "Marked as New", "product", p.name);
       fetchProducts();
+    } else {
+      toast({ title: "Update Failed", description: error.message, variant: "destructive" });
     }
   };
 
@@ -371,6 +383,8 @@ const Admin = () => {
     if (!error) {
       logAction(!p.is_bestseller ? "Marked as Top Seller" : "Removed from Top Sellers", "product", p.name);
       fetchProducts();
+    } else {
+      toast({ title: "Update Failed", description: error.message, variant: "destructive" });
     }
   };
 
@@ -406,6 +420,7 @@ const Admin = () => {
       video_url: final_video_url,
       size: formData.size,
       scent_mood: formData.scent_mood,
+      is_bestseller: (formData as any).is_bestseller,
       ...(image_url ? { image_url } : {}),
     };
 
@@ -445,11 +460,13 @@ const Admin = () => {
   const handleToggleReviewVisibility = async (id: string, current: boolean, name: string) => {
     const { error } = await supabase.from("reviews").update({ visible: !current }).eq("id", id);
     if (!error) { logAction(current ? "Hid review" : "Showed review", "review", name); fetchReviews(); }
+    else { toast({ title: "Failed to update review", description: error.message, variant: "destructive" }); }
   };
 
   const handleToggleReviewVerified = async (id: string, current: boolean, name: string) => {
     const { error } = await supabase.from("reviews").update({ verified: !current }).eq("id", id);
     if (!error) { logAction(current ? "Unverified review" : "Verified review", "review", name); fetchReviews(); }
+    else { toast({ title: "Failed to update verification", description: error.message, variant: "destructive" }); }
   };
 
   const handleToggleTestimonial = async (id: string, current: boolean, name: string) => {
@@ -459,12 +476,14 @@ const Admin = () => {
     }
     const { error } = await supabase.from("reviews").update({ is_testimonial: !current }).eq("id", id);
     if (!error) { logAction(!current ? "Featured Testimonial" : "Removed Testimonial", "review", name); fetchReviews(); }
+    else { toast({ title: "Failed to update testimonial", description: error.message, variant: "destructive" }); }
   };
 
   const handleDeleteReview = async (id: string, name: string) => {
     if (!confirm(`Delete review from ${name}?`)) return;
     const { error } = await supabase.from("reviews").delete().eq("id", id);
     if (!error) { logAction("Deleted review", "review", name); fetchReviews(); }
+    else { toast({ title: "Delete Failed", description: error.message, variant: "destructive" }); }
   };
 
   const handleAddInvite = async (e: React.FormEvent) => {
@@ -684,7 +703,7 @@ const Admin = () => {
             ) : (
               <div className="mb-4 flex items-center justify-between">
                 <h2 className="font-serif text-xl sm:text-2xl">Perfume Collection</h2>
-                <Button onClick={() => setShowForm(true)} size="sm" className="gap-2">
+                <Button onClick={() => { resetForm(); setShowForm(true); }} size="sm" className="gap-2">
                   <Plus className="h-4 w-4" /> <span className="hidden xs:inline">Add Product</span>
                 </Button>
               </div>
@@ -710,7 +729,7 @@ const Admin = () => {
                         <td className="p-4">
                           <div className="flex items-center gap-3">
                             <div className="h-10 w-10 shrink-0 overflow-hidden rounded bg-muted">
-                              {p.image_url && <img src={p.image_url} className="h-full w-full object-cover" alt="" />}
+                              {p.image_url && <img src={getOptimisedImageUrl(p.image_url, 100)} className="h-full w-full object-cover" alt="" />}
                             </div>
                             <div className="min-w-0">
                               <p className="font-medium truncate max-w-[150px]">{p.name}</p>
@@ -724,7 +743,7 @@ const Admin = () => {
                           <div className="flex flex-wrap gap-1.5">
                             <button onClick={() => handleToggleStock(p)} 
                               className={`rounded-full px-2 py-0.5 text-[9px] font-bold uppercase ${p.in_stock ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
-                              {p.in_stock ? "In Stock" : "Out"}
+                              {p.in_stock ? "In Stock" : "Sold Out"}
                             </button>
                             <button onClick={() => handleToggleNewArrival(p)} 
                               className={`rounded px-1 text-xs border transition-all ${p.is_new ? "border-primary text-primary" : "border-border opacity-30"}`} title="New Arrival">✨</button>
