@@ -7,6 +7,7 @@ import {
   Trash2, Edit2, Eye, EyeOff, Plus, LogOut, Loader2,
   Shield, ShieldOff, Mail, History, User, Star, CheckCircle2
 } from "lucide-react";
+import logo from "@/assets/logo.webp";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 const OWNER_ID = "7a7f1bb0-6aa6-42e6-80e3-7e4f7a48491e";
@@ -545,17 +546,21 @@ const Admin = () => {
 
       <div className="mx-auto max-w-6xl w-full">
         {/* Header */}
-        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-border/40 pb-6">
+          <a href="/" className="flex items-center gap-2" aria-label="Perfumes By Luch home">
+            <img src={logo} alt="Perfumes By Luch logo" className="h-12 w-auto md:h-16" width={160} height={64} />
+            <span className="sr-only">Perfumes By Luch</span>
+          </a>
           <div>
-            <h1 className="font-serif text-2xl sm:text-3xl">Admin Dashboard</h1>
-            <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground overflow-hidden">
-              <User className="h-3 w-3 shrink-0" />
-              <span className="truncate">{session?.user?.email}</span>
-              <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 uppercase tracking-tighter">{userRole}</span>
+            <h1 className="font-serif text-xl sm:text-2xl tracking-tight">Admin Console</h1>
+            <div className="mt-1 flex items-center gap-2 text-[10px] text-muted-foreground uppercase tracking-widest">
+              <span className="flex items-center gap-1"><User className="h-2.5 w-2.5" /> {session?.user?.email}</span>
+              <span className="h-1 w-1 rounded-full bg-border" />
+              <span className="font-bold text-primary">{userRole}</span>
             </div>
           </div>
-          <Button variant="outline" size="sm" onClick={handleLogout} className="w-full sm:w-auto">
-            <LogOut className="mr-2 h-4 w-4" /> Logout
+          <Button variant="ghost" size="sm" onClick={handleLogout} className="h-8 text-xs text-muted-foreground hover:text-red-500 hover:bg-red-50 transition-all">
+            <LogOut className="mr-2 h-3 w-3" /> <span className="sm:inline">Logout</span>
           </Button>
         </div>
 

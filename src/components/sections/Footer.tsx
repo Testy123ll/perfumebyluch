@@ -14,7 +14,7 @@ const Footer = () => (
     <div className="container">
       <div className="grid gap-10 md:grid-cols-4">
         <div className="md:col-span-1">
-          <img src={logo} alt="Perfumes By Luch" className="h-14 w-auto" width={140} height={56} />
+          <img src={logo} alt="Perfumes By Luch" className="h-20 w-auto" width={200} height={80} />
           <p className="mt-4 text-sm italic text-muted-foreground">
             Smell so good without breaking the bank.
           </p>
