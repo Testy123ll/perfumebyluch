@@ -5,27 +5,11 @@ import { WhatsAppIcon } from "@/components/WhatsAppFloat";
 const CTA = () => (
   <section className="py-14 md:py-20">
     <div className="container">
-      {/* Emotional Statement */}
       <div className="mb-16 text-center animate-fade-up [animation-delay:200ms]">
         <p className="font-serif text-2xl md:text-4xl leading-relaxed text-foreground">
           "Scent is the only sense directly linked to memory and emotion. <br className="hidden md:block" />
           <span className="text-primary italic mt-2 block">Choose wisely. Choose something that stays."</span>
         </p>
-        
-        <div className="mt-12 flex flex-wrap justify-center gap-8 md:gap-16">
-          <div className="text-center">
-            <p className="font-serif text-xl text-foreground">500+</p>
-            <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Happy customers</p>
-          </div>
-          <div className="text-center">
-            <p className="font-serif text-xl text-foreground">3 Countries</p>
-            <p className="text-[10px] uppercase tracking-widest text-muted-foreground">NG · GH · CM</p>
-          </div>
-          <div className="text-center">
-            <p className="font-serif text-xl text-foreground">100%</p>
-            <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Authentic Always</p>
-          </div>
-        </div>
       </div>
 
       <div className="relative overflow-hidden rounded-3xl border border-primary/30 bg-gradient-to-br from-card to-background p-10 text-center md:p-20 shadow-pink">
@@ -34,10 +18,15 @@ const CTA = () => (
           <h2 className="font-serif text-4xl md:text-5xl lg:text-6xl leading-tight">
             Ready to <span className="italic text-gradient-pink">smell amazing</span>?
           </h2>
-          <p className="mx-auto mt-4 max-w-md text-muted-foreground">
-            Send us a message and we'll help you pick the perfect scent.
+          <p className="mt-6 max-w-md text-lg text-muted-foreground mx-auto">
+            Boxed, unboxed, thrifted, and tester perfumes available. Authentic fragrances, delivered across Nigeria, Ghana and Cameroon.
           </p>
-          <Button asChild size="lg" variant="whatsapp" className="mt-8 text-base">
+          <div className="mt-4 flex flex-col gap-1 text-[10px] uppercase tracking-[0.2em] text-primary/70 mb-8">
+            <span>🚀 Outside Lagos: 2-7 Days</span>
+            <span>🌍 GH & CM: 5-14 Days</span>
+          </div>
+          
+          <Button asChild size="lg" variant="whatsapp" className="shadow-xl hover:scale-105 transition-transform">
             <a
               href={waLink("Hi Perfumes By Luch! I'm ready to smell amazing.")}
               target="_blank"
@@ -48,30 +37,18 @@ const CTA = () => (
             </a>
           </Button>
 
-          <div className="mt-4 flex flex-col items-center gap-2">
-            <p className="text-xs text-muted-foreground/60 uppercase tracking-widest">or</p>
-            <a
-              href="#products"
-              className="font-serif italic text-primary/70 text-sm hover:text-primary transition-colors"
-            >
-              Browse the collection first ↓
-            </a>
-          </div>
-
-          <div className="mt-10 flex flex-wrap justify-center gap-8 text-center text-sm text-muted-foreground">
-            <div>
-              <p className="font-serif text-3xl text-foreground">500+</p>
-              <p>Happy customers across West Africa</p>
+          <div className="mt-10 flex flex-wrap justify-center gap-8 text-center text-[10px] uppercase tracking-widest text-primary/70">
+            <div className="flex flex-col items-center border-r border-border/30 pr-8 last:border-0">
+              <span className="font-serif text-2xl text-foreground tracking-normal lowercase italic">500+</span>
+              <span>Happy customers</span>
             </div>
-            <div className="h-10 w-px bg-border hidden md:block self-center" />
-            <div>
-              <p className="font-serif text-3xl text-foreground">3</p>
-              <p>Countries • Nigeria · Ghana · Cameroon</p>
+            <div className="flex flex-col items-center border-r border-border/30 pr-8 last:border-0">
+              <span className="font-serif text-2xl text-foreground tracking-normal lowercase italic">3 Countries</span>
+              <span>NG • GH • CM</span>
             </div>
-            <div className="h-10 w-px bg-border hidden md:block self-center" />
-            <div>
-              <p className="font-serif text-3xl text-foreground">100%</p>
-              <p>Authentic, every single time</p>
+            <div className="flex flex-col items-center">
+              <span className="font-serif text-2xl text-foreground tracking-normal lowercase italic">100%</span>
+              <span>Authentic Always</span>
             </div>
           </div>
         </div>

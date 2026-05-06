@@ -50,7 +50,7 @@ const faqCategories = [
     items: [
       {
         q: "Do you offer delivery across Nigeria and Worldwide?",
-        a: "Yes, we deliver across Nigeria and Worldwide. Delivery times and fees depend on your location.",
+        a: "Yes, we deliver across Nigeria, Ghana and Cameroon. Delivery times and fees depend on your location.",
       },
       {
         q: "Do you deliver outside Nigeria?",
