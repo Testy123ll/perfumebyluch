@@ -364,14 +364,15 @@ const Admin = () => {
       image_url = res.url;
     }
 
+    // Video Upload (via upload-video Edge Function)
     if (videoFile) {
       setUploadProgress("Uploading video...");
 
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-      const formData = new FormData();
-      formData.append("file", videoFile, videoFile.name);
+      const formDataPayload = new FormData();
+      formDataPayload.append("file", videoFile, videoFile.name);
 
       const result = await new Promise<{ url: string | null; error: string | null }>((resolve) => {
         const xhr = new XMLHttpRequest();
@@ -398,7 +399,7 @@ const Admin = () => {
 
         xhr.open("POST", `${supabaseUrl}/functions/v1/upload-video`, true);
         xhr.setRequestHeader("Authorization", `Bearer ${supabaseKey}`);
-        xhr.send(formData);
+        xhr.send(formDataPayload);
       });
 
       if (result.error) {
@@ -409,8 +410,6 @@ const Admin = () => {
       video_url = result.url || "";
       setUploadProgress("");
     }
-
-    setUploadProgress("");
 
     const payload = {
       name: formData.name,
