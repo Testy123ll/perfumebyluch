@@ -364,18 +364,18 @@ const Admin = () => {
       image_url = res.url;
     }
 
-    // Video Upload (via Supabase Edge Function Bridge)
     if (videoFile) {
-      setUploadProgress("Uploading video... (via secure bridge)");
+      setUploadProgress("Uploading video...");
 
-      const { data: { session: s } } = await supabase.auth.getSession();
-      const authToken = s?.access_token;
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-      const formDataPayload = new FormData();
-      formDataPayload.append("file", videoFile);
+      const formData = new FormData();
+      formData.append("file", videoFile, videoFile.name);
 
       const result = await new Promise<{ url: string | null; error: string | null }>((resolve) => {
         const xhr = new XMLHttpRequest();
+
         xhr.upload.onprogress = (e) => {
           if (e.lengthComputable) {
             const pct = Math.round((e.loaded / e.total) * 100);
@@ -386,25 +386,19 @@ const Admin = () => {
         xhr.onload = () => {
           if (xhr.status === 200) {
             const res = JSON.parse(xhr.responseText);
-            resolve({ url: res.secure_url, error: null });
+            resolve({ url: res.url, error: null });
           } else {
-            let errMsg = `Upload failed: ${xhr.status}`;
-            try {
-              const errRes = JSON.parse(xhr.responseText);
-              errMsg = errRes.error || errMsg;
-            } catch (e) {}
-            resolve({ url: null, error: errMsg });
+            resolve({ url: null, error: `Upload failed: ${xhr.status} ${xhr.responseText}` });
           }
         };
 
-        xhr.onerror = () => resolve({ url: null, error: "Connection to upload bridge failed. Check your internet signal." });
-        xhr.timeout = 600000;
+        xhr.onerror   = () => resolve({ url: null, error: "Network error" });
+        xhr.ontimeout = () => resolve({ url: null, error: "Upload timed out" });
+        xhr.timeout = 600000; // 10 minutes
 
-        xhr.open("POST", `https://hmxijqaddxvcrssgcaaz.supabase.co/functions/v1/cloudinary-upload`, true);
-        xhr.setRequestHeader("Authorization", `Bearer ${authToken}`);
-        // Mandatory for Supabase Edge Functions
-        xhr.setRequestHeader("apikey", import.meta.env.VITE_SUPABASE_ANON_KEY); 
-        xhr.send(formDataPayload);
+        xhr.open("POST", `${supabaseUrl}/functions/v1/upload-video`, true);
+        xhr.setRequestHeader("Authorization", `Bearer ${supabaseKey}`);
+        xhr.send(formData);
       });
 
       if (result.error) {
