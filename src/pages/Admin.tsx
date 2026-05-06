@@ -432,6 +432,9 @@ const Admin = () => {
     if (videoFile) {
       setUploadProgress("Uploading video...");
 
+      const cloudName = "dp4auwl1h";
+      const uploadPreset = "Perfumeluch";
+
       const formData = new FormData();
       formData.append("file", videoFile);
       formData.append("upload_preset", "Perfumeluch");
