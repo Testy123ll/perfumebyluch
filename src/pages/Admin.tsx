@@ -438,7 +438,7 @@ const Admin = () => {
       const formData = new FormData();
       formData.append("file", videoFile);
       formData.append("upload_preset", "Perfumeluch");
-      formData.append("public_id", `video_${Date.now()}.${videoFile.name.split(".").pop()}`);
+      formData.append("public_id", `video_${Date.now()}`);
 
       const result = await new Promise<{ url: string | null; error: string | null }>((resolve) => {
         const xhr = new XMLHttpRequest();
