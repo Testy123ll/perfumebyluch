@@ -43,7 +43,7 @@ const uploadImageSimple = async (file: File, folder: string) => {
   const { error } = await supabase.storage
     .from("products")
     .upload(path, file, { contentType: file.type, cacheControl: "3600", upsert: true });
-  
+
   if (error) return { url: "", error: error.message };
   const { data } = supabase.storage.from("products").getPublicUrl(path);
   return { url: data.publicUrl, error: null };
@@ -146,7 +146,7 @@ const Admin = () => {
   const fetchTeam = useCallback(async () => {
     const { data: profiles } = await supabase.from("profiles").select("*");
     const { data: invites } = await supabase.from("admin_invites").select("*");
-    
+
     const profileEmails = new Set((profiles || []).map((p: any) => p.email));
     const combined: TeamMember[] = [
       ...((profiles as any[]) || []).map(p => ({
@@ -188,7 +188,7 @@ const Admin = () => {
     const checkAuth = async () => {
       setAuthChecking(true);
       const { data: { session: currentSession } } = await supabase.auth.getSession();
-      
+
       if (!currentSession) {
         navigate("/admin/login");
         setAuthChecking(false);
@@ -196,13 +196,13 @@ const Admin = () => {
       }
 
       setSession(currentSession);
-      
+
       const { data: profile, error: pErr } = await supabase
         .from("profiles")
         .select("role")
         .eq("id", currentSession.user.id)
         .single();
-      
+
       if (pErr || !profile) {
         // Check for invitation
         const { data: invite } = await supabase
@@ -566,7 +566,7 @@ const Admin = () => {
                 <span className="flex items-center gap-1"><User className="h-2.5 w-2.5" /> {session?.user?.email}</span>
                 <span className="h-1 w-1 rounded-full bg-border" />
                 <span className="font-bold text-primary">{userRole}</span>
-                <button 
+                <button
                   onClick={handleLogout}
                   className="flex items-center gap-1.5 text-muted-foreground/60 hover:text-red-500 transition-colors ml-2 border-l border-border/50 pl-3"
                 >
@@ -591,9 +591,8 @@ const Admin = () => {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as Tab)}
-              className={`flex-1 rounded-md px-4 py-2 text-sm font-medium transition-all whitespace-nowrap ${
-                activeTab === tab.id ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
-              }`}
+              className={`flex-1 rounded-md px-4 py-2 text-sm font-medium transition-all whitespace-nowrap ${activeTab === tab.id ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
+                }`}
             >
               {tab.label}
             </button>
@@ -741,13 +740,13 @@ const Admin = () => {
                         <td className="p-4 font-mono">₦{p.price.toLocaleString()}</td>
                         <td className="p-4">
                           <div className="flex flex-wrap gap-1.5">
-                            <button onClick={() => handleToggleStock(p)} 
+                            <button onClick={() => handleToggleStock(p)}
                               className={`rounded-full px-2 py-0.5 text-[9px] font-bold uppercase ${p.in_stock ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
                               {p.in_stock ? "In Stock" : "Sold Out"}
                             </button>
-                            <button onClick={() => handleToggleNewArrival(p)} 
+                            <button onClick={() => handleToggleNewArrival(p)}
                               className={`rounded px-1 text-xs border transition-all ${p.is_new ? "border-primary text-primary" : "border-border opacity-30"}`} title="New Arrival">✨</button>
-                            <button onClick={() => handleToggleBestSeller(p)} 
+                            <button onClick={() => handleToggleBestSeller(p)}
                               className={`rounded px-1 text-xs border transition-all ${p.is_bestseller ? "border-amber-500 text-amber-500" : "border-border opacity-30"}`} title="Top Seller">🔥</button>
                           </div>
                         </td>
@@ -775,10 +774,10 @@ const Admin = () => {
               <h2 className="mb-4 text-lg font-medium">Create Manual Review</h2>
               <form onSubmit={handleAddReview} className="grid gap-4 sm:grid-cols-2">
                 <input required placeholder="Reviewer Name" value={reviewFormData.reviewer_name}
-                  onChange={(e) => setReviewFormData({...reviewFormData, reviewer_name: e.target.value})}
+                  onChange={(e) => setReviewFormData({ ...reviewFormData, reviewer_name: e.target.value })}
                   className="rounded-md border border-input bg-transparent px-3 py-2 text-sm" />
                 <select required value={reviewFormData.product_id}
-                  onChange={(e) => setReviewFormData({...reviewFormData, product_id: e.target.value})}
+                  onChange={(e) => setReviewFormData({ ...reviewFormData, product_id: e.target.value })}
                   className="rounded-md border border-input bg-background px-3 py-2 text-sm">
                   <option value="">Link to Product</option>
                   {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
@@ -786,16 +785,16 @@ const Admin = () => {
                 <div className="flex items-center gap-4">
                   <span className="text-sm">Rating:</span>
                   <input type="number" min="1" max="5" value={reviewFormData.rating}
-                    onChange={(e) => setReviewFormData({...reviewFormData, rating: parseInt(e.target.value)})}
+                    onChange={(e) => setReviewFormData({ ...reviewFormData, rating: parseInt(e.target.value) })}
                     className="w-16 rounded border bg-transparent px-2 py-1 text-sm" />
                 </div>
                 <label className="flex items-center gap-2 text-sm cursor-pointer">
                   <input type="checkbox" checked={reviewFormData.verified}
-                    onChange={(e) => setReviewFormData({...reviewFormData, verified: e.target.checked})} />
+                    onChange={(e) => setReviewFormData({ ...reviewFormData, verified: e.target.checked })} />
                   Verified Purchase
                 </label>
                 <textarea placeholder="Write their comment here..." value={reviewFormData.comment}
-                  onChange={(e) => setReviewFormData({...reviewFormData, comment: e.target.value})}
+                  onChange={(e) => setReviewFormData({ ...reviewFormData, comment: e.target.value })}
                   className="sm:col-span-2 h-20 rounded border bg-transparent p-3 text-sm resize-none" />
                 <Button type="submit" className="w-fit">Save Review</Button>
               </form>
@@ -826,11 +825,11 @@ const Admin = () => {
                         <td className="p-4 text-amber-500 font-bold">{"★".repeat(r.rating)}</td>
                         <td className="p-4">
                           <div className="flex gap-1.5">
-                            <button onClick={() => handleToggleReviewVisibility(r.id, r.visible, r.reviewer_name)} 
+                            <button onClick={() => handleToggleReviewVisibility(r.id, r.visible, r.reviewer_name)}
                               className={`h-7 w-7 rounded border transition-all flex items-center justify-center ${r.visible ? "border-primary/40 bg-primary/5 text-primary" : "border-red-400 bg-red-50 text-red-500"}`}><Eye className="h-3.5 w-3.5" /></button>
-                            <button onClick={() => handleToggleReviewVerified(r.id, r.verified, r.reviewer_name)} 
+                            <button onClick={() => handleToggleReviewVerified(r.id, r.verified, r.reviewer_name)}
                               className={`h-7 w-7 rounded border transition-all flex items-center justify-center ${r.verified ? "border-green-400 bg-green-50 text-green-600" : "opacity-30 border-border"}`} title="Verified"><CheckCircle2 className="h-3.5 w-3.5" /></button>
-                            <button onClick={() => handleToggleTestimonial(r.id, r.is_testimonial, r.reviewer_name)} 
+                            <button onClick={() => handleToggleTestimonial(r.id, r.is_testimonial, r.reviewer_name)}
                               className={`h-7 w-7 rounded border transition-all flex items-center justify-center ${r.is_testimonial ? "border-amber-400 bg-amber-50 text-amber-500" : "opacity-30 border-border"}`} title="Testimonial"><Star className="h-3.5 w-3.5" /></button>
                           </div>
                         </td>
@@ -884,11 +883,10 @@ const Admin = () => {
                           <span className={m.role === "owner" ? "text-primary" : "text-muted-foreground"}>{m.role}</span>
                         </td>
                         <td className="p-4">
-                          <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${
-                            m.status === "active" ? "bg-green-100 text-green-600" :
+                          <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${m.status === "active" ? "bg-green-100 text-green-600" :
                             m.status === "pending" ? "bg-amber-100 text-amber-600" :
-                            "bg-red-100 text-red-600"
-                          }`}>{m.status}</span>
+                              "bg-red-100 text-red-600"
+                            }`}>{m.status}</span>
                         </td>
                         <td className="p-4 text-right">
                           <div className="flex justify-end gap-1">
