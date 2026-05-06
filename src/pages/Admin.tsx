@@ -277,6 +277,7 @@ const Admin = () => {
     });
     setImageFile(null);
     setVideoUrl(""); // Reset widget URL
+    setUploadProgress(""); // Clear progress banner
     setShowForm(false);
   };
 
@@ -394,6 +395,7 @@ const Admin = () => {
         setLoading(false); setUploadProgress(""); return;
       }
       image_url = res.url;
+      setUploadProgress(""); // Clear image progress immediately
     }
 
     // Video is now handled by the Cloudinary Widget (videoUrl state)
@@ -431,6 +433,7 @@ const Admin = () => {
       }
     }
     setLoading(false);
+    setUploadProgress(""); // Final clear
   };
 
   // --- Review Handlers ---
