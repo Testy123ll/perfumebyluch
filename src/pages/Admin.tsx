@@ -425,19 +425,72 @@ const Admin = () => {
     }
 
     if (videoFile) {
-      setUploadProgress("Uploading video...");
-      const r = await uploadFile(videoFile, "product-videos");
-      if (r.error) {
+      setUploadProgress("Uploading video... please wait");
+      
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      const { data: { session } } = await supabase.auth.getSession();
+      const authToken = session?.access_token || supabaseKey;
+      
+      const videoPath = `product-videos/${Date.now()}.${videoFile.name.split(".").pop()}`;
+
+      const result = await new Promise<{ publicUrl: string | null; error: string | null }>((resolve) => {
+        const formData = new FormData();
+        formData.append("", videoFile, videoFile.name);
+
+        const xhr = new XMLHttpRequest();
+
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable) {
+            const percent = Math.round((e.loaded / e.total) * 100);
+            setUploadProgress(`Uploading video... ${percent}%`);
+          }
+        };
+
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            const { data: publicUrlData } = supabase.storage
+              .from("products")
+              .getPublicUrl(videoPath);
+            resolve({ publicUrl: publicUrlData.publicUrl, error: null });
+          } else {
+            resolve({ 
+              publicUrl: null, 
+              error: `Upload failed: ${xhr.status} — ${xhr.responseText}` 
+            });
+          }
+        };
+
+        xhr.onerror = () => resolve({ publicUrl: null, error: "Network error" });
+        xhr.ontimeout = () => resolve({ publicUrl: null, error: "Upload timed out" });
+        xhr.timeout = 180000; // 3 minutes
+
+        xhr.open(
+          "POST",
+          `${supabaseUrl}/storage/v1/object/products/${videoPath}`,
+          true
+        );
+
+        // Set auth headers — do NOT set Content-Type, let browser set it for FormData
+        xhr.setRequestHeader("Authorization", `Bearer ${authToken}`);
+        xhr.setRequestHeader("apikey", supabaseKey);
+        xhr.setRequestHeader("x-upsert", "false");
+
+        xhr.send(formData);
+      });
+
+      if (result.error) {
         toast({
           title: "Video Upload Failed",
-          description: r.error,
+          description: result.error,
           variant: "destructive",
         });
         setLoading(false);
         setUploadProgress("");
         return;
       }
-      video_url = r.url;
+
+      video_url = result.publicUrl || "";
     }
 
 
