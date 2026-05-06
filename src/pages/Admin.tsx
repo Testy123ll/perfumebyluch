@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase, Product, IS_SUPABASE_CONFIGURED } from "@/lib/supabase";
+import { supabase, Product, IS_SUPABASE_CONFIGURED, getOptimisedImageUrl } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { useToast, toast } from "@/components/ui/use-toast";
 import {
