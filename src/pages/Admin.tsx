@@ -293,8 +293,8 @@ const Admin = () => {
     // @ts-ignore
     const widget = window.cloudinary.createUploadWidget(
       {
-        cloudName: "dp4auwl1h",
-        uploadPreset: "Perfumeluch",
+        cloudName: "dvmefdiu3",
+        uploadPreset: "Perfume",
         sources: ["local", "camera"], // Simplified for mobile stability
         multiple: false,
         resourceType: "video",
