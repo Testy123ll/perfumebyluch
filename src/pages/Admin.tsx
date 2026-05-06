@@ -283,11 +283,17 @@ const Admin = () => {
   // --- Cloudinary Widget Handler ---
   const handleUploadVideo = () => {
     // @ts-ignore - Cloudinary is loaded via script tag
+    if (!window.cloudinary) {
+      toast({ title: "Widget Error", description: "Cloudinary library not ready. Please refresh the page.", variant: "destructive" });
+      return;
+    }
+
+    // @ts-ignore
     const widget = window.cloudinary.createUploadWidget(
       {
         cloudName: "dp4auwl1h",
         uploadPreset: "Perfumeluch",
-        sources: ["local", "url", "camera"],
+        sources: ["local", "camera"], // Simplified for mobile stability
         multiple: false,
         resourceType: "video",
         clientAllowedFormats: ["mp4", "mov", "avi"],
@@ -298,7 +304,8 @@ const Admin = () => {
           setVideoUrl(result.info.secure_url);
           toast({ title: "Video Uploaded", description: "Video ready to be saved." });
         } else if (error) {
-          toast({ title: "Upload Widget Error", description: error.message, variant: "destructive" });
+          console.error("Cloudinary Widget Error:", error);
+          toast({ title: "Upload Widget Error", description: error.message || "Initialization failed", variant: "destructive" });
         }
       }
     );
