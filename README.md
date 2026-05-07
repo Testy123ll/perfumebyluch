@@ -3,7 +3,7 @@
 A full-stack luxury perfume e-commerce website built for Perfumes By Luch, Lagos Nigeria. Customers browse products and order via WhatsApp. Admins manage products, reviews, team members and activity logs.
 
 ## 🌐 Live Site
-[perfumebyluch.com](https://perfumebyluch.com)
+[perfumesbyluch.com](https://perfumesbyluch.com)
 
 ## ✨ Features
 

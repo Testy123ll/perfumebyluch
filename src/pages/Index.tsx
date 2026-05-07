@@ -23,7 +23,7 @@ const Index = () => {
       <Helmet>
         <title>Perfumes By Luch — Luxury Perfumes in Lekki, Lagos</title>
         <meta name="description" content="Shop authentic boxed, unboxed, thrifted and tester perfumes in Lekki, Lagos. 100% original fragrances. Order easily via WhatsApp. We deliver across Nigeria, Ghana and Cameroon." />
-        <link rel="canonical" href="https://perfumebyluch.com/" />
+        <link rel="canonical" href="https://perfumesbyluch.com/" />
       </Helmet>
       <div className="min-h-screen bg-background scroll-smooth">
         <Nav />
