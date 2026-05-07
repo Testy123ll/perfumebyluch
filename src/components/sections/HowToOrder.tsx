@@ -19,7 +19,7 @@ const steps = [
   {
     icon: Truck,
     title: "4. Global Delivery",
-    description: "We'll confirm availability and ship to your doorstep in NG, GH, CM or Worldwide.",
+    description: "We'll confirm availability and ship to your doorstep in NG, Ghana, Cameroon or Worldwide.",
   },
 ];
 

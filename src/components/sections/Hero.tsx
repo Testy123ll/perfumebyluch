@@ -110,12 +110,12 @@ const Hero = () => {
             <div className="h-10 w-px bg-border hidden sm:block" />
             <div>
               <p className="font-serif text-2xl text-foreground">2 to 7</p>
-              <p>Days NG</p>
+              <p>Days Outside Lagos</p>
             </div>
             <div className="h-10 w-px bg-border hidden sm:block" />
             <div>
               <p className="font-serif text-2xl text-foreground">5 to 14</p>
-              <p>Days GH & CM</p>
+              <p>Days Ghana & Cameroon</p>
             </div>
             <div className="h-10 w-px bg-border hidden sm:block" />
             <div>

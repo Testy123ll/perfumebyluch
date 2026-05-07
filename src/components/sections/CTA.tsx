@@ -23,7 +23,7 @@ const CTA = () => (
           </p>
           <div className="mt-4 flex flex-col gap-1 text-[10px] uppercase tracking-[0.2em] text-primary/70 mb-8">
             <span>🚀 Outside Lagos: 2-7 Days</span>
-            <span>🌍 GH & CM: 5-14 Days</span>
+            <span>🌍 Ghana & Cameroon: 5-14 Days</span>
           </div>
           
           <Button asChild size="lg" variant="whatsapp" className="shadow-xl hover:scale-105 transition-transform">
@@ -44,7 +44,7 @@ const CTA = () => (
             </div>
             <div className="flex flex-col items-center border-r border-border/30 pr-8 last:border-0">
               <span className="font-serif text-2xl text-foreground tracking-normal lowercase italic">3 Countries</span>
-              <span>NG • GH • CM</span>
+              <span>NG • Ghana • Cameroon</span>
             </div>
             <div className="flex flex-col items-center">
               <span className="font-serif text-2xl text-foreground tracking-normal lowercase italic">100%</span>

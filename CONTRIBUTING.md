@@ -23,7 +23,7 @@ Thank you for contributing to the Perfumes By Luch project! This guide outlines 
    ```
 
 4. **Code Quality**:
-   - Follow the **Antigravity** design system (Premium, Dark Mode, Framer Motion).
+   - Follow the design system (Premium, Dark Mode, Framer Motion).
    - Use TypeScript for all new logic.
    - Ensure all `img` and `video` tags use the `getOptimisedImageUrl` utility.
 

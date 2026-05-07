@@ -64,7 +64,7 @@ const faqCategories = [
             <ul className="list-disc pl-5 space-y-1">
               <li>Lagos: 1 to 2 days depending on your location</li>
               <li>Outside Lagos: 2 to 7 days depending on your location.</li>
-              <li>Outside Nigeria(GH & CM): 5 to 14 days depending on your location.</li>
+              <li>Outside Nigeria (Ghana & Cameroon): 5 to 14 days depending on your location.</li>
             </ul>
           </div>
         ),
