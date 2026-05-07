@@ -44,7 +44,7 @@ const CTA = () => (
             </div>
             <div className="flex flex-col items-center border-r border-border/30 pr-8 last:border-0">
               <span className="font-serif text-2xl text-foreground tracking-normal lowercase italic">3 Countries</span>
-              <span>NG • Ghana • Cameroon</span>
+              <span>Nigeria • Ghana • Cameroon</span>
             </div>
             <div className="flex flex-col items-center">
               <span className="font-serif text-2xl text-foreground tracking-normal lowercase italic">100%</span>

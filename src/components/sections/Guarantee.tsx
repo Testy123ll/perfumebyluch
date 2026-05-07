@@ -12,7 +12,7 @@ const Guarantee = () => {
     {
       title: "Long Lasting Fragrance",
       icon: Sparkles,
-      description: "Our curated selection focuses on longevity. Expect 8 to 12 hours of wear from our boxed collection, and 6 to 8 hours from our testers.",
+      description: "Our carefully curated selection focused on longevity, sillage and projection. Expect 7-18 hours performance for Unboxed & Thrifted Open Box perfumes and 10-36 hours performance for Boxed and Tester Perfumes.",
     },
     {
       title: "Satisfaction Guarantee",
@@ -22,7 +22,7 @@ const Guarantee = () => {
   ];
 
   return (
-    <section 
+    <section
       className="bg-card py-16"
     >
       <div className="container">
@@ -38,8 +38,8 @@ const Guarantee = () => {
 
         <div className="mt-16 grid gap-8 md:grid-cols-3">
           {promises.map((p, idx) => (
-            <div 
-              key={idx} 
+            <div
+              key={idx}
               className="group relative overflow-hidden rounded-2xl border border-border bg-card/50 p-8 backdrop-blur-sm transition-all duration-300 hover:-translate-y-2 hover:border-primary/30"
             >
               <div className="absolute top-0 left-0 h-1 w-full scale-x-0 bg-primary/40 transition-transform duration-500 group-hover:scale-x-100" />

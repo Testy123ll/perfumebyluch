@@ -126,7 +126,7 @@ const Products = () => {
           <p className="text-xs uppercase tracking-[0.3em] text-primary">The Collection</p>
           <h2 className="mt-3 font-serif text-4xl md:text-5xl">Shop The Collection</h2>
           <p className="mt-4 text-muted-foreground">
-            Hand-picked fragrances across every budget. Add to cart and send your order in one message.
+            Hand-Picked Luxurious Fragrances across every budget, add to cart and send in your order in one message. Very seamless.
           </p>
         </div>
 
@@ -150,11 +150,10 @@ const Products = () => {
             <button
               key={cat}
               onClick={() => setActive(cat)}
-              className={`rounded-full border px-5 py-2 text-sm transition-smooth ${
-                active === cat
+              className={`rounded-full border px-5 py-2 text-sm transition-smooth ${active === cat
                   ? "border-primary bg-primary text-primary-foreground"
                   : "border-border bg-card text-muted-foreground hover:border-primary/50 hover:text-foreground"
-              }`}
+                }`}
             >
               {cat}
             </button>
@@ -177,10 +176,10 @@ const Products = () => {
         ) : (
           <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {filtered.map((p, idx) => (
-              <ProductCard 
-                key={p.id} 
-                product={p} 
-                priority={idx < 4} 
+              <ProductCard
+                key={p.id}
+                product={p}
+                priority={idx < 4}
                 isTopSelling={p.is_bestseller}
               />
             ))}
@@ -352,8 +351,7 @@ const ProductCard = ({ product, priority, isTopSelling }: { product: Product; pr
             >
               <a
                 href={waLink(
-                  `Hi, I'd like to order ${product.name}${
-                    product.size ? ` (${product.size})` : ""
+                  `Hi, I'd like to order ${product.name}${product.size ? ` (${product.size})` : ""
                   } at ${formatPrice(product.price)}`
                 )}
                 target="_blank"

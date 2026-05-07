@@ -125,9 +125,9 @@ const Hero = () => {
           </div>
 
           <div className="mt-12 flex flex-wrap items-center gap-x-4 gap-y-2 text-[10px] uppercase tracking-[0.25em] text-muted-foreground/60 animate-fade-in [animation-delay:600ms]">
-            <span>✦ Boxed & Unboxed Originals</span>
+            <span>✦ Original Boxed & Unboxed Luxury Perfumes</span>
             <span className="text-primary/40">•</span>
-            <span>✦ Discreet Packaging</span>
+            <span>✦ Free gift when you order ₦200,000 & above</span>
             <span className="text-primary/40">•</span>
             <span>✦ International Shipping Available</span>
             <span className="text-primary/40">•</span>
