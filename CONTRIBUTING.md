@@ -4,7 +4,7 @@ Thank you for contributing to the Perfumes By Luch project! This guide outlines 
 
 ## 🌿 Branching Strategy
 
-- **`main`**: The production-ready branch. All merges to `main` are automatically deployed to `perfumesbyluch.com`.
+- **`main`**: The production-ready branch. All merges to `main` are automatically deployed to `perfumebyluch.com`.
 - **Feature Branches**: Use descriptive names like `feature/performance-audit` or `fix/admin-mobile-rendering`.
 
 ## 🛠 Development Workflow
