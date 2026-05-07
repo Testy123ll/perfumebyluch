@@ -21,8 +21,8 @@ const Index = () => {
   return (
     <CartProvider>
       <Helmet>
-        <title>Perfumes By Luch — Luxury Perfumes in Lekki, Lagos</title>
-        <meta name="description" content="Shop authentic boxed, unboxed, thrifted and tester perfumes in Lekki, Lagos. 100% original fragrances. Order easily via WhatsApp. We deliver across Nigeria, Ghana and Cameroon." />
+        <title>Perfumes By Luch | Buy Original Perfume in Nigeria | Lagos, Abuja, PH Delivery</title>
+        <meta name="description" content="Buy 100% authentic luxury perfumes online in Nigeria. Fast delivery to Lagos, Abuja, Port Harcourt, Kano, Ibadan, Enugu, Benin City and all states. Boxed, unboxed, thrifted and tester fragrances. Order via WhatsApp." />
         <link rel="canonical" href="https://perfumesbyluch.com/" />
       </Helmet>
       <div className="min-h-screen bg-background scroll-smooth">
