@@ -28,6 +28,14 @@ const Footer = () => (
               13B Charles Ifeanyi Street,<br />
               Off Fola Osibo Street,<br />
               Lekki Phase 1, Lagos
+              <a 
+                href="https://www.google.com/maps/search/?api=1&query=13B+Charles+Ifeanyi+Street+Lekki+Phase+1+Lagos" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="mt-2 block text-[10px] text-primary hover:underline"
+              >
+                View on Google Maps →
+              </a>
             </span>
           </p>
         </div>

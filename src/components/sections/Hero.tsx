@@ -24,7 +24,7 @@ const Hero = () => {
   }, []);
 
   return (
-    <section className="relative overflow-hidden pt-20 pb-12 md:pt-28 md:pb-16 min-h-[90vh] flex items-center">
+    <section className="relative overflow-hidden pt-28 pb-12 md:pt-36 md:pb-16 min-h-[90vh] flex items-center">
       <div className="absolute inset-0 z-0 overflow-hidden">
         {heroImages.map((src, i) => (
           <div
