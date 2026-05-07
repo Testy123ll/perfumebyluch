@@ -4,22 +4,22 @@ const steps = [
   {
     icon: Search,
     title: "1. Explore",
-    description: "Browse our curated collection of luxury fragrances and find your perfect match.",
+    description: "Browse our curated collection of luxury fragrances and find your perfect selection.",
   },
   {
     icon: ShoppingBag,
     title: "2. Add to Bag",
-    description: "Add multiple items to your cart. We'll bundle them into one convenient order.",
+    description: "Add multiple items to your cart, we’ll package them very carefully with so much love, until it gets to you.",
   },
   {
     icon: MessageSquare,
     title: "3. WhatsApp Order",
-    description: "Click the Order button to send your entire shopping list to us in a single click.",
+    description: "Click the Order button to send your entire shopping list to us in one click.",
   },
   {
     icon: Truck,
     title: "4. Global Delivery",
-    description: "“We’ll confirm availability and ship to your doorstop within Nigeria, to Ghana and Cameroon or Worldwide.",
+    description: "“We’ll confirm availability and ship to your doorstep within Nigeria, to Ghana and Cameroon or Worldwide.",
   },
 ];
 

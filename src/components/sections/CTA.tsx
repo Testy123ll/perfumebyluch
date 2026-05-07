@@ -19,13 +19,14 @@ const CTA = () => (
             Ready to <span className="italic text-gradient-pink">smell amazing</span>?
           </h2>
           <p className="mt-6 max-w-md text-lg text-muted-foreground mx-auto">
-            Boxed, unboxed, thrifted, and tester perfumes available. Authentic fragrances, delivered across Nigeria, Ghana and Cameroon.
+            Boxed, Unboxed, Thrifted Open Box and Tester  perfumes are all available. Our fragrances are 100% authentic with the best quality and price, you don’t have to break the bank to smell so good. Let us be your plug.
           </p>
           <div className="mt-4 flex flex-col gap-1 text-[10px] uppercase tracking-[0.2em] text-primary/70 mb-8">
+            <span>Lagos: 1-2 Days</span>
             <span>🚀 Outside Lagos: 2-7 Days</span>
             <span>🌍 Ghana & Cameroon: 5-14 Days</span>
           </div>
-          
+
           <Button asChild size="lg" variant="whatsapp" className="shadow-xl hover:scale-105 transition-transform">
             <a
               href={waLink("Hi Perfumes By Luch! I'm ready to smell amazing.")}
