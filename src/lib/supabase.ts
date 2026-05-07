@@ -12,8 +12,6 @@ export const IS_SUPABASE_CONFIGURED =
 
 const isConfigured = IS_SUPABASE_CONFIGURED;
 
-console.log("Supabase Client Init:", { supabaseUrl, supabaseAnonKey });
-
 export const supabase: SupabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
   global: {
     fetch: fetch.bind(globalThis),

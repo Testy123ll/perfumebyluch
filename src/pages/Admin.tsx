@@ -306,7 +306,6 @@ const Admin = () => {
           setVideoUrl(result.info.secure_url);
           toast({ title: "Video Uploaded", description: "Video ready to be saved." });
         } else if (error) {
-          console.error("Cloudinary Widget Error:", error);
           toast({ title: "Upload Widget Error", description: error.message || "Initialization failed", variant: "destructive" });
         }
       }
