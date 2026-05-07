@@ -58,67 +58,85 @@
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
-      "@type": "LocalBusiness",
+      "@type": "Store",
       "name": "Perfumes By Luch",
-      "description": "Buy 100% authentic luxury perfumes online in Nigeria. Fast delivery to Lagos, Abuja, Port Harcourt, Kano, Ibadan, Enugu, Benin City and all states. Boxed, unboxed, thrifted and tester fragrances available.",
-      "url": "https://perfumesbyluch.com",
-      "logo": "https://perfumesbyluch.com/og-image.jpg",
-      "image": "https://perfumesbyluch.com/og-image.jpg",
+      "image": "https://www.perfumesbyluch.com/og-image.jpg",
+      "url": "https://www.perfumesbyluch.com",
       "telephone": "+2347052537265",
-      "priceRange": "₦₦₦",
-      "currenciesAccepted": "NGN",
-      "paymentAccepted": "Cash, Bank Transfer, WhatsApp Order",
       "address": {
         "@type": "PostalAddress",
-        "streetAddress": "13B Charles Ifeanyi Street, Off Fola Osibo Street, Lekki Phase 1",
-        "addressLocality": "Lagos",
-        "addressRegion": "Lagos State",
+        "streetAddress": "13B Charles Ifeanyi Street, Off Fola Osibo Street",
+        "addressLocality": "Lekki Phase 1",
+        "addressRegion": "Lagos",
         "addressCountry": "NG"
       },
-      "geo": {
-        "@type": "GeoCoordinates",
-        "latitude": 6.4477,
-        "longitude": 3.4735
-      },
-      "areaServed": [
-        { "@type": "State", "name": "Lagos" },
-        { "@type": "State", "name": "Abuja" },
-        { "@type": "State", "name": "Rivers" },
-        { "@type": "State", "name": "Kano" },
-        { "@type": "State", "name": "Oyo" },
-        { "@type": "State", "name": "Enugu" },
-        { "@type": "State", "name": "Delta" },
-        { "@type": "State", "name": "Anambra" },
-        { "@type": "State", "name": "Edo" },
-        { "@type": "State", "name": "Kaduna" },
-        { "@type": "State", "name": "Ogun" },
-        { "@type": "State", "name": "Imo" },
-        { "@type": "State", "name": "Cross River" },
-        { "@type": "State", "name": "Kwara" },
-        { "@type": "State", "name": "Plateau" },
-        { "@type": "Country", "name": "Nigeria" },
-        { "@type": "Country", "name": "Ghana" },
-        { "@type": "Country", "name": "Cameroon" }
+      "openingHoursSpecification": [
+        {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"],
+          "opens": "10:00",
+          "closes": "16:30"
+        }
       ],
       "hasOfferCatalog": {
         "@type": "OfferCatalog",
         "name": "Perfume Collection",
         "itemListElement": [
-          { "@type": "Offer", "itemOffered": { "@type": "Product", "name": "Boxed Perfumes", "description": "100% authentic boxed luxury perfumes delivered across Nigeria" } },
-          { "@type": "Offer", "itemOffered": { "@type": "Product", "name": "Unboxed Perfumes", "description": "Original unboxed perfumes at affordable prices in Nigeria" } },
-          { "@type": "Offer", "itemOffered": { "@type": "Product", "name": "Thrifted Open Box Perfumes", "description": "Authentic thrifted perfumes available for delivery in Nigeria" } },
-          { "@type": "Offer", "itemOffered": { "@type": "Product", "name": "Tester Perfumes", "description": "Original tester perfumes shipped across Nigeria" } }
+          {
+            "@type": "Product",
+            "name": "Boxed Perfumes",
+            "description": "100% authentic boxed luxury perfumes delivered across Nigeria",
+            "brand": { "@type": "Brand", "name": "Perfumes By Luch" },
+            "offers": {
+              "@type": "Offer",
+              "priceCurrency": "NGN",
+              "price": "15000",
+              "priceSpecification": { "minPrice": "5000", "maxPrice": "150000" },
+              "availability": "https://schema.org/InStock",
+              "seller": { "@type": "Organization", "name": "Perfumes By Luch" }
+            }
+          },
+          {
+            "@type": "Product",
+            "name": "Unboxed Perfumes",
+            "description": "Original unboxed perfumes at affordable prices in Nigeria",
+            "brand": { "@type": "Brand", "name": "Perfumes By Luch" },
+            "offers": {
+              "@type": "Offer",
+              "priceCurrency": "NGN",
+              "price": "8000",
+              "availability": "https://schema.org/InStock",
+              "seller": { "@type": "Organization", "name": "Perfumes By Luch" }
+            }
+          },
+          {
+            "@type": "Product",
+            "name": "Tester Perfumes",
+            "description": "Original tester perfumes shipped across Nigeria",
+            "brand": { "@type": "Brand", "name": "Perfumes By Luch" },
+            "offers": {
+              "@type": "Offer",
+              "priceCurrency": "NGN",
+              "price": "6000",
+              "availability": "https://schema.org/InStock",
+              "seller": { "@type": "Organization", "name": "Perfumes By Luch" }
+            }
+          },
+          {
+            "@type": "Product",
+            "name": "Thrifted Open Box Perfumes",
+            "description": "Authentic thrifted perfumes available for delivery in Nigeria",
+            "brand": { "@type": "Brand", "name": "Perfumes By Luch" },
+            "offers": {
+              "@type": "Offer",
+              "priceCurrency": "NGN",
+              "price": "5000",
+              "availability": "https://schema.org/InStock",
+              "seller": { "@type": "Organization", "name": "Perfumes By Luch" }
+            }
+          }
         ]
-      },
-      "openingHoursSpecification": {
-        "@type": "OpeningHoursSpecification",
-        "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"],
-        "opens": "10:00",
-        "closes": "16:30"
-      },
-      "sameAs": [
-        "https://wa.me/2347052537265"
-      ]
+      }
     }
     </script>
   </head>
