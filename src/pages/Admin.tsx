@@ -212,22 +212,20 @@ const Admin = () => {
           .single();
 
         if (invite) {
-          // Initialize profile
-          const { error: iErr } = await supabase.from("profiles").insert([{
+          // Initialize profile using upsert for resilience
+          const { error: iErr } = await supabase.from("profiles").upsert([{
             id: currentSession.user.id,
-            email: currentSession.user.email.toLowerCase(),
+            email: currentSession.user.email,
             role: "admin"
           }]);
-          
+
           if (!iErr) {
             setUserRole("admin");
-            await supabase.from("admin_invites").delete().eq("email", currentSession.user.email.toLowerCase());
-            toast({ title: "Welcome", description: "Your admin account has been activated." });
+            await supabase.from("admin_invites").delete().eq("email", currentSession.user.email);
           } else {
-            console.error("Profile creation error:", iErr);
             toast({ 
-              title: "Activation Error", 
-              description: "Failed to create your admin profile. Please contact the owner.", 
+              title: "Profile Error", 
+              description: `Auth account created but profile setup failed. User ID: ${currentSession.user.id}. Error: ${iErr.message}`, 
               variant: "destructive" 
             });
             await supabase.auth.signOut();
@@ -495,7 +493,7 @@ const Admin = () => {
   const handleAddInvite = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newInviteEmail) return;
-    const { error } = await supabase.from("admin_invites").upsert([{ email: newInviteEmail.toLowerCase(), invited_by: session?.user?.id }]);
+    const { error } = await supabase.from("admin_invites").upsert([{ email: newInviteEmail.trim().toLowerCase(), invited_by: session?.user?.id }]);
     if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
     else {
       toast({ title: "Invited", description: newInviteEmail });

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase, IS_SUPABASE_CONFIGURED } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
@@ -17,8 +17,65 @@ const AdminLogin = () => {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  useEffect(() => {
+    const handleEmailConfirmation = async () => {
+      // Check if there is a confirmation token in the URL hash
+      const hash = window.location.hash;
+      if (!hash) return;
+
+      const params = new URLSearchParams(hash.substring(1));
+      const accessToken = params.get("access_token");
+      const refreshToken = params.get("refresh_token");
+      const type = params.get("type");
+
+      if (type === "signup" && accessToken && refreshToken) {
+        // Set the session from the confirmation tokens
+        const { data, error } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken,
+        });
+
+        if (error) {
+          setError("Email confirmation failed. Please try signing up again.");
+          return;
+        }
+
+        if (data.user) {
+          // Check if profile already exists
+          const { data: existingProfile } = await supabase
+            .from("profiles")
+            .select("id")
+            .eq("id", data.user.id)
+            .single();
+
+          // Only create profile if it doesn't exist yet
+          if (!existingProfile) {
+            await supabase.from("profiles").upsert([{
+              id: data.user.id,
+              email: data.user.email,
+              role: "admin"
+            }]);
+
+            // Delete the invite now that signup is complete
+            await supabase
+              .from("admin_invites")
+              .delete()
+              .eq("email", data.user.email);
+          }
+
+          // Redirect to admin dashboard
+          navigate("/admin");
+        }
+      }
+    };
+
+    handleEmailConfirmation();
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,68 +109,64 @@ const AdminLogin = () => {
     }
 
     if (isSignUp) {
-      const { data: invite, error: inviteError } = await supabase
-        .from("admin_invites")
-        .select("email")
-        .eq("email", email.toLowerCase())
-        .single();
+      setError("");
+      setSuccess("");
+      try {
+        // Step 1: Check if already a profile
+        const { data: existingProfile } = await supabase
+          .from("profiles")
+          .select("id")
+          .eq("email", email.trim().toLowerCase())
+          .single();
 
-      if (inviteError || !invite) {
-        toast({ title: "Access Denied", description: "You have not been invited to this admin panel.", variant: "destructive" });
-        setLoading(false);
-        return;
-      }
-
-      const { data, error } = await supabase.auth.signUp({ 
-        email: email.toLowerCase(), 
-        password 
-      });
-      
-      if (error) {
-        if (error.message.toLowerCase().includes("already registered")) {
-          toast({ 
-            title: "Already Registered", 
-            description: "Your account already exists. Please Sign In instead.", 
-            variant: "default" 
-          });
-          setIsSignUp(false);
-        } else {
-          toast({ title: "Error", description: error.message, variant: "destructive" });
+        if (existingProfile) {
+          setError("You already have an admin account. Please sign in instead.");
+          setLoading(false);
+          return;
         }
-      } else if (data?.user) {
-        const { error: profileError } = await supabase.from("profiles").insert([{ 
-          id: data.user.id, 
-          email: email.toLowerCase(), 
-          role: 'admin' 
-        }]);
 
-        if (!profileError) {
-          await supabase.from("admin_invites").delete().eq("email", email.toLowerCase());
-          const { error: signInError } = await supabase.auth.signInWithPassword({ 
-            email: email.toLowerCase(), 
-            password 
-          });
-          
-          if (signInError) {
-            toast({ title: "Error signing in", description: signInError.message, variant: "destructive" });
-          } else {
-            toast({ title: "Success", description: "Account created successfully. Welcome!" });
-            navigate("/admin", { replace: true });
+        // Step 2: Check invite
+        const { data: invite, error: inviteError } = await supabase
+          .from("admin_invites")
+          .select("*")
+          .eq("email", email.trim().toLowerCase())
+          .single();
+
+        if (inviteError || !invite) {
+          setError("You have not been invited as an admin. Contact the owner.");
+          setLoading(false);
+          return;
+        }
+
+        // Step 2: Sign up with Supabase Auth
+        const { data, error: signUpError } = await supabase.auth.signUp({
+          email: email.trim().toLowerCase(),
+          password,
+          options: {
+            emailRedirectTo: "https://perfumesbyluch.com/admin/login",
           }
-        } else {
-          toast({ 
-            title: "Profile Error", 
-            description: "Auth account created but profile setup failed. Please try signing in.", 
-            variant: "destructive" 
-          });
-          setIsSignUp(false);
+        });
+
+        if (signUpError) {
+          setError(signUpError.message);
+          setLoading(false);
+          return;
         }
+
+        if (data.user && !data.session) {
+          // Email confirmation required — show clear message
+          setSuccess("Account created! Please check your email and click the confirmation link to activate your account.");
+          setLoading(false);
+          return;
+        }
+
+      } catch (err: any) {
+        setError("Something went wrong. Please try again.");
       }
+      setLoading(false);
+      return;
     } else {
-      const { data, error } = await supabase.auth.signInWithPassword({ 
-        email: email.toLowerCase(), 
-        password 
-      });
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) {
         toast({ title: "Error", description: error.message, variant: "destructive" });
       } else if (data?.session) {
@@ -133,6 +186,18 @@ const AdminLogin = () => {
           <p className="mb-6 text-center text-xs text-muted-foreground">
             Test mode active
           </p>
+        )}
+
+        {error && (
+          <div className="mb-6 rounded-lg bg-destructive/10 border border-destructive/20 p-4 text-sm text-destructive text-center">
+            {error}
+          </div>
+        )}
+
+        {success && (
+          <div className="mb-6 rounded-lg bg-green-500/10 border border-green-500/20 p-4 text-sm text-green-500 text-center">
+            {success}
+          </div>
         )}
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
