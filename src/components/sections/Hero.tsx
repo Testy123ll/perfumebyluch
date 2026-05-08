@@ -63,7 +63,7 @@ const Hero = () => {
             </span>
           </h1>
           <p className="mt-6 max-w-md text-lg text-muted-foreground">
-            Boxed, unboxed, thrifted, and tester perfumes available. Authentic fragrances, delivered across Nigeria, Ghana and Cameroon.
+            We sell Boxed, Unboxed, Thrifted Open Box and Tester perfumes. Authentic fragrances delivered across Nigeria, Ghana and Cameroon.
           </p>
           <p className="mt-4 font-serif italic text-primary/80 animate-fade-in [animation-delay:400ms] text-sm md:text-base">
             "The right scent doesn't just smell good, it tells your story before you say a word."
@@ -128,7 +128,6 @@ const Hero = () => {
             <span>✦ Original Boxed & Unboxed Luxury Perfumes</span>
             <span>✦ Free gift when you order ₦200,000 & above</span>
             <span>✦ International Shipping Available</span>
-            <span>✦ Secure Payment</span>
           </div>
         </div>
 
