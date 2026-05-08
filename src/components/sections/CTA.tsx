@@ -19,7 +19,7 @@ const CTA = () => (
             Ready to <span className="italic text-gradient-pink">smell amazing</span>?
           </h2>
           <p className="mt-6 max-w-md text-lg text-muted-foreground mx-auto">
-            Boxed, Unboxed, Thrifted Open Box and Tester  perfumes are all available. Our fragrances are 100% authentic with the best quality and price, you don’t have to break the bank to smell so good. Let us be your plug.
+            We sell Boxed, Unboxed, Thrifted Open Box and Tester  perfumes are all available. Our fragrances are 100% authentic with the best quality and price, you don’t have to break the bank to smell so good. Let us be your plug.
           </p>
           <div className="mt-4 flex flex-col gap-1 text-[10px] uppercase tracking-[0.2em] text-primary/70 mb-8">
             <span>Lagos: 1-2 Days</span>
