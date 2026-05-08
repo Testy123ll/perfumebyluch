@@ -215,14 +215,21 @@ const Admin = () => {
           // Initialize profile
           const { error: iErr } = await supabase.from("profiles").insert([{
             id: currentSession.user.id,
-            email: currentSession.user.email,
+            email: currentSession.user.email.toLowerCase(),
             role: "admin"
           }]);
+          
           if (!iErr) {
             setUserRole("admin");
-            await supabase.from("admin_invites").delete().eq("email", currentSession.user.email);
+            await supabase.from("admin_invites").delete().eq("email", currentSession.user.email.toLowerCase());
+            toast({ title: "Welcome", description: "Your admin account has been activated." });
           } else {
-            toast({ title: "Auth Error", description: "Failed to create profile.", variant: "destructive" });
+            console.error("Profile creation error:", iErr);
+            toast({ 
+              title: "Activation Error", 
+              description: "Failed to create your admin profile. Please contact the owner.", 
+              variant: "destructive" 
+            });
             await supabase.auth.signOut();
             navigate("/admin/login");
           }
@@ -488,7 +495,7 @@ const Admin = () => {
   const handleAddInvite = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newInviteEmail) return;
-    const { error } = await supabase.from("admin_invites").upsert([{ email: newInviteEmail, invited_by: session?.user?.id }]);
+    const { error } = await supabase.from("admin_invites").upsert([{ email: newInviteEmail.toLowerCase(), invited_by: session?.user?.id }]);
     if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
     else {
       toast({ title: "Invited", description: newInviteEmail });

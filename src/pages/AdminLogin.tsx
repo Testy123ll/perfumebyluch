@@ -55,7 +55,7 @@ const AdminLogin = () => {
       const { data: invite, error: inviteError } = await supabase
         .from("admin_invites")
         .select("email")
-        .eq("email", email)
+        .eq("email", email.toLowerCase())
         .single();
 
       if (inviteError || !invite) {
@@ -64,24 +64,56 @@ const AdminLogin = () => {
         return;
       }
 
-      const { data, error } = await supabase.auth.signUp({ email, password });
+      const { data, error } = await supabase.auth.signUp({ 
+        email: email.toLowerCase(), 
+        password 
+      });
       
       if (error) {
-        toast({ title: "Error", description: error.message, variant: "destructive" });
-      } else if (data?.user) {
-        await supabase.from("profiles").insert([{ id: data.user.id, email: email, role: 'admin' }]);
-        await supabase.from("admin_invites").delete().eq("email", email);
-        const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
-        
-        if (signInError) {
-          toast({ title: "Error signing in", description: signInError.message, variant: "destructive" });
+        if (error.message.toLowerCase().includes("already registered")) {
+          toast({ 
+            title: "Already Registered", 
+            description: "Your account already exists. Please Sign In instead.", 
+            variant: "default" 
+          });
+          setIsSignUp(false);
         } else {
-          toast({ title: "Success", description: "Account created successfully. Welcome to the admin panel!" });
-          navigate("/admin", { replace: true });
+          toast({ title: "Error", description: error.message, variant: "destructive" });
+        }
+      } else if (data?.user) {
+        const { error: profileError } = await supabase.from("profiles").insert([{ 
+          id: data.user.id, 
+          email: email.toLowerCase(), 
+          role: 'admin' 
+        }]);
+
+        if (!profileError) {
+          await supabase.from("admin_invites").delete().eq("email", email.toLowerCase());
+          const { error: signInError } = await supabase.auth.signInWithPassword({ 
+            email: email.toLowerCase(), 
+            password 
+          });
+          
+          if (signInError) {
+            toast({ title: "Error signing in", description: signInError.message, variant: "destructive" });
+          } else {
+            toast({ title: "Success", description: "Account created successfully. Welcome!" });
+            navigate("/admin", { replace: true });
+          }
+        } else {
+          toast({ 
+            title: "Profile Error", 
+            description: "Auth account created but profile setup failed. Please try signing in.", 
+            variant: "destructive" 
+          });
+          setIsSignUp(false);
         }
       }
     } else {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      const { data, error } = await supabase.auth.signInWithPassword({ 
+        email: email.toLowerCase(), 
+        password 
+      });
       if (error) {
         toast({ title: "Error", description: error.message, variant: "destructive" });
       } else if (data?.session) {
