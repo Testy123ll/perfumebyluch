@@ -22,7 +22,7 @@ const faqCategories = [
       },
       {
         q: "What is the difference between Unboxed, Thrifted Open Box, Boxed and Tester Perfumes?",
-        a: "Boxed and Tester perfumes are brand new, sealed, and unused. In contrast, Unboxed and Thrifted Open Box perfumes are not sealed, may not be full, and may show slight wear or scratches; however, this does not affect the authenticity of the products.",
+        a: "Boxed and Tester perfumes are brand new, sealed, unused and cost more, whereas, unboxed and thrifted open box perfumes aren’t sealed, whereas, the Unboxed and Thrifted Open Box perfumes aren’t new or sealed and may not come full, bottles may not be neat, and may also have slight dents or scratches, but this doesn’t in anyway  affect the authenticity of the products.",
       },
       {
         q: "Do Unboxed and Thrifted Open Box perfumes last as long as Boxed and Tester Perfumes?",
