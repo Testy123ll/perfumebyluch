@@ -147,16 +147,23 @@ const CollectionContent = () => {
                         No Image
                       </div>
                     )}
-                    {p.is_new && (
-                      <span className="absolute left-3 top-3 rounded-full bg-amber-400/90 px-3 py-1 text-xs font-semibold text-amber-950 backdrop-blur">
-                        New
-                      </span>
-                    )}
-                    {p.is_bestseller && !p.is_new && (
-                      <span className="absolute left-3 top-3 rounded-full bg-amber-500/90 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white backdrop-blur shadow-lg">
-                        Top Seller
-                      </span>
-                    )}
+                    <div className="absolute left-3 top-3 z-30 flex flex-col items-start gap-2">
+                      {isSaleActive && (
+                        <span className="rounded-full bg-red-600/95 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white backdrop-blur shadow-lg shadow-red-500/20 animate-pulse-slow">
+                          Sale
+                        </span>
+                      )}
+                      {p.is_new && (
+                        <span className="rounded-full bg-amber-400/90 px-3 py-1 text-xs font-semibold text-amber-950 backdrop-blur shadow-sm">
+                          New
+                        </span>
+                      )}
+                      {p.is_bestseller && !p.is_new && (
+                        <span className="rounded-full bg-amber-500/90 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white backdrop-blur shadow-lg animate-pulse-slow">
+                          🔥 Top Seller
+                        </span>
+                      )}
+                    </div>
                     <span className="absolute bottom-3 left-3 rounded-full bg-background/80 px-3 py-1 text-xs text-foreground backdrop-blur">
                       {p.category}
                     </span>

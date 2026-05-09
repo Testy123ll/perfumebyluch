@@ -79,11 +79,18 @@ const BestSellers = () => {
                     height={400}
                     className="h-full w-full object-cover transition-smooth group-hover:scale-105"
                   />
-                  {p.size && (
-                    <span className="absolute left-3 top-3 rounded-full bg-background/80 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-primary backdrop-blur">
-                      {p.size}
-                    </span>
-                  )}
+                  <div className="absolute left-3 top-3 z-30 flex flex-col items-start gap-2">
+                    {p.sale_price && (!p.sale_end_date || new Date(p.sale_end_date) > new Date()) && (
+                      <span className="rounded-full bg-red-600/95 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white backdrop-blur shadow-lg shadow-red-500/20 animate-pulse-slow">
+                        Sale
+                      </span>
+                    )}
+                    {p.size && (
+                      <span className="rounded-full bg-background/80 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-primary backdrop-blur">
+                        {p.size}
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <div className="flex flex-1 flex-col p-6 text-center">
                   <h3 className="font-serif text-xl">{p.name}</h3>
