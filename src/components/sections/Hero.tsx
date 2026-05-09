@@ -6,11 +6,11 @@ import { WhatsAppIcon } from "@/components/WhatsAppFloat";
 import heroImage from "@/assets/hero-perfume.jpg";
 
 const heroImages = [
-  "https://images.unsplash.com/photo-1541643600914-78b084683702?w=1200&q=45&fm=webp",
-  "https://images.unsplash.com/photo-1588405748880-12d1d2a59f75?w=1200&q=45&fm=webp",
-  "https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?w=1200&q=45&fm=webp",
-  "https://images.unsplash.com/photo-1563170351-be82bc888aa4?w=1200&q=45&fm=webp",
-  "https://images.unsplash.com/photo-1615634260167-c8cdede054de?w=1200&q=45&fm=webp",
+  "https://images.unsplash.com/photo-1541643600914-78b084683702?w=800&q=60&fm=webp",
+  "https://images.unsplash.com/photo-1588405748880-12d1d2a59f75?w=800&q=60&fm=webp",
+  "https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?w=800&q=60&fm=webp",
+  "https://images.unsplash.com/photo-1563170351-be82bc888aa4?w=800&q=60&fm=webp",
+  "https://images.unsplash.com/photo-1615634260167-c8cdede054de?w=800&q=60&fm=webp",
 ];
 
 const Hero = () => {

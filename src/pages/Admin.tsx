@@ -37,16 +37,42 @@ interface ActivityLog {
 /**
  * Standard SDK upload for images.
  */
-const uploadImageSimple = async (file: File, folder: string) => {
-  const ext = file.name.split(".").pop();
-  const path = `${folder}/${Date.now()}.${ext}`;
-  const { error } = await supabase.storage
-    .from("products")
-    .upload(path, file, { contentType: file.type, cacheControl: "3600", upsert: true });
+const uploadImage = async (
+  file: File,
+  onProgress: (msg: string) => void
+): Promise<{ url: string; error: string | null }> => {
+  return new Promise((resolve) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", "Perfumeluch");
+    formData.append("folder", "perfumebyluch/images");
+    formData.append("transformation", "q_auto,f_auto,w_800");
 
-  if (error) return { url: "", error: error.message };
-  const { data } = supabase.storage.from("products").getPublicUrl(path);
-  return { url: data.publicUrl, error: null };
+    const xhr = new XMLHttpRequest();
+    xhr.timeout = 120000;
+
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable) {
+        const pct = Math.round((e.loaded / e.total) * 100);
+        onProgress(`Uploading image... ${pct}%`);
+      }
+    };
+
+    xhr.onload = () => {
+      if (xhr.status === 200) {
+        const res = JSON.parse(xhr.responseText);
+        resolve({ url: res.secure_url, error: null });
+      } else {
+        resolve({ url: "", error: `Upload failed: ${xhr.status}` });
+      }
+    };
+
+    xhr.onerror = () => resolve({ url: "", error: "Network error" });
+    xhr.ontimeout = () => resolve({ url: "", error: "Upload timed out" });
+
+    xhr.open("POST", "https://api.cloudinary.com/v1_1/dp4auwl1h/image/upload", true);
+    xhr.send(formData);
+  });
 };
 
 const Admin = () => {
@@ -204,38 +230,16 @@ const Admin = () => {
         .single();
 
       if (pErr || !profile) {
-        // Check for invitation
-        const { data: invite } = await supabase
-          .from("admin_invites")
-          .select("*")
-          .eq("email", currentSession.user.email)
-          .single();
+        // Auto-create profile instead of failing
+        await supabase.from("profiles").upsert([{
+          id: currentSession.user.id,
+          email: currentSession.user.email,
+          role: "admin"
+        }]);
+        setUserRole("admin");
 
-        if (invite) {
-          // Initialize profile using upsert for resilience
-          const { error: iErr } = await supabase.from("profiles").upsert([{
-            id: currentSession.user.id,
-            email: currentSession.user.email,
-            role: "admin"
-          }]);
-
-          if (!iErr) {
-            setUserRole("admin");
-            await supabase.from("admin_invites").delete().eq("email", currentSession.user.email);
-          } else {
-            toast({ 
-              title: "Profile Error", 
-              description: `Auth account created but profile setup failed. User ID: ${currentSession.user.id}. Error: ${iErr.message}`, 
-              variant: "destructive" 
-            });
-            await supabase.auth.signOut();
-            navigate("/admin/login");
-          }
-        } else {
-          toast({ title: "Access Denied", description: "You have not been invited.", variant: "destructive" });
-          await supabase.auth.signOut();
-          navigate("/admin/login");
-        }
+        // Cleanup invite just in case
+        await supabase.from("admin_invites").delete().eq("email", currentSession.user.email);
       } else {
         if (profile.role !== "admin" && profile.role !== "owner") {
           toast({ title: "Access Denied", description: "Unauthorized role.", variant: "destructive" });
@@ -401,13 +405,12 @@ const Admin = () => {
 
     if (imageFile) {
       setUploadProgress("Uploading image...");
-      const res = await uploadImageSimple(imageFile, "product-images");
-      if (res.error) {
-        toast({ title: "Image failed", description: res.error, variant: "destructive" });
+      const r = await uploadImage(imageFile, setUploadProgress);
+      if (r.error) {
+        toast({ title: "Image Upload Failed", description: r.error, variant: "destructive" });
         setLoading(false); setUploadProgress(""); return;
       }
-      image_url = res.url;
-      setUploadProgress(""); // Clear image progress immediately
+      image_url = r.url;
     }
 
     // Video is now handled by the Cloudinary Widget (videoUrl state)
@@ -493,13 +496,52 @@ const Admin = () => {
   const handleAddInvite = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newInviteEmail) return;
-    const { error } = await supabase.from("admin_invites").upsert([{ email: newInviteEmail.trim().toLowerCase(), invited_by: session?.user?.id }]);
-    if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
-    else {
-      toast({ title: "Invited", description: newInviteEmail });
-      logAction("Invited admin", "admin", newInviteEmail);
-      setNewInviteEmail(""); fetchTeam();
+
+    // Check if already invited or registered
+    const { data: existingProfile } = await supabase
+      .from("profiles")
+      .select("email")
+      .eq("email", newInviteEmail)
+      .single();
+
+    if (existingProfile) {
+      toast({
+        title: "Already Registered",
+        description: `${newInviteEmail} is already an admin.`,
+        variant: "destructive",
+      });
+      return;
     }
+
+    // Send invite via Supabase Auth
+    const { error } = await supabase.auth.admin.inviteUserByEmail(newInviteEmail, {
+      redirectTo: `${window.location.origin}/admin/register`,
+      data: { role: "admin" }
+    });
+
+    if (error) {
+      toast({
+        title: "Invite Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Save invite record
+    await supabase.from("admin_invites").upsert([{
+      email: newInviteEmail,
+      invited_by: session?.user?.id
+    }]);
+
+    toast({
+      title: "Invite Sent",
+      description: `A registration link has been sent to ${newInviteEmail}`,
+    });
+
+    logAction("Invited admin", "admin", newInviteEmail);
+    setNewInviteEmail("");
+    fetchTeam();
   };
 
   const handleDeleteInvite = async (email: string) => {

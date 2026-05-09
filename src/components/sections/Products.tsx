@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { formatPrice, waLink } from "@/lib/whatsapp";
 import { WhatsAppIcon } from "@/components/WhatsAppFloat";
 import { useCart } from "@/contexts/CartContext";
 import { Plus, Check, Loader2, Search, Play, X, Instagram, ShoppingBag } from "lucide-react";
-import { supabase, Product, getOptimisedImageUrl } from "@/lib/supabase";
+import { supabase, Product } from "@/lib/supabase";
+import { getOptimizedImageUrl } from "@/lib/cloudinary";
 import {
   Dialog,
   DialogContent,
@@ -175,7 +177,7 @@ const Products = () => {
           </div>
         ) : (
           <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {filtered.map((p, idx) => (
+            {filtered.slice(0, 6).map((p, idx) => (
               <ProductCard
                 key={p.id}
                 product={p}
@@ -188,10 +190,9 @@ const Products = () => {
 
         <div className="mt-12 text-center">
           <Button asChild variant="outline" size="lg" className="gap-2">
-            <a href="https://instagram.com/perfumesbyluch" target="_blank" rel="noopener noreferrer">
-              <Instagram className="h-5 w-5 text-primary" />
-              View More on Instagram
-            </a>
+            <Link to="/collection">
+              View Full Collection
+            </Link>
           </Button>
         </div>
       </div>
@@ -234,13 +235,12 @@ const ProductCard = ({ product, priority, isTopSelling }: { product: Product; pr
         <div className="relative aspect-square overflow-hidden bg-secondary">
           {product.image_url ? (
             <img
-              src={getOptimisedImageUrl(product.image_url)}
+              src={getOptimizedImageUrl(product.image_url, 400, 60)}
               alt={product.name}
+              loading="lazy"
+              decoding="async"
               width={400}
               height={400}
-              loading={priority ? "eager" : "lazy"}
-              decoding="async"
-              fetchPriority={priority ? "high" : "auto"}
               className={`h-full w-full object-cover transition-smooth group-hover:scale-105 ${soldOut ? "opacity-60" : ""}`}
             />
           ) : (
@@ -251,12 +251,12 @@ const ProductCard = ({ product, priority, isTopSelling }: { product: Product; pr
 
           {product.video_url && (
             <video
-              src={getOptimisedImageUrl(product.video_url, 400)}
-              poster={getOptimisedImageUrl(product.image_url, 400)}
-              muted
+              src={product.video_url}
+              poster={getOptimizedImageUrl(product.image_url, 400, 60)}
+              preload="none"
               loop
+              muted
               playsInline
-              preload="metadata"
               className="absolute inset-0 h-full w-full object-cover opacity-0 transition-opacity duration-500 group-hover:opacity-100"
               onMouseEnter={(e) => e.currentTarget.play()}
               onMouseLeave={(e) => {
@@ -371,15 +371,15 @@ const ProductCard = ({ product, priority, isTopSelling }: { product: Product; pr
           <div className="relative aspect-video w-full overflow-hidden rounded-lg">
             {product.video_url && (
               <video
-                poster={getOptimisedImageUrl(product.image_url, 800, 80)}
-                preload={videoOpen ? "auto" : "metadata"}
+                poster={getOptimizedImageUrl(product.image_url, 800, 60)}
+                preload={videoOpen ? "auto" : "none"}
                 playsInline
                 autoPlay
                 muted
                 controls
                 className="h-full w-full"
               >
-                <source src={getOptimisedImageUrl(product.video_url, 1080)} />
+                <source src={product.video_url} />
                 Your browser does not support the video tag.
               </video>
             )}

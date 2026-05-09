@@ -11,8 +11,22 @@ const TEST_PASSWORD = "";
 const TEST_SESSION_KEY = "pbl_admin_test_session";
 
 
+// Helper to retry profile creation if the database trigger is slow or fails
+const createProfileWithRetry = async (userId: string, email: string, maxRetries = 3) => {
+  for (let i = 0; i < maxRetries; i++) {
+    const { error } = await supabase
+      .from("profiles")
+      .upsert({ id: userId, email, role: "admin" })
+      .select()
+      .single();
+
+    if (!error) return { success: true };
+    await new Promise(r => setTimeout(r, 1000));
+  }
+  return { success: false };
+};
+
 const AdminLogin = () => {
-  const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -55,11 +69,7 @@ const AdminLogin = () => {
 
           // Only create profile if it doesn't exist yet
           if (!existingProfile) {
-            await supabase.from("profiles").upsert([{
-              id: data.user.id,
-              email: data.user.email,
-              role: "admin"
-            }]);
+            await createProfileWithRetry(data.user.id, data.user.email || "");
 
             // Delete the invite now that signup is complete
             await supabase
@@ -80,98 +90,28 @@ const AdminLogin = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setError("");
 
     // Use local test auth when Supabase is not configured yet
     if (!IS_SUPABASE_CONFIGURED) {
-      if (isSignUp) {
-        const users = JSON.parse(localStorage.getItem("pbl_mock_users") || "[]");
-        if (users.find((u: any) => u.email === email)) {
-          toast({ title: "Error", description: "User already exists", variant: "destructive" });
-        } else {
-          users.push({ email, password });
-          localStorage.setItem("pbl_mock_users", JSON.stringify(users));
-          toast({ title: "Success", description: "Mock account created! You can now sign in." });
-          setIsSignUp(false);
-        }
-      } else {
-        const users = JSON.parse(localStorage.getItem("pbl_mock_users") || "[]");
-        const user = users.find((u: any) => u.email === email && u.password === password);
+      const users = JSON.parse(localStorage.getItem("pbl_mock_users") || "[]");
+      const user = users.find((u: any) => u.email === email && u.password === password);
 
-        if (user || (TEST_EMAIL && email === TEST_EMAIL && password === TEST_PASSWORD)) {
-          localStorage.setItem(TEST_SESSION_KEY, "true");
-          navigate("/admin", { replace: true });
-        } else {
-          toast({ title: "Invalid credentials", description: "Wrong email or password.", variant: "destructive" });
-        }
+      if (user || (TEST_EMAIL && email === TEST_EMAIL && password === TEST_PASSWORD)) {
+        localStorage.setItem(TEST_SESSION_KEY, "true");
+        navigate("/admin", { replace: true });
+      } else {
+        toast({ title: "Invalid credentials", description: "Wrong email or password.", variant: "destructive" });
       }
       setLoading(false);
       return;
     }
 
-    if (isSignUp) {
-      setError("");
-      setSuccess("");
-      try {
-        // Step 1: Check if already a profile
-        const { data: existingProfile } = await supabase
-          .from("profiles")
-          .select("id")
-          .eq("email", email.trim().toLowerCase())
-          .single();
-
-        if (existingProfile) {
-          setError("You already have an admin account. Please sign in instead.");
-          setLoading(false);
-          return;
-        }
-
-        // Step 2: Check invite
-        const { data: invite, error: inviteError } = await supabase
-          .from("admin_invites")
-          .select("*")
-          .eq("email", email.trim().toLowerCase())
-          .single();
-
-        if (inviteError || !invite) {
-          setError("You have not been invited as an admin. Contact the owner.");
-          setLoading(false);
-          return;
-        }
-
-        // Step 2: Sign up with Supabase Auth
-        const { data, error: signUpError } = await supabase.auth.signUp({
-          email: email.trim().toLowerCase(),
-          password,
-          options: {
-            emailRedirectTo: "https://perfumesbyluch.com/admin/login",
-          }
-        });
-
-        if (signUpError) {
-          setError(signUpError.message);
-          setLoading(false);
-          return;
-        }
-
-        if (data.user && !data.session) {
-          // Email confirmation required — show clear message
-          setSuccess("Account created! Please check your email and click the confirmation link to activate your account.");
-          setLoading(false);
-          return;
-        }
-
-      } catch (err: any) {
-        setError("Something went wrong. Please try again.");
-      }
-      setLoading(false);
-      return;
-    } else {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) {
-        toast({ title: "Error", description: error.message, variant: "destructive" });
-      } else if (data?.session) {
-        navigate("/admin", { replace: true });
-      }
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) {
+      setError(error.message);
+    } else if (data?.session) {
+      navigate("/admin", { replace: true });
     }
     setLoading(false);
   };
@@ -180,7 +120,7 @@ const AdminLogin = () => {
     <div className="flex min-h-screen items-center justify-center bg-background px-4 py-12 md:py-0">
       <div className="w-full max-w-md rounded-xl border border-border bg-card p-6 md:p-8 shadow-card-luxe">
         <h1 className="mb-2 text-center font-serif text-2xl md:text-3xl">
-          {isSignUp ? "Admin Sign Up" : "Admin Login"}
+          Admin Login
         </h1>
         {!IS_SUPABASE_CONFIGURED && (
           <p className="mb-6 text-center text-xs text-muted-foreground">
@@ -232,17 +172,9 @@ const AdminLogin = () => {
             </div>
           </div>
           <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? "Loading..." : isSignUp ? "Create Account" : "Sign In"}
+            {loading ? "Loading..." : "Sign In"}
           </Button>
         </form>
-        <div className="mt-6 text-center text-sm">
-          <button
-            onClick={() => setIsSignUp(!isSignUp)}
-            className="text-muted-foreground transition-smooth hover:text-primary w-full"
-          >
-            {isSignUp ? "Already have an account? Sign In" : "Invited? Create an account"}
-          </button>
-        </div>
       </div>
     </div>
   );

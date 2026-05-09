@@ -5,6 +5,7 @@ import { WhatsAppIcon } from "@/components/WhatsAppFloat";
 import { useCart } from "@/contexts/CartContext";
 import { Plus, Check, Loader2, Search, ShoppingBag, Instagram, ChevronLeft, ChevronRight } from "lucide-react";
 import { supabase, Product } from "@/lib/supabase";
+import { getOptimizedImageUrl } from "@/lib/cloudinary";
 import Nav from "@/components/sections/Nav";
 import Footer from "@/components/sections/Footer";
 import WhatsAppFloat from "@/components/WhatsAppFloat";
@@ -172,11 +173,12 @@ const CollectionsGrid = () => {
                 <div className="relative aspect-square overflow-hidden bg-secondary">
                   {p.image_url ? (
                     <img
-                      src={p.image_url}
+                      src={getOptimizedImageUrl(p.image_url, 400, 60)}
                       alt={p.name}
-                      width={768}
-                      height={768}
                       loading="lazy"
+                      decoding="async"
+                      width={400}
+                      height={400}
                       className={`h-full w-full object-cover transition-smooth group-hover:scale-105 ${soldOut ? "opacity-60" : ""}`}
                     />
                   ) : (

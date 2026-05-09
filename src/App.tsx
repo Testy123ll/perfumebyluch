@@ -9,7 +9,9 @@ import NotFound from "./pages/NotFound.tsx";
 
 const Admin = lazy(() => import("./pages/Admin.tsx"));
 const AdminLogin = lazy(() => import("./pages/AdminLogin.tsx"));
+const AdminRegister = lazy(() => import("./pages/AdminRegister.tsx"));
 const Collections = lazy(() => import("./pages/Collections.tsx"));
+const Collection = lazy(() => import("./pages/Collection.tsx"));
 
 const PageLoader = () => (
   <div className="flex min-h-screen items-center justify-center bg-background">
@@ -29,8 +31,10 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/collections" element={<Collections />} />
+            <Route path="/collection" element={<Collection />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="/admin/login" element={<AdminLogin />} />
+            <Route path="/admin/register" element={<AdminRegister />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>
