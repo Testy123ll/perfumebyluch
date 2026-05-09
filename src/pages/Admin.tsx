@@ -70,7 +70,7 @@ const uploadImage = async (
     xhr.onerror = () => resolve({ url: "", error: "Network error" });
     xhr.ontimeout = () => resolve({ url: "", error: "Upload timed out" });
 
-    xhr.open("POST", "https://api.cloudinary.com/v1_1/dp4auwl1h/image/upload", true);
+    xhr.open("POST", "https://api.cloudinary.com/v1_1/dvmefdiu3/image/upload", true);
     xhr.send(formData);
   });
 };
@@ -803,7 +803,16 @@ const Admin = () => {
                           </div>
                         </td>
                         <td className="p-4 hidden sm:table-cell text-muted-foreground">{p.category}</td>
-                        <td className="p-4 font-mono">₦{p.price.toLocaleString()}</td>
+                        <td className="p-4 font-mono">
+                          {p.sale_price && (!p.sale_end_date || new Date(p.sale_end_date) > new Date()) ? (
+                            <div className="flex flex-col">
+                              <span className="text-red-600 font-bold">₦{p.sale_price.toLocaleString()}</span>
+                              <span className="text-[10px] text-muted-foreground line-through">₦{p.price.toLocaleString()}</span>
+                            </div>
+                          ) : (
+                            <span>₦{p.price.toLocaleString()}</span>
+                          )}
+                        </td>
                         <td className="p-4">
                           <div className="flex flex-wrap gap-1.5">
                             <button onClick={() => handleToggleStock(p)}
