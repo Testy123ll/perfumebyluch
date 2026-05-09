@@ -87,7 +87,14 @@ const BestSellers = () => {
                 </div>
                 <div className="flex flex-1 flex-col p-6 text-center">
                   <h3 className="font-serif text-xl">{p.name}</h3>
-                  <p className="mt-2 font-serif text-lg text-primary">{formatPrice(p.price)}</p>
+                  {p.sale_price && (!p.sale_end_date || new Date(p.sale_end_date) > new Date()) ? (
+                    <div className="mt-2 flex items-center justify-center gap-2">
+                      <span className="font-serif text-lg text-red-500 font-bold">{formatPrice(p.sale_price)}</span>
+                      <span className="text-xs text-muted-foreground line-through">{formatPrice(p.price)}</span>
+                    </div>
+                  ) : (
+                    <p className="mt-2 font-serif text-lg text-primary">{formatPrice(p.price)}</p>
+                  )}
                   
                   <Button
                     asChild
@@ -96,7 +103,7 @@ const BestSellers = () => {
                     className="mt-4 border-primary/20 text-xs hover:bg-primary hover:text-primary-foreground"
                   >
                     <a
-                      href={waLink(`Hi! I'd like to order the Best Seller: ${p.name}${p.size ? ` (${p.size})` : ""} at ${formatPrice(p.price)}`)}
+                      href={waLink(`Hi! I'd like to order the Best Seller: ${p.name}${p.size ? ` (${p.size})` : ""} at ${formatPrice(p.sale_price && (!p.sale_end_date || new Date(p.sale_end_date) > new Date()) ? p.sale_price : p.price)}`)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="gap-2"

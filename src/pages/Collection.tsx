@@ -123,6 +123,8 @@ const CollectionContent = () => {
             {filtered.map((p) => {
               const inCart = items.some((i) => i.id === p.id);
               const soldOut = !p.in_stock;
+              const isSaleActive = p.sale_price && (!p.sale_end_date || new Date(p.sale_end_date) > new Date());
+              const displayPrice = isSaleActive ? p.sale_price! : p.price;
 
               return (
                 <article
@@ -175,13 +177,20 @@ const CollectionContent = () => {
                       )}
                     </div>
                     <p className="mt-1 text-sm text-muted-foreground">{p.description}</p>
-                    <div className="mt-4 flex items-center justify-between">
-                      <span className="font-serif text-xl text-primary">{formatPrice(p.price)}</span>
+                    <div className="mt-4 flex items-center justify-between gap-2">
+                      {isSaleActive ? (
+                        <div className="flex flex-col">
+                          <span className="font-serif text-xl text-red-500 font-bold">{formatPrice(displayPrice)}</span>
+                          <span className="text-xs text-muted-foreground line-through">{formatPrice(p.price)}</span>
+                        </div>
+                      ) : (
+                        <span className="font-serif text-xl text-primary">{formatPrice(p.price)}</span>
+                      )}
                     </div>
 
                     <Button
                       onClick={() =>
-                        addItem({ id: p.id, name: p.name, price: p.price, category: p.category, image_url: p.image_url || undefined, size: p.size || undefined })
+                        addItem({ id: p.id, name: p.name, price: displayPrice, category: p.category, image_url: p.image_url || undefined, size: p.size || undefined })
                       }
                       variant={inCart ? "outline" : "default"}
                       size="sm"
@@ -200,7 +209,7 @@ const CollectionContent = () => {
                     {!soldOut && (
                       <Button asChild variant="ghost" size="sm" className="mt-2 w-full text-xs text-muted-foreground hover:text-primary">
                         <a
-                          href={waLink(`Hi, I'd like to order ${p.name}${p.size ? ` (${p.size})` : ""} at ${formatPrice(p.price)}`)}
+                          href={waLink(`Hi, I'd like to order ${p.name}${p.size ? ` (${p.size})` : ""} at ${formatPrice(displayPrice)}`)}
                           target="_blank"
                           rel="noopener noreferrer"
                         >

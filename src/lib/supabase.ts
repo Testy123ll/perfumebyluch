@@ -48,6 +48,8 @@ export type Product = {
   image_url: string;
   in_stock: boolean;
   visible: boolean;
+  sale_price?: number | null;
+  sale_end_date?: string | null;
   is_new: boolean;
   video_url?: string;
   size?: string;

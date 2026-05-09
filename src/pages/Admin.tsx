@@ -118,6 +118,8 @@ const Admin = () => {
     is_bestseller: false,
     size: "",
     scent_mood: "",
+    sale_price: "",
+    sale_end_date: "",
   });
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [videoUrl, setVideoUrl] = useState(""); // Replaces videoFile for Widget support
@@ -263,12 +265,12 @@ const Admin = () => {
 
   useEffect(() => {
     if (session) {
-      fetchProducts();
-      fetchReviews();
-      fetchLogs();
-      if (userRole === "owner") fetchTeam();
+      if (activeTab === "products" && products.length === 0) fetchProducts();
+      else if (activeTab === "reviews" && reviews.length === 0) fetchReviews();
+      else if (activeTab === "activity" && logs.length === 0) fetchLogs();
+      else if (activeTab === "team" && team.length === 0 && userRole === "owner") fetchTeam();
     }
-  }, [session, userRole]);
+  }, [session, userRole, activeTab]);
 
   useEffect(() => {
     if (session) fetchLogs();
@@ -284,7 +286,8 @@ const Admin = () => {
     setEditingId(null);
     setFormData({
       name: "", price: "", description: "", category: "Unboxed",
-      in_stock: true, visible: true, is_new: false, is_bestseller: false, size: "", scent_mood: ""
+      in_stock: true, visible: true, is_new: false, is_bestseller: false, size: "", scent_mood: "",
+      sale_price: "", sale_end_date: ""
     });
     setImageFile(null);
     setVideoUrl(""); // Reset widget URL
@@ -335,6 +338,8 @@ const Admin = () => {
       size: product.size || "",
       scent_mood: product.scent_mood || "",
       is_bestseller: product.is_bestseller ?? false,
+      sale_price: product.sale_price ? product.sale_price.toString() : "",
+      sale_end_date: product.sale_end_date ? new Date(product.sale_end_date).toISOString().slice(0, 16) : "",
     });
     setImageFile(null);
     setVideoUrl(product.video_url || ""); // Set existing video URL
@@ -427,7 +432,9 @@ const Admin = () => {
       video_url: final_video_url,
       size: formData.size,
       scent_mood: formData.scent_mood,
-      is_bestseller: (formData as any).is_bestseller,
+      is_bestseller: formData.is_bestseller,
+      sale_price: formData.sale_price ? parseFloat(formData.sale_price) : null,
+      sale_end_date: formData.sale_end_date || null,
       ...(image_url ? { image_url } : {}),
     };
 
@@ -663,6 +670,19 @@ const Admin = () => {
                       <input required type="number" value={formData.price}
                         onChange={(e) => setFormData({ ...formData, price: e.target.value })}
                         className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm focus:ring-1 focus:ring-primary" />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-sm font-medium">Sale Promo Price (₦) - Optional</label>
+                      <input type="number" value={formData.sale_price}
+                        onChange={(e) => setFormData({ ...formData, sale_price: e.target.value })}
+                        placeholder="Leave empty if no sale"
+                        className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm focus:ring-1 focus:ring-primary" />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-sm font-medium">Sale End Date - Optional</label>
+                      <input type="datetime-local" value={formData.sale_end_date}
+                        onChange={(e) => setFormData({ ...formData, sale_end_date: e.target.value })}
+                        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:ring-1 focus:ring-primary" />
                     </div>
                     <div>
                       <label className="mb-1 block text-sm font-medium">Category</label>

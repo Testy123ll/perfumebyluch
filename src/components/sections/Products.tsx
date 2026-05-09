@@ -218,11 +218,14 @@ const ProductCard = ({ product, priority, isTopSelling }: { product: Product; pr
   const inCart = items.some((i) => i.id === product.id);
   const soldOut = !product.in_stock;
 
+  const isSaleActive = product.sale_price && (!product.sale_end_date || new Date(product.sale_end_date) > new Date());
+  const displayPrice = isSaleActive ? product.sale_price! : product.price;
+
   const handleAddToCart = () => {
     addItem({
       id: product.id,
       name: product.name,
-      price: product.price,
+      price: displayPrice,
       category: product.category,
       image_url: product.image_url || undefined,
       size: product.size || undefined,
@@ -316,8 +319,15 @@ const ProductCard = ({ product, priority, isTopSelling }: { product: Product; pr
           </div>
           <p className="mt-1 text-sm text-muted-foreground">{product.description}</p>
 
-          <div className="mt-4 flex items-center justify-between">
-            <span className="font-serif text-xl text-primary">{formatPrice(product.price)}</span>
+          <div className="mt-4 flex items-center justify-between gap-2">
+            {isSaleActive ? (
+              <div className="flex flex-col">
+                <span className="font-serif text-xl text-red-500 font-bold">{formatPrice(displayPrice)}</span>
+                <span className="text-xs text-muted-foreground line-through">{formatPrice(product.price)}</span>
+              </div>
+            ) : (
+              <span className="font-serif text-xl text-primary">{formatPrice(product.price)}</span>
+            )}
           </div>
 
           <Button
@@ -352,7 +362,7 @@ const ProductCard = ({ product, priority, isTopSelling }: { product: Product; pr
               <a
                 href={waLink(
                   `Hi, I'd like to order ${product.name}${product.size ? ` (${product.size})` : ""
-                  } at ${formatPrice(product.price)}`
+                  } at ${formatPrice(displayPrice)}`
                 )}
                 target="_blank"
                 rel="noopener noreferrer"
