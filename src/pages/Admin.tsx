@@ -46,7 +46,7 @@ const uploadImage = async (
     formData.append("file", file);
     formData.append("upload_preset", "Perfume");
     formData.append("folder", "perfumebyluch/images");
-    formData.append("transformation", "q_auto,f_auto,w_800");
+
 
     const xhr = new XMLHttpRequest();
     xhr.timeout = 120000;
