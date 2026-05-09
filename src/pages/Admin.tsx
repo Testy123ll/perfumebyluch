@@ -44,7 +44,7 @@ const uploadImage = async (
   return new Promise((resolve) => {
     const formData = new FormData();
     formData.append("file", file);
-    formData.append("upload_preset", "Perfumeluch");
+    formData.append("upload_preset", "Perfume");
     formData.append("folder", "perfumebyluch/images");
     formData.append("transformation", "q_auto,f_auto,w_800");
 
@@ -63,7 +63,8 @@ const uploadImage = async (
         const res = JSON.parse(xhr.responseText);
         resolve({ url: res.secure_url, error: null });
       } else {
-        resolve({ url: "", error: `Upload failed: ${xhr.status}` });
+        const err = JSON.parse(xhr.responseText || "{}");
+        resolve({ url: "", error: `Upload failed: ${err.error?.message || xhr.status}` });
       }
     };
 
