@@ -136,8 +136,10 @@ const Hero = () => {
           <img
             src={heroImage}
             alt="Luxury perfume bottle by Perfumes By Luch"
-            width={1280}
-            height={1280}
+            width={800}
+            height={800}
+            loading="eager"
+            fetchPriority="high"
             className="mx-auto w-full max-w-md rounded-2xl object-cover shadow-pink animate-float"
           />
         </div>
