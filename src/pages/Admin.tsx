@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase, Product, IS_SUPABASE_CONFIGURED, getOptimisedImageUrl } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
@@ -127,6 +127,13 @@ const Admin = () => {
   const [logs, setLogs] = useState<ActivityLog[]>([]);
   const [logFilterAdmin, setLogFilterAdmin] = useState("all");
   const [logFilterAction, setLogFilterAction] = useState("all");
+
+  const filteredProducts = useMemo(() => {
+    return products.filter(p =>
+      p.name.toLowerCase().includes(productSearch.toLowerCase()) ||
+      p.description?.toLowerCase().includes(productSearch.toLowerCase())
+    );
+  }, [products, productSearch]);
 
   const fetchProducts = useCallback(async () => {
     setLoading(true);
@@ -810,14 +817,11 @@ const Admin = () => {
                           <td className="p-4 text-right"><div className="h-8 w-24 bg-muted rounded ml-auto" /></td>
                         </tr>
                       ))
-                    ) : products
-                          .filter(p => p.name.toLowerCase().includes(productSearch.toLowerCase()) || p.description?.toLowerCase().includes(productSearch.toLowerCase()))
-                          .length === 0 ? (
+                    ) : filteredProducts.length === 0 ? (
                       <tr><td colSpan={5} className="p-8 text-center text-muted-foreground">No products match your search.</td></tr>
-                    ) : products
-                          .filter(p => p.name.toLowerCase().includes(productSearch.toLowerCase()) || p.description?.toLowerCase().includes(productSearch.toLowerCase()))
-                          .map((p) => (
-                      <tr key={p.id} className="border-t border-border hover:bg-muted/10 transition-colors">
+                    ) : (
+                      filteredProducts.map((p) => (
+                        <tr key={p.id} className="border-t border-border hover:bg-muted/10 transition-colors">
                         <td className="p-4">
                           <div className="flex items-center gap-3">
                             <div className="h-10 w-10 shrink-0 overflow-hidden rounded bg-muted">
