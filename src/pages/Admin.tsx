@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback, useMemo, memo } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase, Product, IS_SUPABASE_CONFIGURED, getOptimisedImageUrl } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
@@ -75,6 +75,70 @@ const uploadImage = async (
     xhr.send(formData);
   });
 };
+
+const ProductRow = memo(({ 
+  p, 
+  onToggleStock, 
+  onToggleNew, 
+  onToggleBest, 
+  onToggleVisibility, 
+  onEdit, 
+  onDelete 
+}: { 
+  p: Product, 
+  onToggleStock: (p: Product) => void,
+  onToggleNew: (p: Product) => void,
+  onToggleBest: (p: Product) => void,
+  onToggleVisibility: (p: Product) => void,
+  onEdit: (p: Product) => void,
+  onDelete: (id: string, name: string) => void
+}) => (
+  <tr className="border-t border-border hover:bg-muted/10 transition-colors">
+    <td className="p-4">
+      <div className="flex items-center gap-3">
+        <div className="h-10 w-10 shrink-0 overflow-hidden rounded bg-muted">
+          {p.image_url && <img src={getOptimisedImageUrl(p.image_url, 100)} className="h-full w-full object-cover" alt="" loading="lazy" />}
+        </div>
+        <div className="min-w-0">
+          <p className="font-medium truncate max-w-[150px]">{p.name}</p>
+          <p className="text-[10px] text-muted-foreground">{p.size || "No size"}</p>
+        </div>
+      </div>
+    </td>
+    <td className="p-4 hidden sm:table-cell text-muted-foreground">{p.category}</td>
+    <td className="p-4 font-mono">
+      {p.sale_price && (!p.sale_end_date || new Date(p.sale_end_date) > new Date()) ? (
+        <div className="flex flex-col">
+          <span className="text-red-600 font-bold">₦{p.sale_price.toLocaleString()}</span>
+          <span className="text-[10px] text-muted-foreground line-through">₦{p.price.toLocaleString()}</span>
+        </div>
+      ) : (
+        <span>₦{p.price.toLocaleString()}</span>
+      )}
+    </td>
+    <td className="p-4">
+      <div className="flex flex-wrap gap-1.5">
+        <button onClick={() => onToggleStock(p)}
+          className={`rounded-full px-2 py-0.5 text-[9px] font-bold uppercase ${p.in_stock ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
+          {p.in_stock ? "In Stock" : "Sold Out"}
+        </button>
+        <button onClick={() => onToggleNew(p)}
+          className={`rounded px-1 text-xs border transition-all ${p.is_new ? "border-primary text-primary" : "border-border opacity-30"}`} title="New Arrival">✨</button>
+        <button onClick={() => onToggleBest(p)}
+          className={`rounded px-1 text-xs border transition-all ${p.is_bestseller ? "border-amber-500 text-amber-500" : "border-border opacity-30"}`} title="Top Seller">🔥</button>
+      </div>
+    </td>
+    <td className="p-4 text-right">
+      <div className="flex justify-end gap-1">
+        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onToggleVisibility(p)}>
+          {p.visible ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4 text-muted-foreground/50" />}
+        </Button>
+        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onEdit(p)}><Edit2 className="h-4 w-4" /></Button>
+        <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500" onClick={() => onDelete(p.id, p.name)}><Trash2 className="h-4 w-4" /></Button>
+      </div>
+    </td>
+  </tr>
+));
 
 const Admin = () => {
   const navigate = useNavigate();
@@ -821,52 +885,18 @@ const Admin = () => {
                       <tr><td colSpan={5} className="p-8 text-center text-muted-foreground">No products match your search.</td></tr>
                     ) : (
                       filteredProducts.map((p) => (
-                        <tr key={p.id} className="border-t border-border hover:bg-muted/10 transition-colors">
-                        <td className="p-4">
-                          <div className="flex items-center gap-3">
-                            <div className="h-10 w-10 shrink-0 overflow-hidden rounded bg-muted">
-                              {p.image_url && <img src={getOptimisedImageUrl(p.image_url, 100)} className="h-full w-full object-cover" alt="" loading="lazy" />}
-                            </div>
-                            <div className="min-w-0">
-                              <p className="font-medium truncate max-w-[150px]">{p.name}</p>
-                              <p className="text-[10px] text-muted-foreground">{p.size || "No size"}</p>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="p-4 hidden sm:table-cell text-muted-foreground">{p.category}</td>
-                        <td className="p-4 font-mono">
-                          {p.sale_price && (!p.sale_end_date || new Date(p.sale_end_date) > new Date()) ? (
-                            <div className="flex flex-col">
-                              <span className="text-red-600 font-bold">₦{p.sale_price.toLocaleString()}</span>
-                              <span className="text-[10px] text-muted-foreground line-through">₦{p.price.toLocaleString()}</span>
-                            </div>
-                          ) : (
-                            <span>₦{p.price.toLocaleString()}</span>
-                          )}
-                        </td>
-                        <td className="p-4">
-                          <div className="flex flex-wrap gap-1.5">
-                            <button onClick={() => handleToggleStock(p)}
-                              className={`rounded-full px-2 py-0.5 text-[9px] font-bold uppercase ${p.in_stock ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
-                              {p.in_stock ? "In Stock" : "Sold Out"}
-                            </button>
-                            <button onClick={() => handleToggleNewArrival(p)}
-                              className={`rounded px-1 text-xs border transition-all ${p.is_new ? "border-primary text-primary" : "border-border opacity-30"}`} title="New Arrival">✨</button>
-                            <button onClick={() => handleToggleBestSeller(p)}
-                              className={`rounded px-1 text-xs border transition-all ${p.is_bestseller ? "border-amber-500 text-amber-500" : "border-border opacity-30"}`} title="Top Seller">🔥</button>
-                          </div>
-                        </td>
-                        <td className="p-4 text-right">
-                          <div className="flex justify-end gap-1">
-                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleToggleVisibility(p)}>
-                              {p.visible ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4 text-muted-foreground/50" />}
-                            </Button>
-                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEdit(p)}><Edit2 className="h-4 w-4" /></Button>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500" onClick={() => handleDelete(p.id, p.name)}><Trash2 className="h-4 w-4" /></Button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                        <ProductRow
+                          key={p.id}
+                          p={p}
+                          onToggleStock={handleToggleStock}
+                          onToggleNew={handleToggleNewArrival}
+                          onToggleBest={handleToggleBestSeller}
+                          onToggleVisibility={handleToggleVisibility}
+                          onEdit={handleEdit}
+                          onDelete={handleDelete}
+                        />
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>

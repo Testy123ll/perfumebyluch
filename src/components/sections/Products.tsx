@@ -147,19 +147,32 @@ const Products = () => {
         </div>
 
         {/* Category pills */}
-        <div className="mt-4 flex flex-wrap justify-center gap-2">
-          {categories.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => setActive(cat)}
-              className={`rounded-full border px-5 py-2 text-sm transition-smooth ${active === cat
-                  ? "border-primary bg-primary text-primary-foreground"
-                  : "border-border bg-card text-muted-foreground hover:border-primary/50 hover:text-foreground"
-                }`}
-            >
-              {cat}
-            </button>
-          ))}
+        <div className="mt-8 flex flex-col items-center gap-6">
+          <div className="relative w-full max-w-md">
+            <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="Search scents..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full rounded-full border border-border bg-card/50 py-3 pl-11 pr-4 text-sm backdrop-blur-sm transition-smooth focus:border-primary/60 focus:ring-4 focus:ring-primary/5"
+            />
+          </div>
+
+          <div className="flex flex-wrap justify-center gap-2">
+            {categories.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setActive(cat)}
+                className={`rounded-full border px-5 py-2 text-sm transition-smooth ${active === cat
+                    ? "border-primary bg-primary text-primary-foreground shadow-lg shadow-primary/20"
+                    : "border-border bg-card text-muted-foreground hover:border-primary/50 hover:text-foreground"
+                  }`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
         </div>
 
         {loading ? (
