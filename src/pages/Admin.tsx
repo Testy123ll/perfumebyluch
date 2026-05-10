@@ -79,21 +79,7 @@ const uploadImage = async (
 const Admin = () => {
   const navigate = useNavigate();
 
-  useEffect(() => {
-    // Lazy load Cloudinary upload widget script only for the Admin page
-    const script = document.createElement("script");
-    script.src = "https://upload-widget.cloudinary.com/global/all.js";
-    script.async = true;
-    script.type = "text/javascript";
-    document.head.appendChild(script);
 
-    return () => {
-      // Clean up the script when the component unmounts
-      if (document.head.contains(script)) {
-        document.head.removeChild(script);
-      }
-    };
-  }, []);
 
   const [activeTab, setActiveTab] = useState<Tab>("products");
   const [session, setSession] = useState<any>(null);
@@ -297,33 +283,43 @@ const Admin = () => {
   };
 
   const handleUploadVideo = () => {
-    // @ts-ignore - Cloudinary is loaded via script tag
-    if (!(window as any).cloudinary) {
-      toast({ title: "Widget Error", description: "Cloudinary library not ready. Please refresh the page.", variant: "destructive" });
-      return;
-    }
-
-    // @ts-ignore
-    const widget = (window as any).cloudinary.createUploadWidget(
-      {
-        cloudName: "dvmefdiu3",
-        uploadPreset: "Perfume",
-        sources: ["local", "camera"], // Simplified for mobile stability
-        multiple: false,
-        resourceType: "video",
-        clientAllowedFormats: ["mp4", "mov", "avi"],
-        maxFileSize: 100000000, // 100MB
-      },
-      (error: any, result: any) => {
-        if (!error && result && result.event === "success") {
-          setVideoUrl(result.info.secure_url);
-          toast({ title: "Video Uploaded", description: "Video ready to be saved." });
-        } else if (error) {
-          toast({ title: "Upload Widget Error", description: error.message || "Initialization failed", variant: "destructive" });
+    const startWidget = () => {
+      // @ts-ignore
+      const widget = (window as any).cloudinary.createUploadWidget(
+        {
+          cloudName: "dvmefdiu3",
+          uploadPreset: "Perfume",
+          sources: ["local", "camera"],
+          multiple: false,
+          resourceType: "video",
+          clientAllowedFormats: ["mp4", "mov", "avi"],
+          maxFileSize: 100000000,
+        },
+        (error: any, result: any) => {
+          if (!error && result && result.event === "success") {
+            setVideoUrl(result.info.secure_url);
+            toast({ title: "Video Uploaded", description: "Video ready to be saved." });
+          } else if (error) {
+            toast({ title: "Upload Widget Error", description: error.message || "Initialization failed", variant: "destructive" });
+          }
         }
-      }
-    );
-    widget.open();
+      );
+      widget.open();
+    };
+
+    if (!(window as any).cloudinary) {
+      setUploadProgress("Loading uploader...");
+      const script = document.createElement("script");
+      script.src = "https://upload-widget.cloudinary.com/global/all.js";
+      script.async = true;
+      script.onload = () => {
+        setUploadProgress("");
+        startWidget();
+      };
+      document.head.appendChild(script);
+    } else {
+      startWidget();
+    }
   };
 
   const handleEdit = (product: Product) => {
@@ -788,14 +784,24 @@ const Admin = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {products.length === 0 ? (
+                    {loading ? (
+                      [...Array(5)].map((_, i) => (
+                        <tr key={i} className="animate-pulse border-t border-border">
+                          <td className="p-4"><div className="flex items-center gap-3"><div className="h-10 w-10 bg-muted rounded shrink-0" /><div className="h-4 w-32 bg-muted rounded" /></div></td>
+                          <td className="p-4 hidden sm:table-cell"><div className="h-4 w-16 bg-muted rounded" /></td>
+                          <td className="p-4"><div className="h-4 w-16 bg-muted rounded" /></td>
+                          <td className="p-4"><div className="h-4 w-24 bg-muted rounded" /></td>
+                          <td className="p-4 text-right"><div className="h-8 w-24 bg-muted rounded ml-auto" /></td>
+                        </tr>
+                      ))
+                    ) : products.length === 0 ? (
                       <tr><td colSpan={5} className="p-8 text-center text-muted-foreground">No products found.</td></tr>
                     ) : products.map((p) => (
                       <tr key={p.id} className="border-t border-border hover:bg-muted/10 transition-colors">
                         <td className="p-4">
                           <div className="flex items-center gap-3">
                             <div className="h-10 w-10 shrink-0 overflow-hidden rounded bg-muted">
-                              {p.image_url && <img src={getOptimisedImageUrl(p.image_url, 100)} className="h-full w-full object-cover" alt="" />}
+                              {p.image_url && <img src={getOptimisedImageUrl(p.image_url, 100)} className="h-full w-full object-cover" alt="" loading="lazy" />}
                             </div>
                             <div className="min-w-0">
                               <p className="font-medium truncate max-w-[150px]">{p.name}</p>
