@@ -90,6 +90,7 @@ const Admin = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [uploadProgress, setUploadProgress] = useState("");
   const [loading, setLoading] = useState(true);
+  const [productSearch, setProductSearch] = useState("");
 
   const [products, setProducts] = useState<Product[]>([]);
   const [showForm, setShowForm] = useState(false);
@@ -763,11 +764,26 @@ const Admin = () => {
                 </form>
               </div>
             ) : (
-              <div className="mb-4 flex items-center justify-between">
-                <h2 className="font-serif text-xl sm:text-2xl">Perfume Collection</h2>
-                <Button onClick={() => { resetForm(); setShowForm(true); }} size="sm" className="gap-2">
-                  <Plus className="h-4 w-4" /> <span className="hidden xs:inline">Add Product</span>
-                </Button>
+              <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h2 className="font-serif text-xl sm:text-2xl">Perfume Collection</h2>
+                  <p className="text-xs text-muted-foreground mt-1">Manage your storefront inventory</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="relative">
+                    <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                    <input
+                      type="text"
+                      placeholder="Search products..."
+                      value={productSearch}
+                      onChange={(e) => setProductSearch(e.target.value)}
+                      className="h-9 w-[180px] rounded-md border border-input bg-background pl-8 pr-3 text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary sm:w-[250px]"
+                    />
+                  </div>
+                  <Button onClick={() => { resetForm(); setShowForm(true); }} size="sm" className="gap-2 shrink-0">
+                    <Plus className="h-4 w-4" /> <span className="hidden xs:inline">Add Product</span>
+                  </Button>
+                </div>
               </div>
             )}
 
@@ -794,9 +810,13 @@ const Admin = () => {
                           <td className="p-4 text-right"><div className="h-8 w-24 bg-muted rounded ml-auto" /></td>
                         </tr>
                       ))
-                    ) : products.length === 0 ? (
-                      <tr><td colSpan={5} className="p-8 text-center text-muted-foreground">No products found.</td></tr>
-                    ) : products.map((p) => (
+                    ) : products
+                          .filter(p => p.name.toLowerCase().includes(productSearch.toLowerCase()) || p.description?.toLowerCase().includes(productSearch.toLowerCase()))
+                          .length === 0 ? (
+                      <tr><td colSpan={5} className="p-8 text-center text-muted-foreground">No products match your search.</td></tr>
+                    ) : products
+                          .filter(p => p.name.toLowerCase().includes(productSearch.toLowerCase()) || p.description?.toLowerCase().includes(productSearch.toLowerCase()))
+                          .map((p) => (
                       <tr key={p.id} className="border-t border-border hover:bg-muted/10 transition-colors">
                         <td className="p-4">
                           <div className="flex items-center gap-3">
