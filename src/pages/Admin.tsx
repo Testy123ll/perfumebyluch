@@ -6,7 +6,7 @@ import { useToast, toast } from "@/components/ui/use-toast";
 import {
   Trash2, Edit2, Eye, EyeOff, Plus, LogOut, Loader2,
   Shield, ShieldOff, Mail, History, User, Star, CheckCircle2,
-  ArrowUpRight
+  ArrowUpRight, Search
 } from "lucide-react";
 import logo from "@/assets/logo.webp";
 
@@ -325,7 +325,10 @@ const Admin = () => {
   useEffect(() => {
     if (session) {
       if (activeTab === "products" && products.length === 0) fetchProducts();
-      else if (activeTab === "reviews" && reviews.length === 0) fetchReviews();
+      else if (activeTab === "reviews") {
+        if (reviews.length === 0) fetchReviews();
+        if (products.length === 0) fetchProducts();
+      }
       else if (activeTab === "activity" && logs.length === 0) fetchLogs();
       else if (activeTab === "team" && team.length === 0 && userRole === "owner") fetchTeam();
     }
