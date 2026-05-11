@@ -175,15 +175,17 @@ const CollectionContent = () => {
                   </div>
 
                   <div className="flex flex-1 flex-col p-5">
-                    <div className="flex items-start justify-between">
-                      <h3 className="font-serif text-xl sm:text-2xl">{p.name}</h3>
-                      {p.size && (
-                        <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary">
-                          {p.size}
-                        </span>
-                      )}
+                    <div className="flex-1">
+                      <div className="flex items-start justify-between">
+                        <h3 className="font-serif text-xl sm:text-2xl">{p.name}</h3>
+                        {p.size && (
+                          <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary">
+                            {p.size}
+                          </span>
+                        )}
+                      </div>
+                      <p className="mt-1 text-sm text-muted-foreground">{p.description}</p>
                     </div>
-                    <p className="mt-1 text-sm text-muted-foreground">{p.description}</p>
                     <div className="mt-4 flex items-center justify-between gap-2">
                       {isSaleActive ? (
                         <div className="flex flex-col">

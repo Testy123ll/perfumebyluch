@@ -93,7 +93,9 @@ const BestSellers = () => {
                   </div>
                 </div>
                 <div className="flex flex-1 flex-col p-6 text-center">
-                  <h3 className="font-serif text-xl">{p.name}</h3>
+                  <div className="flex-1">
+                    <h3 className="font-serif text-xl">{p.name}</h3>
+                  </div>
                   {p.sale_price && (!p.sale_end_date || new Date(p.sale_end_date) > new Date()) ? (
                     <div className="mt-2 flex items-center justify-center gap-2">
                       <span className="font-serif text-lg text-red-500 font-bold">{formatPrice(p.sale_price)}</span>

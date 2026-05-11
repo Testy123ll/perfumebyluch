@@ -330,15 +330,17 @@ const ProductCard = ({ product, priority, isTopSelling }: { product: Product; pr
         </div>
 
         <div className="flex flex-1 flex-col p-5">
-          <div className="flex items-start justify-between">
-            <h3 className="font-serif text-2xl">{product.name}</h3>
-            {product.size && (
-              <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary">
-                {product.size}
-              </span>
-            )}
+          <div className="flex-1">
+            <div className="flex items-start justify-between">
+              <h3 className="font-serif text-2xl">{product.name}</h3>
+              {product.size && (
+                <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary">
+                  {product.size}
+                </span>
+              )}
+            </div>
+            <p className="mt-1 text-sm text-muted-foreground">{product.description}</p>
           </div>
-          <p className="mt-1 text-sm text-muted-foreground">{product.description}</p>
 
           <div className="mt-4 flex items-center justify-between gap-2">
             {isSaleActive ? (
