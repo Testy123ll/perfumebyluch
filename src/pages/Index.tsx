@@ -26,7 +26,7 @@ const Index = () => {
       <Helmet>
         <title>Perfumes By Luch | Buy Original Perfume in Nigeria | Lagos, Abuja, PH Delivery</title>
         <meta name="description" content="Buy 100% authentic luxury perfumes online in Nigeria. Fast delivery to Lagos, Abuja, Port Harcourt, Kano, Ibadan, Enugu, Benin City and all states. Boxed, unboxed, thrifted and tester fragrances. Order via WhatsApp." />
-        <link rel="canonical" href="https://perfumesbyluch.com/" />
+        <link rel="canonical" href="https://www.perfumesbyluch.com/" />
       </Helmet>
       <div className="min-h-screen bg-background scroll-smooth">
         <Nav />
