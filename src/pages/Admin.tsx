@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, useMemo, memo } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase, Product, IS_SUPABASE_CONFIGURED, getOptimisedImageUrl } from "@/lib/supabase";
+import { supabase, Product, IS_SUPABASE_CONFIGURED } from "@/lib/supabase";
+import { getOptimizedImageUrl } from "@/lib/media";
 import { Button } from "@/components/ui/button";
 import { useToast, toast } from "@/components/ui/use-toast";
 import {
@@ -97,7 +98,7 @@ const ProductRow = memo(({
     <td className="p-4">
       <div className="flex items-center gap-3">
         <div className="h-10 w-10 shrink-0 overflow-hidden rounded bg-muted">
-          {p.image_url && <img src={getOptimisedImageUrl(p.image_url, 100)} className="h-full w-full object-cover" alt="" loading="lazy" />}
+          {p.image_url && <img src={getOptimizedImageUrl(p.image_url, 100, 65)} className="h-full w-full object-cover" alt="" loading="lazy" />}
         </div>
         <div className="min-w-0">
           <p className="font-medium truncate max-w-[150px]">{p.name}</p>

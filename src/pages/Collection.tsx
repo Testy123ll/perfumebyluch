@@ -6,7 +6,7 @@ import { WhatsAppIcon } from "@/components/WhatsAppFloat";
 import { useCart } from "@/contexts/CartContext";
 import { Plus, Check, Loader2, Search, ArrowLeft, Instagram } from "lucide-react";
 import { supabase, Product } from "@/lib/supabase";
-import { getOptimizedImageUrl } from "@/lib/cloudinary";
+import { getOptimizedImageUrl } from "@/lib/media";
 import Footer from "@/components/sections/Footer";
 import WhatsAppFloat from "@/components/WhatsAppFloat";
 import CartDrawer from "@/components/CartDrawer";
@@ -134,7 +134,7 @@ const CollectionContent = () => {
                   <div className="relative aspect-square overflow-hidden bg-secondary">
                     {p.image_url ? (
                       <img
-                        src={getOptimizedImageUrl(p.image_url, 400, 60)}
+                        src={getOptimizedImageUrl(p.image_url, 400, 65)}
                         alt={p.name}
                         loading="lazy"
                         decoding="async"

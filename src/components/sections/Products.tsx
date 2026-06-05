@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { formatPrice, waLink } from "@/lib/whatsapp";
@@ -6,7 +6,7 @@ import { WhatsAppIcon } from "@/components/WhatsAppFloat";
 import { useCart } from "@/contexts/CartContext";
 import { Plus, Check, Loader2, Search, Play, X, Instagram, ShoppingBag } from "lucide-react";
 import { supabase, Product } from "@/lib/supabase";
-import { getOptimizedImageUrl } from "@/lib/cloudinary";
+import { getOptimizedVideoUrl, getOptimizedImageUrl, getVideoThumbnail } from "@/lib/media";
 import {
   Dialog,
   DialogContent,
@@ -225,6 +225,122 @@ const Products = () => {
   );
 };
 
+const LazyVideo = ({ 
+  product, 
+  soldOut, 
+  onPlayClick 
+}: { 
+  product: Product; 
+  soldOut?: boolean; 
+  onPlayClick?: () => void;
+}) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [isVisible, setIsVisible] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setIsVisible(true);
+            observer.disconnect();
+          }
+        });
+      },
+      { threshold: 0.3 }
+    );
+
+    if (containerRef.current) observer.observe(containerRef.current);
+    return () => observer.disconnect();
+  }, []);
+
+  const handleMouseEnter = () => {
+    if (videoRef.current && product.video_url) {
+      videoRef.current.play().catch(() => {});
+      setIsPlaying(true);
+    }
+  };
+
+  const handleMouseLeave = () => {
+    if (videoRef.current) {
+      videoRef.current.pause();
+      videoRef.current.currentTime = 0;
+      setIsPlaying(false);
+    }
+  };
+
+  const handleTouchStart = () => {
+    if (videoRef.current && product.video_url) {
+      if (isPlaying) {
+        videoRef.current.pause();
+        videoRef.current.currentTime = 0;
+        setIsPlaying(false);
+      } else {
+        videoRef.current.play().catch(() => {});
+        setIsPlaying(true);
+      }
+    }
+  };
+
+  return (
+    <div
+      ref={containerRef}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      onTouchStart={handleTouchStart}
+      onClick={onPlayClick}
+      className="relative h-full w-full cursor-pointer"
+    >
+      {/* Always show image first */}
+      <img
+        src={getOptimizedImageUrl(product.image_url, 400, 65)}
+        alt={product.name}
+        loading="lazy"
+        decoding="async"
+        className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-300 ${
+          isPlaying ? "opacity-0" : "opacity-100"
+        } ${soldOut ? "opacity-60" : ""}`}
+      />
+
+      {/* Only render video element when card is visible in viewport */}
+      {isVisible && product.video_url && (
+        <video
+          ref={videoRef}
+          src={getOptimizedVideoUrl(product.video_url)}
+          preload="none"
+          muted
+          loop
+          playsInline
+          poster={getVideoThumbnail(product.video_url) || getOptimizedImageUrl(product.image_url, 400, 65)}
+          className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-300 ${
+            isPlaying ? "opacity-100" : "opacity-0"
+          }`}
+        />
+      )}
+
+      {/* Play hint icon */}
+      {isVisible && product.video_url && !isPlaying && (
+        <div className="absolute bottom-2 right-2 flex h-6 w-6 items-center justify-center rounded-full bg-black/40 text-white z-20">
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor">
+            <path d="M2 1.5l6 3.5-6 3.5V1.5z"/>
+          </svg>
+        </div>
+      )}
+
+      {/* Large play button on hover */}
+      {product.video_url && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/20 opacity-0 transition-opacity hover:opacity-100">
+          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white/20 backdrop-blur-md text-white border border-white/30">
+            <Play className="h-8 w-8 fill-current" />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 const ProductCard = ({ product, priority, isTopSelling }: { product: Product; priority?: boolean; isTopSelling?: boolean }) => {
   const { addItem, items } = useCart();
   const [videoOpen, setVideoOpen] = useState(false);
@@ -250,48 +366,15 @@ const ProductCard = ({ product, priority, isTopSelling }: { product: Product; pr
       <article className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card/60 backdrop-blur-sm shadow-card-luxe transition-smooth hover:-translate-y-1 hover:border-primary/40 hover:shadow-pink">
         <div className="relative aspect-square overflow-hidden bg-secondary">
           {product.image_url ? (
-            <img
-              src={getOptimizedImageUrl(product.image_url, 400, 60)}
-              alt={product.name}
-              loading="lazy"
-              decoding="async"
-              width={400}
-              height={400}
-              className={`h-full w-full object-cover transition-smooth group-hover:scale-105 ${soldOut ? "opacity-60" : ""}`}
+            <LazyVideo
+              product={product}
+              soldOut={soldOut}
+              onPlayClick={product.video_url ? () => setVideoOpen(true) : undefined}
             />
           ) : (
             <div className="flex h-full w-full items-center justify-center bg-muted text-muted-foreground">
               No Image
             </div>
-          )}
-
-          {product.video_url && (
-            <video
-              src={product.video_url}
-              poster={getOptimizedImageUrl(product.image_url, 400, 60)}
-              preload="none"
-              loop
-              muted
-              playsInline
-              className="absolute inset-0 h-full w-full object-cover opacity-0 transition-opacity duration-500 group-hover:opacity-100"
-              onMouseEnter={(e) => e.currentTarget.play()}
-              onMouseLeave={(e) => {
-                e.currentTarget.pause();
-                e.currentTarget.currentTime = 0;
-              }}
-            />
-          )}
-
-          {product.video_url && (
-            <button
-              onClick={() => setVideoOpen(true)}
-              className="absolute inset-0 z-10 flex items-center justify-center bg-black/20 opacity-0 transition-opacity group-hover:opacity-100"
-              aria-label="Play product video"
-            >
-              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white/20 backdrop-blur-md text-white border border-white/30">
-                <Play className="h-8 w-8 fill-current" />
-              </div>
-            </button>
           )}
 
           <div className="absolute inset-x-0 bottom-0 z-20 bg-gradient-to-t from-black/80 to-transparent p-4 text-center opacity-0 transition-opacity duration-300 group-hover:opacity-100 pointer-events-none">
@@ -404,7 +487,7 @@ const ProductCard = ({ product, priority, isTopSelling }: { product: Product; pr
           <div className="relative aspect-video w-full overflow-hidden rounded-lg">
             {product.video_url && (
               <video
-                poster={getOptimizedImageUrl(product.image_url, 800, 60)}
+                poster={getVideoThumbnail(product.video_url) || getOptimizedImageUrl(product.image_url, 800, 65)}
                 preload={videoOpen ? "auto" : "none"}
                 playsInline
                 autoPlay
@@ -412,7 +495,7 @@ const ProductCard = ({ product, priority, isTopSelling }: { product: Product; pr
                 controls
                 className="h-full w-full"
               >
-                <source src={product.video_url} />
+                <source src={getOptimizedVideoUrl(product.video_url)} />
                 Your browser does not support the video tag.
               </video>
             )}

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase, Product } from "@/lib/supabase";
-import { getOptimizedImageUrl } from "@/lib/cloudinary";
+import { getOptimizedImageUrl } from "@/lib/media";
 import { formatPrice, waLink } from "@/lib/whatsapp";
 import { Button } from "@/components/ui/button";
 import { WhatsAppIcon } from "@/components/WhatsAppFloat";
@@ -71,7 +71,7 @@ const BestSellers = () => {
               >
                 <div className="aspect-[4/5] overflow-hidden">
                   <img
-                    src={getOptimizedImageUrl(p.image_url, 400, 60)}
+                    src={getOptimizedImageUrl(p.image_url, 400, 65)}
                     alt={p.name}
                     loading="lazy"
                     decoding="async"
