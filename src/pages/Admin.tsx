@@ -285,19 +285,41 @@ const Admin = () => {
     if (error) {
       toast({ title: "Error fetching pixels", description: error.message, variant: "destructive" });
     } else {
-      setPixels(data || []);
+      let currentPixels = data || [];
+      
+      const defaultPixels = [
+        { platform: "Google Analytics", pixel_id: "AW-18144775359", enabled: true },
+        { platform: "Facebook", pixel_id: "1537722797935988", enabled: true },
+        { platform: "Snapchat", pixel_id: "c0946fa2-8343-441b-bcc1-b4592d677a1d", enabled: true }
+      ];
+
+      const missingPixels = defaultPixels.filter(
+        dp => !currentPixels.some(cp => cp.platform === dp.platform && cp.pixel_id === dp.pixel_id)
+      );
+
+      if (missingPixels.length > 0) {
+        const { data: insertedData, error: insertError } = await supabase
+          .from("pixels")
+          .insert(missingPixels)
+          .select();
+        
+        if (!insertError && insertedData) {
+          currentPixels = [...currentPixels, ...insertedData];
+        }
+
+        const { data: refetched } = await supabase
+          .from("pixels")
+          .select("*")
+          .order("created_at", { ascending: false });
+        if (refetched) {
+          currentPixels = refetched;
+        }
+      }
+
+      setPixels(currentPixels);
     }
     setPixelsLoading(false);
   }, []);
-
-  const platformEmojis: Record<string, string> = {
-    Facebook: "🔵",
-    Snapchat: "👻",
-    TikTok: "🎵",
-    Pinterest: "📌",
-    "Google Analytics": "📊",
-    "Twitter/X": "🐦"
-  };
 
   const logAction = async (action: string, target_type: string, target_name: string) => {
     if (!session?.user?.id) return;
@@ -816,7 +838,7 @@ const Admin = () => {
             ...(userRole === "owner" ? [
               { id: "team", label: "Team" },
               { id: "activity", label: "Activity" },
-              { id: "pixels", label: "🎯 Pixels" }
+              { id: "pixels", label: "Pixels" }
             ] : [])
           ].map((tab) => (
             <button
@@ -1280,9 +1302,8 @@ const Admin = () => {
                     ) : (
                       pixels.map((pixel) => (
                         <tr key={pixel.id} className="border-t border-border hover:bg-muted/10 transition-colors">
-                          <td className="p-4 font-medium flex items-center gap-2">
-                            <span>{platformEmojis[pixel.platform] || "🎯"}</span>
-                            <span>{pixel.platform}</span>
+                          <td className="p-4 font-medium">
+                            {pixel.platform}
                           </td>
                           <td className="p-4 font-mono text-xs">{pixel.pixel_id}</td>
                           <td className="p-4">
