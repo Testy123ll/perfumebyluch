@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import React, { Suspense, lazy } from "react";
 import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
+import PixelInjector from "./components/PixelInjector.tsx";
 
 const Admin = lazy(() => import("./pages/Admin.tsx"));
 const AdminLogin = lazy(() => import("./pages/AdminLogin.tsx"));
@@ -24,6 +25,7 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
+      <PixelInjector />
       <Toaster />
       <Sonner />
       <BrowserRouter>

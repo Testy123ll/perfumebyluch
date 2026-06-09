@@ -16,7 +16,7 @@ const TEST_SESSION_KEY = "pbl_admin_test_session";
 const MAX_VIDEO_SIZE_MB = 100;
 const MAX_VIDEO_SIZE_BYTES = MAX_VIDEO_SIZE_MB * 1024 * 1024;
 
-type Tab = "products" | "reviews" | "team" | "activity";
+type Tab = "products" | "reviews" | "team" | "activity" | "pixels";
 
 interface TeamMember {
   id?: string;
@@ -33,6 +33,14 @@ interface ActivityLog {
   action: string;
   target_name: string;
   created_at: string;
+}
+
+interface Pixel {
+  id: string;
+  platform: string;
+  pixel_id: string;
+  enabled: boolean;
+  created_at?: string;
 }
 
 /**
@@ -190,6 +198,13 @@ const Admin = () => {
   const [newInviteEmail, setNewInviteEmail] = useState("");
 
   const [logs, setLogs] = useState<ActivityLog[]>([]);
+
+  const [pixels, setPixels] = useState<Pixel[]>([]);
+  const [pixelsLoading, setPixelsLoading] = useState(false);
+  const [pixelFormData, setPixelFormData] = useState({
+    platform: "Facebook",
+    pixel_id: ""
+  });
   const [logFilterAdmin, setLogFilterAdmin] = useState("all");
   const [logFilterAction, setLogFilterAction] = useState("all");
 
@@ -259,6 +274,30 @@ const Admin = () => {
     });
     setTeam(combined);
   }, []);
+
+  const fetchPixels = useCallback(async () => {
+    setPixelsLoading(true);
+    const { data, error } = await supabase
+      .from("pixels")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      toast({ title: "Error fetching pixels", description: error.message, variant: "destructive" });
+    } else {
+      setPixels(data || []);
+    }
+    setPixelsLoading(false);
+  }, []);
+
+  const platformEmojis: Record<string, string> = {
+    Facebook: "🔵",
+    Snapchat: "👻",
+    TikTok: "🎵",
+    Pinterest: "📌",
+    "Google Analytics": "📊",
+    "Twitter/X": "🐦"
+  };
 
   const logAction = async (action: string, target_type: string, target_name: string) => {
     if (!session?.user?.id) return;
@@ -331,9 +370,18 @@ const Admin = () => {
         if (products.length === 0) fetchProducts();
       }
       else if (activeTab === "activity" && logs.length === 0) fetchLogs();
-      else if (activeTab === "team" && team.length === 0 && userRole === "owner") fetchTeam();
+      else if (activeTab === "team" && team.length === 0 && userRole === "owner") {
+        fetchTeam();
+        fetchPixels();
+      }
     }
   }, [session, userRole, activeTab]);
+
+  useEffect(() => {
+    if (activeTab === "pixels" && userRole === "owner") {
+      fetchPixels();
+    }
+  }, [activeTab]);
 
   useEffect(() => {
     if (session) fetchLogs();
@@ -658,6 +706,62 @@ const Admin = () => {
     if (!error) { toast({ title: "Logs cleared" }); fetchLogs(); }
   };
 
+  const handleAddPixel = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!pixelFormData.pixel_id.trim()) return;
+
+    setLoading(true);
+    const { error } = await supabase.from("pixels").insert([
+      {
+        platform: pixelFormData.platform,
+        pixel_id: pixelFormData.pixel_id.trim(),
+        enabled: true
+      }
+    ]);
+
+    if (error) {
+      toast({ title: "Error adding pixel", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Pixel added successfully" });
+      logAction("added", "pixel", pixelFormData.platform);
+      setPixelFormData({ ...pixelFormData, pixel_id: "" });
+      fetchPixels();
+    }
+    setLoading(false);
+  };
+
+  const handleTogglePixelEnabled = async (pixel: Pixel) => {
+    const newEnabled = !pixel.enabled;
+    const { error } = await supabase
+      .from("pixels")
+      .update({ enabled: newEnabled })
+      .eq("id", pixel.id);
+
+    if (error) {
+      toast({ title: "Error updating pixel status", description: error.message, variant: "destructive" });
+    } else {
+      logAction(newEnabled ? "enabled" : "disabled", "pixel", pixel.platform);
+      fetchPixels();
+    }
+  };
+
+  const handleDeletePixel = async (pixel: Pixel) => {
+    if (!confirm(`Delete ${pixel.platform} pixel with ID "${pixel.pixel_id}"?`)) return;
+
+    const { error } = await supabase
+      .from("pixels")
+      .delete()
+      .eq("id", pixel.id);
+
+    if (error) {
+      toast({ title: "Error deleting pixel", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Pixel deleted successfully" });
+      logAction("deleted", "pixel", pixel.platform);
+      fetchPixels();
+    }
+  };
+
   if (authChecking) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
@@ -711,7 +815,8 @@ const Admin = () => {
             { id: "reviews", label: "Reviews" },
             ...(userRole === "owner" ? [
               { id: "team", label: "Team" },
-              { id: "activity", label: "Activity" }
+              { id: "activity", label: "Activity" },
+              { id: "pixels", label: "🎯 Pixels" }
             ] : [])
           ].map((tab) => (
             <button
@@ -1101,6 +1206,126 @@ const Admin = () => {
                   </tbody>
                 </table>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* ══════════════════════════════════════════════════════
+            PIXELS TAB (OWNER ONLY)
+        ══════════════════════════════════════════════════════ */}
+        {activeTab === "pixels" && userRole === "owner" && (
+          <div className="space-y-6">
+            <div className="rounded-xl border border-border bg-card p-4 sm:p-6 shadow-sm">
+              <h2 className="mb-4 text-lg font-medium">Add Tracking Pixel</h2>
+              <form onSubmit={handleAddPixel} className="grid gap-4 sm:grid-cols-3 items-end">
+                <div>
+                  <label className="mb-1 block text-sm font-medium">Platform</label>
+                  <select
+                    value={pixelFormData.platform}
+                    onChange={(e) => setPixelFormData({ ...pixelFormData, platform: e.target.value })}
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:ring-1 focus:ring-primary"
+                  >
+                    <option value="Facebook">Facebook</option>
+                    <option value="Snapchat">Snapchat</option>
+                    <option value="TikTok">TikTok</option>
+                    <option value="Pinterest">Pinterest</option>
+                    <option value="Google Analytics">Google Analytics</option>
+                    <option value="Twitter/X">Twitter/X</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium">Pixel ID</label>
+                  <input
+                    required
+                    type="text"
+                    placeholder="Enter pixel or measurement ID"
+                    value={pixelFormData.pixel_id}
+                    onChange={(e) => setPixelFormData({ ...pixelFormData, pixel_id: e.target.value })}
+                    className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm focus:ring-1 focus:ring-primary"
+                  />
+                </div>
+                <Button type="submit" disabled={loading} className="w-full sm:w-fit">
+                  {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Add Pixel"}
+                </Button>
+              </form>
+            </div>
+
+            <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+              <div className="overflow-x-auto no-scrollbar">
+                <table className="w-full text-left text-sm min-w-[500px]">
+                  <thead className="bg-muted/50 text-[10px] uppercase tracking-widest text-muted-foreground">
+                    <tr>
+                      <th className="p-4">Platform</th>
+                      <th className="p-4">Pixel ID</th>
+                      <th className="p-4">Status</th>
+                      <th className="p-4 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pixelsLoading ? (
+                      <tr>
+                        <td colSpan={4} className="p-8 text-center">
+                          <div className="flex justify-center items-center gap-2 text-muted-foreground">
+                            <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                            <span>Loading pixels...</span>
+                          </div>
+                        </td>
+                      </tr>
+                    ) : pixels.length === 0 ? (
+                      <tr>
+                        <td colSpan={4} className="p-8 text-center text-muted-foreground">
+                          No pixels added yet.
+                        </td>
+                      </tr>
+                    ) : (
+                      pixels.map((pixel) => (
+                        <tr key={pixel.id} className="border-t border-border hover:bg-muted/10 transition-colors">
+                          <td className="p-4 font-medium flex items-center gap-2">
+                            <span>{platformEmojis[pixel.platform] || "🎯"}</span>
+                            <span>{pixel.platform}</span>
+                          </td>
+                          <td className="p-4 font-mono text-xs">{pixel.pixel_id}</td>
+                          <td className="p-4">
+                            <button
+                              type="button"
+                              onClick={() => handleTogglePixelEnabled(pixel)}
+                              className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase transition-all ${
+                                pixel.enabled
+                                  ? "bg-green-100 text-green-700 hover:bg-green-200"
+                                  : "bg-amber-100 text-amber-700 hover:bg-amber-200"
+                              }`}
+                            >
+                              {pixel.enabled ? "Active" : "Paused"}
+                            </button>
+                          </td>
+                          <td className="p-4 text-right">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-red-500"
+                              onClick={() => handleDeletePixel(pixel)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-border bg-card p-4 sm:p-6 shadow-sm">
+              <h3 className="mb-3 text-base font-medium">Where to find your Pixel ID</h3>
+              <ul className="space-y-3 text-xs text-muted-foreground list-disc pl-5">
+                <li><strong>Facebook:</strong> Go to Facebook Events Manager. Your Pixel ID is listed under the "Data Sources" tab.</li>
+                <li><strong>Snapchat:</strong> Open Snapchat Ads Manager, go to Assets &gt; Pixels. The Pixel ID is shown next to your pixel name.</li>
+                <li><strong>TikTok:</strong> Go to TikTok Ads Manager &gt; Assets &gt; Events &gt; Web Events. Find your Pixel ID under the pixel name.</li>
+                <li><strong>Pinterest:</strong> In Pinterest Ads Manager, navigate to Ads &gt; Conversions. Your Tag ID is shown under the Pinterest Tag section.</li>
+                <li><strong>Google Analytics:</strong> Go to Google Analytics Admin &gt; Data Streams &gt; Web Stream. Your Measurement ID (starts with G-) or Conversion ID (starts with AW-) is displayed there.</li>
+                <li><strong>Twitter/X:</strong> Go to Twitter Ads Manager &gt; Tools &gt; Conversion Tracking. The Pixel ID is listed in the tag details.</li>
+              </ul>
             </div>
           </div>
         )}
