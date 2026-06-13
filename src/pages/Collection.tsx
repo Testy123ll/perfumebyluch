@@ -7,8 +7,6 @@ import { useCart } from "@/contexts/CartContext";
 import { Plus, Check, Loader2, Search, ArrowLeft, Instagram } from "lucide-react";
 import { supabase, Product } from "@/lib/supabase";
 import { getOptimizedImageUrl } from "@/lib/media";
-import { useGlobalPromo } from "@/hooks/useGlobalPromo";
-import { getActiveOffer } from "@/lib/offer";
 import Footer from "@/components/sections/Footer";
 import WhatsAppFloat from "@/components/WhatsAppFloat";
 import CartDrawer from "@/components/CartDrawer";
@@ -19,7 +17,6 @@ type Category = "All" | "Unboxed" | "Thrifted Open Box" | "Boxed" | "Tester";
 const categories: Category[] = ["All", "Boxed", "Unboxed", "Thrifted Open Box", "Tester"];
 
 const CollectionContent = () => {
-  const globalPromo = useGlobalPromo();
   const [active, setActive] = useState<Category>("All");
   const [search, setSearch] = useState("");
   const [products, setProducts] = useState<Product[]>([]);
@@ -126,9 +123,8 @@ const CollectionContent = () => {
             {filtered.map((p) => {
               const inCart = items.some((i) => i.id === p.id);
               const soldOut = !p.in_stock;
-              const offer = getActiveOffer(p, globalPromo);
-              const isSaleActive = offer.isOnSale;
-              const displayPrice = offer.price;
+              const isSaleActive = p.sale_price && (!p.sale_end_date || new Date(p.sale_end_date) > new Date());
+              const displayPrice = isSaleActive ? p.sale_price! : p.price;
 
               return (
                 <article
@@ -154,7 +150,7 @@ const CollectionContent = () => {
                     <div className="absolute left-3 top-3 z-30 flex flex-col items-start gap-2">
                       {isSaleActive && (
                         <span className="rounded-full bg-red-600/95 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white backdrop-blur shadow-lg shadow-red-500/20 animate-pulse-slow">
-                          {offer.promoLabel || "Sale"}
+                          Sale
                         </span>
                       )}
                       {p.is_new && (
