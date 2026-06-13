@@ -9,6 +9,7 @@ import { supabase, Product } from "@/lib/supabase";
 import { getOptimizedVideoUrl, getOptimizedImageUrl, getVideoThumbnail } from "@/lib/media";
 import { useGlobalPromo } from "@/hooks/useGlobalPromo";
 import { getActiveOffer } from "@/lib/offer";
+import type { GlobalPromoData } from "@/lib/offer";
 import {
   Dialog,
   DialogContent,
@@ -354,7 +355,7 @@ const ProductCard = ({
   product: Product; 
   priority?: boolean; 
   isTopSelling?: boolean; 
-  globalPromo?: any;
+  globalPromo?: GlobalPromoData;
 }) => {
   const { addItem, items } = useCart();
   const [videoOpen, setVideoOpen] = useState(false);

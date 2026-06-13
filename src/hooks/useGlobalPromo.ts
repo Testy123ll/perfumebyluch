@@ -3,7 +3,6 @@ import { supabase } from "@/lib/supabase";
 
 export interface GlobalPromoData {
   isGlobalPromoActive: boolean;
-  globalDiscount: number;
   globalLabel: string;
   globalPromoEnd: string;
   loading: boolean;
@@ -12,7 +11,6 @@ export interface GlobalPromoData {
 export const useGlobalPromo = (): GlobalPromoData => {
   const [promo, setPromo] = useState<{
     enabled: boolean;
-    discount_percent: number;
     label: string;
     offer_start: string | null;
     offer_end: string | null;
@@ -23,7 +21,7 @@ export const useGlobalPromo = (): GlobalPromoData => {
     try {
       const { data, error } = await supabase
         .from("global_promo")
-        .select("*")
+        .select("enabled, label, offer_start, offer_end")
         .maybeSingle();
 
       if (!error && data) {
@@ -43,7 +41,7 @@ export const useGlobalPromo = (): GlobalPromoData => {
 
     const interval = setInterval(() => {
       fetchPromo();
-    }, 60000); // 60 seconds
+    }, 60000); // re-fetch every 60 seconds
 
     return () => clearInterval(interval);
   }, []);
@@ -57,7 +55,6 @@ export const useGlobalPromo = (): GlobalPromoData => {
 
   return {
     isGlobalPromoActive,
-    globalDiscount: promo ? promo.discount_percent : 0,
     globalLabel: promo ? promo.label || "" : "",
     globalPromoEnd: promo ? promo.offer_end || "" : "",
     loading,

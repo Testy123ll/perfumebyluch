@@ -46,7 +46,6 @@ interface Pixel {
 interface GlobalPromo {
   id?: string;
   enabled: boolean;
-  discount_percent: number;
   label: string;
   offer_start: string;
   offer_end: string;
@@ -256,7 +255,6 @@ const Admin = () => {
     } else {
       setGlobalPromo({
         enabled: false,
-        discount_percent: 0,
         label: "",
         offer_start: "",
         offer_end: "",
@@ -271,7 +269,6 @@ const Admin = () => {
 
     const payload = {
       enabled: enable,
-      discount_percent: globalPromo.discount_percent,
       label: globalPromo.label,
       offer_start: globalPromo.offer_start || null,
       offer_end: globalPromo.offer_end || null,
@@ -968,22 +965,7 @@ const Admin = () => {
                       </div>
                     )}
 
-                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                      <div>
-                        <label className="mb-1 block text-xs font-medium">Discount Percentage (%)</label>
-                        <input
-                          type="number"
-                          min="0"
-                          max="100"
-                          value={globalPromo.discount_percent}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            setGlobalPromo({ ...globalPromo, discount_percent: val === "" ? 0 : parseFloat(val) || 0 });
-                          }}
-                          className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm focus:ring-1 focus:ring-primary"
-                          placeholder="0"
-                        />
-                      </div>
+                    <div className="grid gap-4 sm:grid-cols-3">
                       <div>
                         <label className="mb-1 block text-xs font-medium">Promo Label</label>
                         <input
@@ -1034,6 +1016,21 @@ const Admin = () => {
                           {promoLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Enable Promo"}
                         </Button>
                       )}
+                    </div>
+
+                    {/* Informational note + affected product count */}
+                    <div className="rounded-lg border border-border bg-muted/40 p-3 space-y-1">
+                      <p className="text-xs text-muted-foreground">
+                        ℹ️ <span className="font-medium text-foreground">How this works:</span> Only products that already have an individual offer price set will participate in this global promo. Products without an offer price will always show their normal price.
+                      </p>
+                      <p className="text-xs font-medium">
+                        {(() => {
+                          const count = products.filter(p => p.sale_price !== undefined && p.sale_price !== null).length;
+                          return count === 0
+                            ? "⚠️ No products currently have an offer price set. Set individual offer prices on products before enabling this promo."
+                            : `✅ ${count} product${count === 1 ? " has" : "s have"} an offer price set and will be affected when this promo is enabled.`;
+                        })()}
+                      </p>
                     </div>
                   </div>
                 )}
