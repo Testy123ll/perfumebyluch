@@ -43,6 +43,15 @@ interface Pixel {
   created_at?: string;
 }
 
+interface GlobalPromo {
+  id?: string;
+  enabled: boolean;
+  discount_percent: number;
+  label: string;
+  offer_start: string;
+  offer_end: string;
+}
+
 /**
  * Standard SDK upload for images.
  */
@@ -205,6 +214,8 @@ const Admin = () => {
     platform: "Facebook",
     pixel_id: ""
   });
+  const [globalPromo, setGlobalPromo] = useState<GlobalPromo | null>(null);
+  const [promoLoading, setPromoLoading] = useState(false);
   const [logFilterAdmin, setLogFilterAdmin] = useState("all");
   const [logFilterAction, setLogFilterAction] = useState("all");
 
@@ -229,6 +240,74 @@ const Admin = () => {
     }
     setLoading(false);
   }, []);
+
+  const fetchGlobalPromo = useCallback(async () => {
+    if (userRole !== "owner") return;
+    setPromoLoading(true);
+    const { data, error } = await supabase
+      .from("global_promo")
+      .select("*")
+      .maybeSingle();
+
+    if (error) {
+      console.error("Error fetching global promo:", error.message);
+    } else if (data) {
+      setGlobalPromo(data);
+    } else {
+      setGlobalPromo({
+        enabled: false,
+        discount_percent: 0,
+        label: "",
+        offer_start: "",
+        offer_end: "",
+      });
+    }
+    setPromoLoading(false);
+  }, [userRole]);
+
+  const handleSavePromo = async (enable: boolean) => {
+    if (!globalPromo) return;
+    setPromoLoading(true);
+
+    const payload = {
+      enabled: enable,
+      discount_percent: globalPromo.discount_percent,
+      label: globalPromo.label,
+      offer_start: globalPromo.offer_start || null,
+      offer_end: globalPromo.offer_end || null,
+    };
+
+    let error;
+    if (globalPromo.id) {
+      const { error: err } = await supabase
+        .from("global_promo")
+        .update(payload)
+        .eq("id", globalPromo.id);
+      error = err;
+    } else {
+      const { data, error: err } = await supabase
+        .from("global_promo")
+        .insert([payload])
+        .select()
+        .single();
+      error = err;
+      if (data) {
+        setGlobalPromo(data);
+      }
+    }
+
+    if (error) {
+      toast({ title: "Error saving promo", description: error.message, variant: "destructive" });
+    } else {
+      toast({
+        title: enable ? "Global Promo Enabled" : "Global Promo Disabled",
+        description: `Successfully ${enable ? "enabled" : "disabled"} the promo.`,
+      });
+      logAction(enable ? "Enabled global promo" : "Disabled global promo", "global_promo", globalPromo.label || "Promo");
+      fetchGlobalPromo();
+    }
+    setPromoLoading(false);
+  };
 
   const fetchReviews = useCallback(async () => {
     const { data, error } = await supabase
@@ -386,7 +465,10 @@ const Admin = () => {
 
   useEffect(() => {
     if (session) {
-      if (activeTab === "products" && products.length === 0) fetchProducts();
+      if (activeTab === "products") {
+        if (products.length === 0) fetchProducts();
+        if (userRole === "owner") fetchGlobalPromo();
+      }
       else if (activeTab === "reviews") {
         if (reviews.length === 0) fetchReviews();
         if (products.length === 0) fetchProducts();
@@ -397,7 +479,7 @@ const Admin = () => {
         fetchPixels();
       }
     }
-  }, [session, userRole, activeTab]);
+  }, [session, userRole, activeTab, fetchGlobalPromo]);
 
   useEffect(() => {
     if (activeTab === "pixels" && userRole === "owner") {
@@ -854,6 +936,109 @@ const Admin = () => {
 
         {activeTab === "products" && (
           <>
+            {userRole === "owner" && (
+              <div className="mb-6 rounded-xl border border-border bg-card p-4 sm:p-6 shadow-sm">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-border/40 pb-4 mb-4">
+                  <div>
+                    <h3 className="font-serif text-lg sm:text-xl">Global Store Promo</h3>
+                    <p className="text-xs text-muted-foreground mt-1">Apply a storewide discount to all products without individual promos</p>
+                  </div>
+                  <div>
+                    {(!globalPromo || !globalPromo.enabled) ? (
+                      <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-semibold text-gray-800 uppercase">
+                        Inactive
+                      </span>
+                    ) : (globalPromo.offer_end && new Date(globalPromo.offer_end) < new Date()) ? (
+                      <span className="inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-semibold text-red-800 uppercase">
+                        Ended
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-semibold text-green-800 uppercase">
+                        Active
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {globalPromo && (
+                  <div className="space-y-4">
+                    {globalPromo.enabled && globalPromo.offer_end && new Date(globalPromo.offer_end) < new Date() && (
+                      <div className="rounded-lg bg-amber-500/10 border border-amber-500/30 p-3 text-sm text-amber-600 font-medium">
+                        ⚠️ Warning: The global promo is marked as enabled, but the end date has already passed.
+                      </div>
+                    )}
+
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                      <div>
+                        <label className="mb-1 block text-xs font-medium">Discount Percentage (%)</label>
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          value={globalPromo.discount_percent}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setGlobalPromo({ ...globalPromo, discount_percent: val === "" ? 0 : parseFloat(val) || 0 });
+                          }}
+                          className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm focus:ring-1 focus:ring-primary"
+                          placeholder="0"
+                        />
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-xs font-medium">Promo Label</label>
+                        <input
+                          type="text"
+                          value={globalPromo.label}
+                          onChange={(e) => setGlobalPromo({ ...globalPromo, label: e.target.value })}
+                          className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm focus:ring-1 focus:ring-primary"
+                          placeholder="e.g. FLASH SALE"
+                        />
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-xs font-medium">Offer Start Date</label>
+                        <input
+                          type="datetime-local"
+                          value={globalPromo.offer_start ? new Date(globalPromo.offer_start).toISOString().slice(0, 16) : ""}
+                          onChange={(e) => setGlobalPromo({ ...globalPromo, offer_start: e.target.value })}
+                          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:ring-1 focus:ring-primary"
+                        />
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-xs font-medium">Offer End Date</label>
+                        <input
+                          type="datetime-local"
+                          value={globalPromo.offer_end ? new Date(globalPromo.offer_end).toISOString().slice(0, 16) : ""}
+                          onChange={(e) => setGlobalPromo({ ...globalPromo, offer_end: e.target.value })}
+                          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:ring-1 focus:ring-primary"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex justify-end gap-3 mt-4">
+                      {globalPromo.enabled ? (
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          onClick={() => handleSavePromo(false)}
+                          disabled={promoLoading}
+                        >
+                          {promoLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Disable Promo"}
+                        </Button>
+                      ) : (
+                        <Button
+                          type="button"
+                          onClick={() => handleSavePromo(true)}
+                          disabled={promoLoading}
+                          className="bg-green-600 hover:bg-green-700 text-white"
+                        >
+                          {promoLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Enable Promo"}
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
             {showForm ? (
               <div className="mb-6 rounded-xl border border-border bg-card p-4 sm:p-6 shadow-sm">
                 <h2 className="mb-4 text-xl font-medium">{editingId ? "Edit Product" : "Add Product"}</h2>

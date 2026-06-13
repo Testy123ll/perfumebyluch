@@ -7,6 +7,8 @@ import { useCart } from "@/contexts/CartContext";
 import { Plus, Check, Loader2, Search, Play, X, Instagram, ShoppingBag } from "lucide-react";
 import { supabase, Product } from "@/lib/supabase";
 import { getOptimizedVideoUrl, getOptimizedImageUrl, getVideoThumbnail } from "@/lib/media";
+import { useGlobalPromo } from "@/hooks/useGlobalPromo";
+import { getActiveOffer } from "@/lib/offer";
 import {
   Dialog,
   DialogContent,
@@ -74,6 +76,7 @@ const SAMPLE_PRODUCTS: Product[] = [
 ];
 
 const Products = () => {
+  const globalPromo = useGlobalPromo();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [active, setActive] = useState<Category>("All");
@@ -196,6 +199,7 @@ const Products = () => {
                 product={p}
                 priority={idx < 4}
                 isTopSelling={p.is_bestseller}
+                globalPromo={globalPromo}
               />
             ))}
           </div>
@@ -341,14 +345,25 @@ const LazyVideo = ({
   );
 };
 
-const ProductCard = ({ product, priority, isTopSelling }: { product: Product; priority?: boolean; isTopSelling?: boolean }) => {
+const ProductCard = ({ 
+  product, 
+  priority, 
+  isTopSelling, 
+  globalPromo 
+}: { 
+  product: Product; 
+  priority?: boolean; 
+  isTopSelling?: boolean; 
+  globalPromo?: any;
+}) => {
   const { addItem, items } = useCart();
   const [videoOpen, setVideoOpen] = useState(false);
   const inCart = items.some((i) => i.id === product.id);
   const soldOut = !product.in_stock;
 
-  const isSaleActive = product.sale_price && (!product.sale_end_date || new Date(product.sale_end_date) > new Date());
-  const displayPrice = isSaleActive ? product.sale_price! : product.price;
+  const offer = getActiveOffer(product, globalPromo);
+  const isSaleActive = offer.isOnSale;
+  const displayPrice = offer.price;
 
   const handleAddToCart = () => {
     addItem({
@@ -386,7 +401,7 @@ const ProductCard = ({ product, priority, isTopSelling }: { product: Product; pr
           <div className="absolute left-3 top-3 z-30 flex flex-col items-start gap-2">
             {isSaleActive && (
               <span className="rounded-full bg-red-600/95 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white backdrop-blur shadow-lg shadow-red-500/20 animate-pulse-slow">
-                Sale
+                {offer.promoLabel || "Sale"}
               </span>
             )}
             {product.is_new && (
