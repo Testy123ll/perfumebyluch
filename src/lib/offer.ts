@@ -25,15 +25,16 @@ export const getActiveOffer = (
     product.sale_price !== null &&
     product.sale_price > 0;
 
-  // 1. Individual promo is active only when ALL of these are true:
-  //    - sale_price is not null and greater than 0
-  //    - sale_end_date is not null (required — open-ended sales are not shown)
-  //    - current time is before sale_end_date
+  // 1. Individual promo is active when:
+  //    - sale_price > 0  (required)
+  //    - AND sale_end_date is null (open-ended sale, always valid)
+  //      OR sale_end_date is set and still in the future (not yet expired)
+  //    An expired sale_end_date means the individual promo is over.
   const ownPromoValid =
     hasOfferPrice &&
-    product.sale_end_date !== undefined &&
-    product.sale_end_date !== null &&
-    new Date(product.sale_end_date) > now;
+    (product.sale_end_date === undefined ||
+      product.sale_end_date === null ||
+      new Date(product.sale_end_date) > now);
 
   if (ownPromoValid) {
     return {
