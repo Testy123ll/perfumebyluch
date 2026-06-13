@@ -19,17 +19,21 @@ export const getActiveOffer = (
 ): ActiveOffer => {
   const now = new Date();
 
-  // Whether the product has an offer price set at all
+  // Whether the product has a valid offer price set (must be > 0)
   const hasOfferPrice =
-    product.sale_price !== undefined && product.sale_price !== null;
+    product.sale_price !== undefined &&
+    product.sale_price !== null &&
+    product.sale_price > 0;
 
-  // 1. Product has its own offer price AND its own individual date range is valid
-  //    (not expired — no end date means it's open-ended)
+  // 1. Individual promo is active only when ALL of these are true:
+  //    - sale_price is not null and greater than 0
+  //    - sale_end_date is not null (required — open-ended sales are not shown)
+  //    - current time is before sale_end_date
   const ownPromoValid =
     hasOfferPrice &&
-    (product.sale_end_date === undefined ||
-      product.sale_end_date === null ||
-      new Date(product.sale_end_date) > now);
+    product.sale_end_date !== undefined &&
+    product.sale_end_date !== null &&
+    new Date(product.sale_end_date) > now;
 
   if (ownPromoValid) {
     return {
