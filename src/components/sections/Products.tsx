@@ -104,11 +104,13 @@ const Products = () => {
 
   useEffect(() => {
     const fetchProducts = async () => {
+      // Append a timestamp hint so Supabase always returns a fresh result
       const { data } = await supabase
         .from("products")
-        .select("*")
+        .select(`*, updated_at`)
         .eq("visible", true)
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .limit(100);
 
       // Fall back to sample products when Supabase returns nothing
       if (data && data.length > 0) {
@@ -118,7 +120,24 @@ const Products = () => {
       }
       setLoading(false);
     };
+
     fetchProducts();
+
+    // Realtime subscription — re-fetch whenever any product row changes
+    const channel = supabase
+      .channel("products-realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "products" },
+        () => {
+          fetchProducts();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const filtered = products
