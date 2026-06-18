@@ -1,5 +1,5 @@
 import { Shield, Sparkles, Heart } from "lucide-react";
-import { waLink } from "@/lib/whatsapp";
+import { waLink, trackWhatsAppConversion } from "@/lib/whatsapp";
 import { WhatsAppIcon } from "@/components/WhatsAppFloat";
 
 const Guarantee = () => {
@@ -68,6 +68,7 @@ const Guarantee = () => {
             href={waLink("Hi Perfumes By Luch! I'd like to place an order.")}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={trackWhatsAppConversion}
             className="inline-flex items-center gap-2 rounded-full bg-whatsapp px-6 py-3 text-sm font-semibold text-whatsapp-foreground shadow-glow transition-smooth hover:scale-105"
           >
             <WhatsAppIcon className="h-4 w-4" />

@@ -1,4 +1,4 @@
-import { waLink } from "@/lib/whatsapp";
+import { waLink, trackWhatsAppConversion } from "@/lib/whatsapp";
 import { WhatsAppIcon } from "@/components/WhatsAppFloat";
 import { Instagram, MapPin, Clock, Mail, Phone } from "lucide-react";
 import logo from "@/assets/logo.webp";
@@ -72,6 +72,7 @@ const Footer = () => (
               target="_blank"
               rel="noopener noreferrer"
               aria-label="WhatsApp"
+              onClick={trackWhatsAppConversion}
               className="flex h-10 w-10 items-center justify-center rounded-full border border-border text-muted-foreground transition-smooth hover:border-primary hover:text-primary"
             >
               <WhatsAppIcon className="h-5 w-5" />
@@ -107,6 +108,7 @@ const Footer = () => (
             href={waLink("Hi Perfumes By Luch! I'd like to place an order.")}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={trackWhatsAppConversion}
             className="inline-flex items-center gap-2 rounded-full bg-whatsapp px-5 py-2.5 text-sm font-semibold text-whatsapp-foreground transition-smooth hover:scale-105"
           >
             <WhatsAppIcon className="h-4 w-4" />

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Minus, Plus, Trash2, ShoppingBag, Copy, Check, ExternalLink } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { WhatsAppIcon } from "@/components/WhatsAppFloat";
-import { buildOrderMessage, formatPrice, waLink, WHATSAPP_NUMBER } from "@/lib/whatsapp";
+import { buildOrderMessage, formatPrice, waLink, WHATSAPP_NUMBER, trackWhatsAppConversion } from "@/lib/whatsapp";
 import { toast } from "@/hooks/use-toast";
 
 const MAX_QTY = 10;
@@ -43,6 +43,7 @@ const CartDrawer = () => {
     clearCart();
     setConfirmOpen(false);
     closeCart();
+    trackWhatsAppConversion();
     window.open(link, "_blank", "noopener,noreferrer");
   };
 

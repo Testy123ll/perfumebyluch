@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { formatPrice, waLink } from "@/lib/whatsapp";
+import { formatPrice, waLink, trackWhatsAppConversion } from "@/lib/whatsapp";
 import { WhatsAppIcon } from "@/components/WhatsAppFloat";
 import { useCart } from "@/contexts/CartContext";
 import { Plus, Check, Loader2, Search, Play, X, Instagram, ShoppingBag } from "lucide-react";
@@ -489,6 +489,7 @@ const ProductCard = ({ product, priority, isTopSelling }: { product: Product; pr
                 )}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={trackWhatsAppConversion}
               >
                 <WhatsAppIcon className="h-3.5 w-3.5" />
                 Order via WhatsApp

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { waLink } from "@/lib/whatsapp";
+import { waLink, trackWhatsAppConversion } from "@/lib/whatsapp";
 import { WhatsAppIcon } from "@/components/WhatsAppFloat";
 import heroImage from "@/assets/hero-perfume.jpg";
 
@@ -70,7 +70,7 @@ const Hero = () => {
           </p>
           <div className="mt-8 flex flex-wrap gap-4">
             <Button asChild size="lg" variant="whatsapp" className="text-base">
-              <a href={waLink("Hi Perfumes By Luch! I'd like to buy perfume.")} target="_blank" rel="noopener noreferrer">
+              <a href={waLink("Hi Perfumes By Luch! I'd like to buy perfume.")} target="_blank" rel="noopener noreferrer" onClick={trackWhatsAppConversion}>
                 <WhatsAppIcon className="h-5 w-5" />
                 Shop on WhatsApp
               </a>

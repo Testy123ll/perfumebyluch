@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase, Product } from "@/lib/supabase";
 import { getOptimizedImageUrl } from "@/lib/media";
-import { formatPrice, waLink } from "@/lib/whatsapp";
+import { formatPrice, waLink, trackWhatsAppConversion } from "@/lib/whatsapp";
 import { Button } from "@/components/ui/button";
 import { WhatsAppIcon } from "@/components/WhatsAppFloat";
 
@@ -115,6 +115,7 @@ const BestSellers = () => {
                       href={waLink(`Hi! I'd like to order the Best Seller: ${p.name}${p.size ? ` (${p.size})` : ""} at ${formatPrice(p.sale_price && (!p.sale_end_date || new Date(p.sale_end_date) > new Date()) ? p.sale_price : p.price)}`)}
                       target="_blank"
                       rel="noopener noreferrer"
+                      onClick={trackWhatsAppConversion}
                       className="gap-2"
                     >
                       <WhatsAppIcon className="h-3.5 w-3.5" />

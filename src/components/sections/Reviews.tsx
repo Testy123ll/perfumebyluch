@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { BadgeCheck, Star } from "lucide-react";
 import { Link } from "react-router-dom";
-import { waLink } from "@/lib/whatsapp";
+import { waLink, trackWhatsAppConversion } from "@/lib/whatsapp";
 import { WhatsAppIcon } from "@/components/WhatsAppFloat";
 
 const Reviews = () => {
@@ -109,6 +109,7 @@ const Reviews = () => {
             href={waLink("Hi Perfumes By Luch! I'd like to find my signature scent.")}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={trackWhatsAppConversion}
             className="inline-flex items-center gap-2 rounded-full bg-whatsapp px-6 py-3 text-sm font-semibold text-whatsapp-foreground shadow-glow transition-smooth hover:scale-105 mt-2"
           >
             <WhatsAppIcon className="h-4 w-4" />

@@ -2,6 +2,21 @@
 // Note: wa.me/message/XXXX short-links do NOT support a prefilled text. Use a phone number.
 export const WHATSAPP_NUMBER = "2347052537265";
 
+// Google Ads WhatsApp conversion tracking
+// Replace XXXXXXXXXXXXXX with your actual conversion label from Google Ads:
+// Google Ads → Goals → Conversions → [your conversion action] → Tag details
+export const trackWhatsAppConversion = () => {
+  try {
+    if (typeof window !== "undefined" && typeof (window as any).gtag === "function") {
+      (window as any).gtag("event", "conversion", {
+        send_to: "AW-18144775359/XXXXXXXXXXXXXX",
+      });
+    }
+  } catch {
+    // silently fail if gtag is not loaded
+  }
+};
+
 export const waLink = (message: string) =>
   `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
 

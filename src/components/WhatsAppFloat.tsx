@@ -1,4 +1,4 @@
-import { waLink } from "@/lib/whatsapp";
+import { waLink, trackWhatsAppConversion } from "@/lib/whatsapp";
 
 const WhatsAppIcon = ({ className }: { className?: string }) => (
   <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden="true">
@@ -12,6 +12,7 @@ const WhatsAppFloat = () => (
     target="_blank"
     rel="noopener noreferrer"
     aria-label="Chat on WhatsApp"
+    onClick={trackWhatsAppConversion}
     className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-whatsapp text-whatsapp-foreground shadow-glow transition-smooth hover:scale-110 animate-pulse-glow"
   >
     <WhatsAppIcon className="h-7 w-7" />

@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { waLink } from "@/lib/whatsapp";
+import { waLink, trackWhatsAppConversion } from "@/lib/whatsapp";
 import { WhatsAppIcon } from "@/components/WhatsAppFloat";
 
 const CTA = () => (
@@ -32,6 +32,7 @@ const CTA = () => (
               href={waLink("Hi Perfumes By Luch! I'm ready to smell amazing.")}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={trackWhatsAppConversion}
             >
               <WhatsAppIcon className="h-5 w-5" />
               Message on WhatsApp

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { formatPrice, waLink } from "@/lib/whatsapp";
+import { formatPrice, waLink, trackWhatsAppConversion } from "@/lib/whatsapp";
 import { WhatsAppIcon } from "@/components/WhatsAppFloat";
 import { useCart } from "@/contexts/CartContext";
 import { Plus, Check, Loader2, Search, ArrowLeft, Instagram } from "lucide-react";
@@ -221,6 +221,7 @@ const CollectionContent = () => {
                           href={waLink(`Hi, I'd like to order ${p.name}${p.size ? ` (${p.size})` : ""} at ${formatPrice(displayPrice)}`)}
                           target="_blank"
                           rel="noopener noreferrer"
+                          onClick={trackWhatsAppConversion}
                         >
                           <WhatsAppIcon className="h-3.5 w-3.5" />
                           Order via WhatsApp

@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { waLink } from "@/lib/whatsapp";
+import { waLink, trackWhatsAppConversion } from "@/lib/whatsapp";
 import { WhatsAppIcon } from "@/components/WhatsAppFloat";
 import CartButton from "@/components/CartButton";
 import logo from "@/assets/logo.webp";
@@ -20,7 +20,7 @@ const Nav = () => (
       <div className="flex items-center gap-2">
         <CartButton />
         <Button asChild variant="whatsapp" size="sm" className="hidden sm:inline-flex">
-          <a href={waLink("Hi Perfumes By Luch! I'd like to place an order.")} target="_blank" rel="noopener noreferrer">
+          <a href={waLink("Hi Perfumes By Luch! I'd like to place an order.")} target="_blank" rel="noopener noreferrer" onClick={trackWhatsAppConversion}>
             <WhatsAppIcon className="h-4 w-4" />
             Order Now
           </a>
