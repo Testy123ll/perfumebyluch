@@ -25,8 +25,8 @@ const Footer = () => (
           <p className="mt-4 flex items-start gap-2 text-sm text-foreground">
             <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
             <span>
-              13B Charles Ifeanyi Street,<br />
-              Off Fola Osibo Street,<br />
+              24 Fola Osibo, ,<br />
+              the plaza beside Dualfol Mall.<br />
               Lekki Phase 1, Lagos
               <a 
                 href="https://www.google.com/maps/search/?api=1&query=13B+Charles+Ifeanyi+Street+Lekki+Phase+1+Lagos" 
